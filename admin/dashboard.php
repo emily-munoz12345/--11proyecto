@@ -1,6 +1,9 @@
 <?php
-require_once 'php/auth.php';
-requireAuth();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+require_once __DIR__ . '/../php/conexion.php';
+require_once __DIR__ . '/../php/auth.php';
 ?>
 
 <!DOCTYPE html>
@@ -97,17 +100,17 @@ requireAuth();
             
             <?php if (isAdmin() || isSeller()): ?>
             <li class="nav-item">
-                <a class="nav-link" href="../--11proyecto/clientes/index.php">
+                <a class="nav-link" href="../admin/clientes/index.php">
                     <i class="fas fa-users"></i> Clientes
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="vehiculos.php">
+                <a class="nav-link" href="../admin/vehiculos/index.php">
                     <i class="fas fa-car"></i> Vehículos
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="cotizaciones.php">
+                <a class="nav-link" href="../admin/cotizaciones/index.php">
                     <i class="fas fa-file-invoice-dollar"></i> Cotizaciones
                 </a>
             </li>
@@ -115,12 +118,12 @@ requireAuth();
             
             <?php if (isAdmin() || isTechnician()): ?>
             <li class="nav-item">
-                <a class="nav-link" href="trabajos.php">
+                <a class="nav-link" href="../admin/trabajos/index.php">
                     <i class="fas fa-tools"></i> Trabajos
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="materiales.php">
+                <a class="nav-link" href="../admin/materiales/index.php">
                     <i class="fas fa-archive"></i> Materiales
                 </a>
             </li>
@@ -128,19 +131,19 @@ requireAuth();
             
             <?php if (isAdmin()): ?>
             <li class="nav-item">
-                <a class="nav-link" href="servicios.php">
+                <a class="nav-link" href="../admin/servicios/index.php">
                     <i class="fas fa-concierge-bell"></i> Servicios
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="usuarios.php">
+                <a class="nav-link" href="../admin/usuarios/index.php">
                     <i class="fas fa-user-cog"></i> Usuarios
                 </a>
             </li>
             <?php endif; ?>
             
             <li class="nav-item mt-4">
-                <a class="nav-link" href="php/logout.php">
+                <a class="nav-link" href="../php/logout.php">
                     <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                 </a>
             </li>

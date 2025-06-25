@@ -1,7 +1,7 @@
    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="../index.php">
+            <a class="navbar-brand" href="../../public/index.php">
                 <i class="fas fa-car me-2"></i>Nacional Tapizados
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,7 +28,7 @@
                         <a class="nav-link" href="cotizaciones.html">Cotizaciones</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="login.php"><i class="fas fa-user me-1"></i>Login</a>
+                        <a class="nav-link" href="../admin/login.php"><i class="fas fa-user me-1"></i>Login</a>
                     </li>
                 </ul>
             </div>

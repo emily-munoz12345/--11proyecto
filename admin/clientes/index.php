@@ -1,18 +1,21 @@
 <?php
-require_once '../../php/auth.php';
-requireAuth();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+require_once __DIR__ . '/../../php/conexion.php';
+require_once __DIR__ . '/../../php/auth.php';
 
 // Verificar permisos (solo Admin y Vendedor)
 if (!isAdmin() && !isSeller()) {
-    header('Location: ../admin/dashboard.php');
+    header('Location: ../dashboard.php');
     exit;
 }
 
-require_once '../../php/conexion.php';
-
-// Mensajes de éxito/error
-$mensaje = '';
-$tipoMensaje = '';
+// Inicializar variables de sesión para mensajes si no existen
+if (!isset($_SESSION['mensaje'])) {
+    $_SESSION['mensaje'] = '';
+    $_SESSION['tipo_mensaje'] = '';
+}
 
 // Procesar eliminación
 if (isset($_GET['eliminar'])) {
@@ -25,19 +28,21 @@ if (isset($_GET['eliminar'])) {
         $tieneVehiculos = $stmt->fetchColumn();
         
         if ($tieneVehiculos > 0) {
-            $mensaje = 'No se puede eliminar: cliente tiene vehículos asociados';
-            $tipoMensaje = 'danger';
+            $_SESSION['mensaje'] = 'No se puede eliminar: cliente tiene vehículos asociados';
+            $_SESSION['tipo_mensaje'] = 'danger';
         } else {
             $stmt = $conex->prepare("DELETE FROM clientes WHERE id_cliente = ?");
             if ($stmt->execute([$id])) {
-                $mensaje = 'Cliente eliminado correctamente';
-                $tipoMensaje = 'success';
+                $_SESSION['mensaje'] = 'Cliente eliminado correctamente';
+                $_SESSION['tipo_mensaje'] = 'success';
             }
         }
     } catch (PDOException $e) {
-        $mensaje = 'Error al eliminar: ' . $e->getMessage();
-        $tipoMensaje = 'danger';
+        $_SESSION['mensaje'] = 'Error al eliminar: ' . $e->getMessage();
+        $_SESSION['tipo_mensaje'] = 'danger';
     }
+    header('Location: index.php');
+    exit;
 }
 
 // Búsqueda y paginación
@@ -62,31 +67,24 @@ $totalClientes = $stmt->fetchColumn();
 $totalPaginas = ceil($totalClientes / $porPagina);
 
 // Obtener clientes
-$sql .= " $where ORDER BY nombre_cliente ASC LIMIT :offset, :limit";
+$offset = ($pagina - 1) * $porPagina;
+$sql .= " $where ORDER BY nombre_cliente ASC LIMIT $offset, $porPagina";
+
 $stmt = $conex->prepare($sql);
-
-foreach ($params as $i => $param) {
-    $stmt->bindValue($i+1, $param);
+if (!empty($busqueda)) {
+    $stmt->execute($params);
+} else {
+    $stmt->execute();
 }
-
-$stmt->bindValue(':offset', ($pagina - 1) * $porPagina, PDO::PARAM_INT);
-$stmt->bindValue(':limit', $porPagina, PDO::PARAM_INT);
-$stmt->execute();
 $clientes = $stmt->fetchAll();
+
+require_once __DIR__ . '/../../includes/head.php';
+$title = 'Gestión de Clientes | Nacional Tapizados';
 ?>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clientes - Nacional Tapizados</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/style.css">
-</head>
-<body>
-    <?php include '../includes/navbar.php'; ?>
+    <?php
+require_once __DIR__ . '/../../includes/navbar.php';
+?>
     
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -96,12 +94,17 @@ $clientes = $stmt->fetchAll();
             </a>
         </div>
         
-        <?php if ($mensaje): ?>
-            <div class="alert alert-<?= $tipoMensaje ?> alert-dismissible fade show">
-                <?= $mensaje ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
+    <?php if (!empty($_SESSION['mensaje'])): ?>
+        <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?> alert-dismissible fade show">
+            <?= $_SESSION['mensaje'] ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php 
+        // Limpiar los mensajes después de mostrarlos
+        $_SESSION['mensaje'] = '';
+        $_SESSION['tipo_mensaje'] = '';
+        ?>
+    <?php endif; ?>
         
         <!-- Buscador -->
         <form class="mb-4">
@@ -196,7 +199,9 @@ $clientes = $stmt->fetchAll();
         </div>
     </div>
 
-    <?php include '../includes/footer.php'; ?>
+        <?php
+require_once __DIR__ . '/../../includes/footer.php';
+?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>

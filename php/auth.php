@@ -1,9 +1,16 @@
 <?php
 session_start();
 
+function getBaseUrl() {
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+    $host = $_SERVER['HTTP_HOST'];
+    $project = '/--11proyecto';
+    return "$protocol://$host$project";
+}
+
 function requireAuth() {
     if (!isset($_SESSION['usuario_id'])) {
-        header('Location: --11proyecto/admin/login.php');
+        header("Location: " . getBaseUrl() . "/admin/login.php");
         exit;
     }
 }

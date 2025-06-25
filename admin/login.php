@@ -1,9 +1,18 @@
+
 <?php
-require_once 'php/conexion.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+require_once __DIR__ . '/../php/conexion.php';
+require_once __DIR__ . '/../php/auth.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Verificar si ya está autenticado
 if (isset($_SESSION['usuario_id'])) {
-    header('Location: dashboard.php');
+    header('Location: ' . getBaseUrl() . '/admin/dashboard.php');
     exit;
 }
 
@@ -48,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     session_regenerate_id(true);
                     
                     // Redirigir según rol
-                    header('Location: dashboard.php');
+                    header('Location: ' . getBaseUrl() . '/admin/dashboard.php');
                     exit;
                 } else {
                     $error = 'Credenciales incorrectas';
@@ -71,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - Nacional Tapizados</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="<?= getBaseUrl() ?>/css/style.css">
 </head>
 <body class="bg-light">
     <div class="container py-5">
@@ -104,6 +113,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+
+    <?php
+require_once __DIR__ . '/../includes/footer.php';
+?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

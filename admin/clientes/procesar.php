@@ -1,14 +1,15 @@
 <?php
-require_once '../php/auth.php';
-requireAuth();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+require_once __DIR__ . '/../../php/conexion.php';
+require_once __DIR__ . '/../../php/auth.php';
 
 // Verificar permisos
 if (!isAdmin() && !isSeller()) {
     header('Location: ../dashboard.php');
     exit;
 }
-
-require_once '../php/conexion.php';
 
 // Verificar método POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
