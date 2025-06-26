@@ -1,118 +1,191 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 require_once __DIR__ . '/../../php/conexion.php';
 require_once __DIR__ . '/../../php/auth.php';
 
-if (!isAdmin()) {
+if (!isAdmin() && !isTecnico()) {
     header('Location: ../dashboard.php');
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !isset($_GET['accion'])) {
     header('Location: index.php');
     exit;
 }
 
-$accion = $_POST['accion'] ?? '';
-$id = isset($_POST['id']) ? intval($_POST['id']) : 0;
-
-$id_cotizacion = intval($_POST['cotizacion'] ?? 0);
-$id_tecnico = intval($_POST['tecnico'] ?? 0);
-$fecha_inicio = trim($_POST['fecha_inicio'] ?? '');
-$fecha_fin_estimada = trim($_POST['fecha_fin_estimada'] ?? '');
-$notas = trim($_POST['notas'] ?? '');
-
-$errores = [];
-
-// Validaciones básicas
-if (empty($id_cotizacion)) $errores[] = 'Seleccione una cotización válida';
-if (empty($id_tecnico)) $errores[] = 'Seleccione un técnico válido';
-if (empty($fecha_inicio)) $errores[] = 'La fecha de inicio es obligatoria';
-
-if (!empty($errores)) {
-    header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id") . 
-          '?error=' . urlencode(implode(', ', $errores)));
-    exit;
-}
+$accion = $_POST['accion'] ?? $_GET['accion'] ?? '';
+$id = isset($_POST['id']) ? intval($_POST['id']) : (isset($_GET['id']) ? intval($_GET['id']) : 0);
 
 try {
     $conex->beginTransaction();
-    
+
     if ($accion === 'crear') {
-        // Insertar trabajo
-        $sql = "INSERT INTO trabajos (id_cotizacion, id_tecnico, id_creador, fecha_inicio, 
-                fecha_fin_estimada, estado, notas) 
-                VALUES (?, ?, ?, ?, ?, 'Pendiente', ?)";
-        $stmt = $conex->prepare($sql);
-        $stmt->execute([
-            $id_cotizacion,
-            $id_tecnico,
-            $_SESSION['id_usuario'],
-            $fecha_inicio,
-            $fecha_fin_estimada ?: null,
-            $notas
-        ]);
-        
-        $id_trabajo = $conex->lastInsertId();
-        $mensaje = 'Trabajo creado exitosamente';
-        
-        // Procesar fotos si se enviaron
+        // Validar datos para crear nuevo trabajo
+        $id_cotizacion = intval($_POST['id_cotizacion']);
+        $fecha_inicio = $_POST['fecha_inicio'];
+        $estado = $_POST['estado'];
+        $notas = trim($_POST['notas'] ?? '');
+
+        // Validar que la cotización existe y está aprobada
+        $stmt = $conex->prepare("SELECT estado_cotizacion FROM cotizaciones WHERE id_cotizacion = ?");
+        $stmt->execute([$id_cotizacion]);
+        $cotizacion = $stmt->fetch();
+
+        if (!$cotizacion || $cotizacion['estado_cotizacion'] !== 'Aprobado') {
+            throw new Exception('La cotización no existe o no está aprobada');
+        }
+
+        // Validar que no existe ya un trabajo para esta cotización
+        $stmt = $conex->prepare("SELECT 1 FROM trabajos WHERE id_cotizacion = ?");
+        $stmt->execute([$id_cotizacion]);
+        if ($stmt->fetch()) {
+            throw new Exception('Ya existe un trabajo para esta cotización');
+        }
+
+        // Procesar fotos si se subieron
+        $fotos = [];
         if (!empty($_FILES['fotos']['name'][0])) {
-            $directorio = __DIR__ . '/../../uploads/trabajos/' . $id_trabajo . '/';
-            
-            if (!file_exists($directorio)) {
-                mkdir($directorio, 0777, true);
+            $uploadDir = __DIR__ . '/../../uploads/trabajos/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
             }
-            
-            $sqlFoto = "INSERT INTO trabajo_fotos (id_trabajo, ruta) VALUES (?, ?)";
-            $stmtFoto = $conex->prepare($sqlFoto);
-            
+
             foreach ($_FILES['fotos']['tmp_name'] as $key => $tmp_name) {
-                if ($_FILES['fotos']['error'][$key] === UPLOAD_ERR_OK) {
-                    $nombre_archivo = uniqid() . '_' . basename($_FILES['fotos']['name'][$key]);
-                    $ruta_completa = $directorio . $nombre_archivo;
-                    
-                    if (move_uploaded_file($tmp_name, $ruta_completa)) {
-                        $ruta_relativa = '/uploads/trabajos/' . $id_trabajo . '/' . $nombre_archivo;
-                        $stmtFoto->execute([$id_trabajo, $ruta_relativa]);
-                    }
+                $fileName = uniqid() . '_' . basename($_FILES['fotos']['name'][$key]);
+                $targetPath = $uploadDir . $fileName;
+                
+                if (move_uploaded_file($tmp_name, $targetPath)) {
+                    $fotos[] = '/uploads/trabajos/' . $fileName;
                 }
             }
         }
+
+        // Insertar nuevo trabajo
+        $sql = "INSERT INTO trabajos (id_cotizacion, fecha_inicio, fecha_fin, estado, notas, fotos) 
+                VALUES (?, ?, NULL, ?, ?, ?)";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute([
+            $id_cotizacion,
+            $fecha_inicio,
+            $estado,
+            $notas,
+            implode(',', $fotos)
+        ]);
+
+        $id_trabajo = $conex->lastInsertId();
+        $mensaje = 'Trabajo creado exitosamente';
+
     } elseif ($accion === 'editar' && $id > 0) {
+        // Validar datos para editar trabajo
+        $fecha_inicio = $_POST['fecha_inicio'];
+        $fecha_fin = !empty($_POST['fecha_fin']) ? $_POST['fecha_fin'] : null;
+        $estado = $_POST['estado'];
+        $notas = trim($_POST['notas'] ?? '');
+
+        // Obtener fotos existentes
+        $stmt = $conex->prepare("SELECT fotos FROM trabajos WHERE id_trabajos = ?");
+        $stmt->execute([$id]);
+        $trabajo = $stmt->fetch();
+        $fotos = $trabajo['fotos'] ? explode(',', $trabajo['fotos']) : [];
+
+        // Procesar nuevas fotos si se subieron
+        if (!empty($_FILES['fotos']['name'][0])) {
+            $uploadDir = __DIR__ . '/../../uploads/trabajos/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            foreach ($_FILES['fotos']['tmp_name'] as $key => $tmp_name) {
+                $fileName = uniqid() . '_' . basename($_FILES['fotos']['name'][$key]);
+                $targetPath = $uploadDir . $fileName;
+                
+                if (move_uploaded_file($tmp_name, $targetPath)) {
+                    $fotos[] = '/uploads/trabajos/' . $fileName;
+                }
+            }
+        }
+
         // Actualizar trabajo
         $sql = "UPDATE trabajos SET 
-                id_tecnico = ?, 
                 fecha_inicio = ?, 
-                fecha_fin_estimada = ?, 
-                notas = ? 
+                fecha_fin = ?, 
+                estado = ?, 
+                notas = ?, 
+                fotos = ?
                 WHERE id_trabajos = ?";
         $stmt = $conex->prepare($sql);
         $stmt->execute([
-            $id_tecnico,
             $fecha_inicio,
-            $fecha_fin_estimada ?: null,
+            $fecha_fin,
+            $estado,
             $notas,
+            implode(',', $fotos),
             $id
         ]);
-        
-        $id_trabajo = $id;
+
         $mensaje = 'Trabajo actualizado exitosamente';
+
+    } elseif ($accion === 'eliminar_foto' && $id > 0 && isset($_GET['foto_index'])) {
+        // Eliminar una foto específica de un trabajo
+        $foto_index = intval($_GET['foto_index']);
+        
+        $stmt = $conex->prepare("SELECT fotos FROM trabajos WHERE id_trabajos = ?");
+        $stmt->execute([$id]);
+        $trabajo = $stmt->fetch();
+        
+        if ($trabajo) {
+            $fotos = $trabajo['fotos'] ? explode(',', $trabajo['fotos']) : [];
+            
+            if (isset($fotos[$foto_index])) {
+                // Eliminar archivo físico
+                $ruta_foto = __DIR__ . '/../..' . $fotos[$foto_index];
+                if (file_exists($ruta_foto)) {
+                    unlink($ruta_foto);
+                }
+                
+                // Eliminar del array
+                unset($fotos[$foto_index]);
+                $fotos = array_values($fotos); // Reindexar array
+                
+                // Actualizar base de datos
+                $stmt = $conex->prepare("UPDATE trabajos SET fotos = ? WHERE id_trabajos = ?");
+                $stmt->execute([implode(',', $fotos), $id]);
+            }
+        }
+        
+        header("Location: editar.php?id=$id");
+        exit;
+
+    } elseif ($accion === 'cambiar_estado' && $id > 0 && isset($_GET['estado'])) {
+        // Cambiar estado del trabajo
+        $nuevo_estado = $_GET['estado'];
+        $fecha_fin = ($nuevo_estado == 'Entregado') ? date('Y-m-d') : null;
+        
+        $sql = "UPDATE trabajos SET estado = ?, fecha_fin = ? WHERE id_trabajos = ?";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute([$nuevo_estado, $fecha_fin, $id]);
+        
+        $mensaje = 'Estado del trabajo actualizado';
     } else {
-        throw new Exception('Acción inválida');
+        throw new Exception('Acción no válida');
     }
-    
+
     $conex->commit();
-    
     $_SESSION['mensaje'] = $mensaje;
     $_SESSION['tipo_mensaje'] = 'success';
-    header("Location: ver.php?id=$id_trabajo");
-} catch (PDOException $e) {
+    header("Location: ver.php?id=$id");
+    exit;
+
+} catch (Exception $e) {
     $conex->rollBack();
-    $error = 'Error en la base de datos: ' . $e->getMessage();
-    $_SESSION['mensaje'] = $error;
+    $_SESSION['mensaje'] = 'Error: ' . $e->getMessage();
     $_SESSION['tipo_mensaje'] = 'danger';
-    header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id"));
+    
+    if ($accion === 'crear') {
+        header('Location: crear.php?error=' . urlencode($e->getMessage()));
+    } elseif ($accion === 'editar' || $accion === 'eliminar_foto') {
+        header("Location: editar.php?id=$id&error=" . urlencode($e->getMessage()));
+    } else {
+        header('Location: index.php');
+    }
+    exit;
 }

@@ -10,25 +10,52 @@ if (!isAdmin() && !isSeller()) {
     exit;
 }
 
-// Obtener clientes, vehículos y servicios
+$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+if ($id <= 0) {
+    header('Location: index.php');
+    exit;
+}
+
 try {
+    // Obtener datos de la cotización
+    $sql = "SELECT * FROM cotizaciones WHERE id_cotizacion = ?";
+    $stmt = $conex->prepare($sql);
+    $stmt->execute([$id]);
+    $cotizacion = $stmt->fetch();
+
+    if (!$cotizacion) {
+        header('Location: index.php?error=Cotización no encontrada');
+        exit;
+    }
+
+    // Obtener servicios de la cotización
+    $sqlServicios = "SELECT cs.id_servicio, s.nombre_servicio, s.precio_servicio, cs.precio 
+                    FROM cotizacion_servicios cs
+                    JOIN servicios s ON cs.id_servicio = s.id_servicio
+                    WHERE cs.id_cotizacion = ?";
+    $stmtServicios = $conex->prepare($sqlServicios);
+    $stmtServicios->execute([$id]);
+    $serviciosCotizacion = $stmtServicios->fetchAll();
+
+    // Obtener listados para los select
     $clientes = $conex->query("SELECT id_cliente, nombre_cliente FROM clientes ORDER BY nombre_cliente")->fetchAll();
     $vehiculos = $conex->query("SELECT id_vehiculo, marca_vehiculo, modelo_vehiculo, placa_vehiculo FROM vehiculos ORDER BY marca_vehiculo")->fetchAll();
     $servicios = $conex->query("SELECT id_servicio, nombre_servicio, precio_servicio FROM servicios ORDER BY nombre_servicio")->fetchAll();
 } catch (PDOException $e) {
     error_log("Error al obtener datos: " . $e->getMessage());
-    header('Location: index.php?error=Error al cargar datos necesarios');
+    header('Location: index.php?error=Error al cargar datos');
     exit;
 }
 
 require_once __DIR__ . '/../../includes/head.php';
-$title = 'Nacional Tapizados - Nueva Cotización';
+$title = 'Nacional Tapizados - Editar Cotización';
 include __DIR__ . '/../../includes/navbar.php';
 ?>
 
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="fas fa-file-invoice-dollar me-2"></i>Nueva Cotización</h1>
+        <h1><i class="fas fa-file-invoice-dollar me-2"></i>Editar Cotización #<?= $cotizacion['id_cotizacion'] ?></h1>
         <a href="index.php" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-1"></i>Volver
         </a>
@@ -44,7 +71,8 @@ include __DIR__ . '/../../includes/navbar.php';
     <div class="card shadow">
         <div class="card-body">
             <form action="procesar.php" method="POST" id="formCotizacion">
-                <input type="hidden" name="accion" value="crear">
+                <input type="hidden" name="accion" value="editar">
+                <input type="hidden" name="id" value="<?= $cotizacion['id_cotizacion'] ?>">
                 
                 <div class="row mb-3">
                     <div class="col-md-6">
@@ -52,7 +80,9 @@ include __DIR__ . '/../../includes/navbar.php';
                         <select class="form-select" id="cliente" name="cliente" required>
                             <option value="">Seleccione un cliente...</option>
                             <?php foreach ($clientes as $cliente): ?>
-                            <option value="<?= $cliente['id_cliente'] ?>"><?= htmlspecialchars($cliente['nombre_cliente']) ?></option>
+                            <option value="<?= $cliente['id_cliente'] ?>" <?= $cliente['id_cliente'] == $cotizacion['id_cliente'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($cliente['nombre_cliente']) ?>
+                            </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -61,7 +91,7 @@ include __DIR__ . '/../../includes/navbar.php';
                         <select class="form-select" id="vehiculo" name="vehiculo" required>
                             <option value="">Seleccione un vehículo...</option>
                             <?php foreach ($vehiculos as $vehiculo): ?>
-                            <option value="<?= $vehiculo['id_vehiculo'] ?>">
+                            <option value="<?= $vehiculo['id_vehiculo'] ?>" <?= $vehiculo['id_vehiculo'] == $cotizacion['id_vehiculo'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($vehiculo['marca_vehiculo']) ?> 
                                 <?= htmlspecialchars($vehiculo['modelo_vehiculo']) ?> 
                                 (<?= htmlspecialchars($vehiculo['placa_vehiculo']) ?>)
@@ -83,15 +113,29 @@ include __DIR__ . '/../../includes/navbar.php';
                                 </tr>
                             </thead>
                             <tbody id="serviciosAgregados">
-                                <!-- Servicios se agregarán aquí dinámicamente -->
+                                <?php foreach ($serviciosCotizacion as $servicio): ?>
+                                <tr data-id="<?= $servicio['id_servicio'] ?>">
+                                    <td><?= htmlspecialchars($servicio['nombre_servicio']) ?></td>
+                                    <td>$ <?= number_format($servicio['precio'], 0, ',', '.') ?></td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="eliminarServicio(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
                             </tbody>
                             <tfoot>
                                 <tr>
                                     <td>
                                         <select class="form-select" id="selectServicio">
                                             <option value="">Seleccione un servicio...</option>
-                                            <?php foreach ($servicios as $servicio): ?>
-                                            <option value="<?= $servicio['id_servicio'] ?>" data-precio="<?= $servicio['precio_servicio'] ?>">
+                                            <?php foreach ($servicios as $servicio): 
+                                                $yaAgregado = in_array($servicio['id_servicio'], array_column($serviciosCotizacion, 'id_servicio'));
+                                            ?>
+                                            <option value="<?= $servicio['id_servicio'] ?>" 
+                                                data-precio="<?= $servicio['precio_servicio'] ?>"
+                                                <?= $yaAgregado ? 'disabled' : '' ?>>
                                                 <?= htmlspecialchars($servicio['nombre_servicio']) ?> ($<?= number_format($servicio['precio_servicio'], 0, ',', '.') ?>)
                                             </option>
                                             <?php endforeach; ?>
@@ -114,34 +158,36 @@ include __DIR__ . '/../../includes/navbar.php';
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <label for="subtotal" class="form-label">Subtotal</label>
-                        <input type="text" class="form-control" id="subtotal" name="subtotal" readonly>
+                        <input type="text" class="form-control" id="subtotal" name="subtotal" value="<?= $cotizacion['subtotal_cotizacion'] ?>" readonly>
                     </div>
                     <div class="col-md-4">
                         <label for="iva" class="form-label">IVA (19%)</label>
-                        <input type="text" class="form-control" id="iva" name="iva" readonly>
+                        <input type="text" class="form-control" id="iva" name="iva" value="<?= $cotizacion['iva'] ?>" readonly>
                     </div>
                     <div class="col-md-4">
                         <label for="total" class="form-label">Total</label>
-                        <input type="text" class="form-control" id="total" name="total" readonly>
+                        <input type="text" class="form-control" id="total" name="total" value="<?= $cotizacion['total_cotizacion'] ?>" readonly>
                     </div>
                 </div>
                 
                 <div class="mb-3">
                     <label for="notas" class="form-label">Notas Adicionales</label>
-                    <textarea class="form-control" id="notas" name="notas" rows="3"></textarea>
+                    <textarea class="form-control" id="notas" name="notas" rows="3"><?= htmlspecialchars($cotizacion['notas_cotizacion']) ?></textarea>
                 </div>
                 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                     <button type="reset" class="btn btn-outline-secondary me-md-2">
-                        <i class="fas fa-undo me-1"></i>Limpiar
+                        <i class="fas fa-undo me-1"></i>Cancelar
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i>Guardar Cotización
+                        <i class="fas fa-save me-1"></i>Guardar Cambios
                     </button>
                 </div>
                 
                 <!-- Campo oculto para enviar los servicios seleccionados -->
-                <input type="hidden" name="servicios_json" id="servicios_json">
+                <input type="hidden" name="servicios_json" id="servicios_json" value='<?= json_encode(array_map(function($s) {
+                    return ['id' => $s['id_servicio'], 'nombre' => $s['nombre_servicio'], 'precio' => $s['precio']];
+                }, $serviciosCotizacion)) ?>'>
             </form>
         </div>
     </div>
@@ -162,8 +208,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const ivaInput = document.getElementById('iva');
     const totalInput = document.getElementById('total');
     
-    let serviciosSeleccionados = [];
-    let subtotal = 0;
+    let serviciosSeleccionados = JSON.parse(serviciosJson.value || '[]');
+    let subtotal = parseFloat(subtotalInput.value) || 0;
     
     // Actualizar precio al seleccionar servicio
     selectServicio.addEventListener('change', function() {
@@ -184,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Verificar si el servicio ya fue agregado
-        if (serviciosSeleccionados.some(s => s.id === idServicio)) {
+        if (serviciosSeleccionados.some(s => s.id == idServicio)) {
             alert('Este servicio ya fue agregado');
             return;
         }

@@ -11,7 +11,7 @@ if (!isAdmin() && !isSeller()) {
 if (isset($_GET['cambiar_estado'])) {
     $id = intval($_GET['id']);
     $nuevo_estado = $_GET['estado'];
-    
+
     try {
         $stmt = $conex->prepare("UPDATE cotizaciones SET estado_cotizacion = ? WHERE id_cotizacion = ?");
         if ($stmt->execute([$nuevo_estado, $id])) {
@@ -26,46 +26,65 @@ if (isset($_GET['cambiar_estado'])) {
 
 // Paginación y búsqueda
 $busqueda = $_GET['busqueda'] ?? '';
+$fecha_inicio = $_GET['fecha_inicio'] ?? '';
+$fecha_fin = $_GET['fecha_fin'] ?? '';
 $pagina = max(1, intval($_GET['pagina'] ?? 1));
 $porPagina = 10;
 
-$sql = "SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo, 
-               u.nombre_completo as nombre_usuario
+$sql = "SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo,
+        u.nombre_completo as nombre_usuario
         FROM cotizaciones c
         JOIN clientes cl ON c.id_cliente = cl.id_cliente
         JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
         JOIN usuarios u ON c.id_usuario = u.id_usuario";
 $params = [];
-$where = '';
+$conditions = [];
 
+// Búsqueda por texto (nombre cliente, placa o estado)
 if (!empty($busqueda)) {
-    $where = " WHERE cl.nombre_cliente LIKE ? OR v.placa_vehiculo LIKE ? OR c.estado_cotizacion LIKE ?";
-    $params = ["%$busqueda%", "%$busqueda%", "%$busqueda%"];
+    $conditions[] = "(cl.nombre_cliente LIKE ? OR v.placa_vehiculo LIKE ? OR c.estado_cotizacion LIKE ?)";
+    array_push($params, "%$busqueda%", "%$busqueda%", "%$busqueda%");
 }
 
-$sqlCount = "SELECT COUNT(*) FROM cotizaciones $where";
+// Búsqueda por rango de fechas
+if (!empty($fecha_inicio)) {
+    $conditions[] = "DATE(c.fecha_cotizacion) >= ?";
+    $params[] = $fecha_inicio;
+}
+
+if (!empty($fecha_fin)) {
+    $conditions[] = "DATE(c.fecha_cotizacion) <= ?";
+    $params[] = $fecha_fin;
+}
+
+// Construir la cláusula WHERE si hay condiciones
+if (!empty($conditions)) {
+    $sql .= " WHERE " . implode(" AND ", $conditions);
+}
+
+// Consulta para contar el total de registros
+$sqlCount = "SELECT COUNT(*) FROM cotizaciones c 
+             JOIN clientes cl ON c.id_cliente = cl.id_cliente
+             JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo" . 
+             (!empty($conditions) ? " WHERE " . implode(" AND ", $conditions) : "");
+
 $stmt = $conex->prepare($sqlCount);
 $stmt->execute($params);
 $total = $stmt->fetchColumn();
 $totalPaginas = ceil($total / $porPagina);
 
-$sql .= " $where ORDER BY c.fecha_cotizacion DESC LIMIT :offset, :limit";
-$stmt = $conex->prepare($sql);
-foreach ($params as $i => $param) {
-    $stmt->bindValue($i+1, $param);
-}
-$stmt->bindValue(':offset', ($pagina - 1) * $porPagina, PDO::PARAM_INT);
-$stmt->bindValue(':limit', $porPagina, PDO::PARAM_INT);
-$stmt->execute();
-$cotizaciones = $stmt->fetchAll();
+// Consulta principal con paginación
+$offset = ($pagina - 1) * $porPagina;
+$sql .= " ORDER BY c.fecha_cotizacion DESC LIMIT $offset, $porPagina";
 
+$stmt = $conex->prepare($sql);
+$stmt->execute($params);
+$cotizaciones = $stmt->fetchAll();
 
 
 require_once __DIR__ . '/../../includes/head.php';
 $title = 'Gestión de Cotizaciones | Nacional Tapizados';
-?>
-    <?php
-require_once __DIR__ . '/../../includes/navbar.php';
+include __DIR__ . '/../../includes/navbar.php';
 ?>
 
 <div class="container py-4">
@@ -86,15 +105,27 @@ require_once __DIR__ . '/../../includes/navbar.php';
 
     <div class="card shadow">
         <div class="card-body">
-            <form class="mb-4">
-                <div class="input-group">
-                    <input type="text" class="form-control" name="busqueda" value="<?= htmlspecialchars($busqueda) ?>" placeholder="Buscar cotizaciones...">
-                    <button class="btn btn-outline-secondary" type="submit">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-            </form>
-
+ <form class="mb-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="busqueda" class="form-label">Buscar (cliente, placa o estado)</label>
+                <input type="text" class="form-control" name="busqueda" value="<?= htmlspecialchars($busqueda) ?>" placeholder="Buscar...">
+            </div>
+            <div class="col-md-3">
+                <label for="fecha_inicio" class="form-label">Fecha desde</label>
+                <input type="date" class="form-control" name="fecha_inicio" value="<?= htmlspecialchars($fecha_inicio) ?>">
+            </div>
+            <div class="col-md-3">
+                <label for="fecha_fin" class="form-label">Fecha hasta</label>
+                <input type="date" class="form-control" name="fecha_fin" value="<?= htmlspecialchars($fecha_fin) ?>">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i> Buscar
+                </button>
+            </div>
+        </div>
+    </form>
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
                     <thead class="table-dark">
@@ -160,7 +191,12 @@ require_once __DIR__ . '/../../includes/navbar.php';
                 <ul class="pagination justify-content-center">
                     <?php if ($pagina > 1): ?>
                     <li class="page-item">
-                        <a class="page-link" href="?pagina=<?= $pagina-1 ?>&busqueda=<?= urlencode($busqueda) ?>">
+                        <a class="page-link" href="?<?= 
+                            http_build_query(array_merge(
+                                $_GET,
+                                ['pagina' => $pagina-1]
+                            )) 
+                        ?>">
                             Anterior
                         </a>
                     </li>
@@ -168,7 +204,12 @@ require_once __DIR__ . '/../../includes/navbar.php';
 
                     <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
                     <li class="page-item <?= $i == $pagina ? 'active' : '' ?>">
-                        <a class="page-link" href="?pagina=<?= $i ?>&busqueda=<?= urlencode($busqueda) ?>">
+                        <a class="page-link" href="?<?= 
+                            http_build_query(array_merge(
+                                $_GET,
+                                ['pagina' => $i]
+                            )) 
+                        ?>">
                             <?= $i ?>
                         </a>
                     </li>
@@ -176,7 +217,12 @@ require_once __DIR__ . '/../../includes/navbar.php';
 
                     <?php if ($pagina < $totalPaginas): ?>
                     <li class="page-item">
-                        <a class="page-link" href="?pagina=<?= $pagina+1 ?>&busqueda=<?= urlencode($busqueda) ?>">
+                        <a class="page-link" href="?<?= 
+                            http_build_query(array_merge(
+                                $_GET,
+                                ['pagina' => $pagina+1]
+                            )) 
+                        ?>">
                             Siguiente
                         </a>
                     </li>
@@ -188,18 +234,18 @@ require_once __DIR__ . '/../../includes/navbar.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../../includes/footer.php'; ?>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Confirmación antes de eliminar
-        document.querySelectorAll('.btn-danger').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                if (!confirm('¿Está seguro de eliminar este cliente?')) {
-                    e.preventDefault();
-                }
-            });
+<?php include __DIR__ . '/../../includes/footer.php'; ?>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Confirmación antes de eliminar
+    document.querySelectorAll('.btn-danger').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            if (!confirm('¿Está seguro de eliminar esta cotización?')) {
+                e.preventDefault();
+            }
         });
-    </script>
+    });
+</script>
 </body>
 </html>

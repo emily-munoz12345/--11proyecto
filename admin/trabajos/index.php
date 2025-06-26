@@ -2,78 +2,73 @@
 require_once __DIR__ . '/../../php/conexion.php';
 require_once __DIR__ . '/../../php/auth.php';
 
-if (!isAdmin() && !isTechnician()) {
+if (!isAdmin() && !isTecnico()) {
     header('Location: ../dashboard.php');
     exit;
 }
 
-// Procesar cambio de estado
-if (isset($_GET['cambiar_estado'])) {
-    $id = intval($_GET['id']);
-    $nuevo_estado = $_GET['estado'];
-    
-    try {
-        $stmt = $conex->prepare("UPDATE trabajos SET estado = ? WHERE id_trabajos = ?");
-        if ($stmt->execute([$nuevo_estado, $id])) {
-            $_SESSION['mensaje'] = 'Estado del trabajo actualizado';
-            $_SESSION['tipo_mensaje'] = 'success';
-        }
-    } catch (PDOException $e) {
-        $_SESSION['mensaje'] = 'Error al actualizar: ' . $e->getMessage();
-        $_SESSION['tipo_mensaje'] = 'danger';
-    }
-}
-
 // Paginación y búsqueda
 $busqueda = $_GET['busqueda'] ?? '';
+$estado = $_GET['estado'] ?? '';
 $pagina = max(1, intval($_GET['pagina'] ?? 1));
 $porPagina = 10;
 
 $sql = "SELECT t.*, c.id_cotizacion, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, 
-               u.nombre_completo as tecnico
+        u.nombre_completo as nombre_tecnico
         FROM trabajos t
         JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
         JOIN clientes cl ON c.id_cliente = cl.id_cliente
         JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
-        LEFT JOIN usuarios u ON t.id_tecnico = u.id_usuario";
+        JOIN usuarios u ON c.id_usuario = u.id_usuario";
 $params = [];
-$where = '';
+$conditions = [];
 
+// Búsqueda por texto (nombre cliente, placa o estado)
 if (!empty($busqueda)) {
-    $where = " WHERE cl.nombre_cliente LIKE ? OR v.placa_vehiculo LIKE ? OR t.estado LIKE ?";
-    $params = ["%$busqueda%", "%$busqueda%", "%$busqueda%"];
+    $conditions[] = "(cl.nombre_cliente LIKE ? OR v.placa_vehiculo LIKE ?)";
+    array_push($params, "%$busqueda%", "%$busqueda%");
 }
 
-$sqlCount = "SELECT COUNT(*) FROM trabajos t
-             JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
-             JOIN clientes cl ON c.id_cliente = cl.id_cliente
-             JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo $where";
+// Filtro por estado
+if (!empty($estado) && in_array($estado, ['Pendiente', 'En progreso', 'Entregado', 'Cancelado'])) {
+    $conditions[] = "t.estado = ?";
+    $params[] = $estado;
+}
+
+// Construir WHERE
+if (!empty($conditions)) {
+    $sql .= " WHERE " . implode(" AND ", $conditions);
+}
+
+// Consulta para contar
+$sqlCount = "SELECT COUNT(*) FROM trabajos t 
+             JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion" . 
+             (!empty($conditions) ? " WHERE " . implode(" AND ", $conditions) : "");
+
 $stmt = $conex->prepare($sqlCount);
 $stmt->execute($params);
 $total = $stmt->fetchColumn();
 $totalPaginas = ceil($total / $porPagina);
 
-$sql .= " $where ORDER BY t.fecha_inicio DESC LIMIT :offset, :limit";
+// Consulta principal con paginación
+$offset = ($pagina - 1) * $porPagina;
+$sql .= " ORDER BY t.fecha_inicio DESC LIMIT $offset, $porPagina";
+
 $stmt = $conex->prepare($sql);
-if (!empty($busqueda)) {
-    $stmt->execute($params);
-} else {
-    $stmt->execute();
-}
+$stmt->execute($params);
 $trabajos = $stmt->fetchAll();
 
 require_once __DIR__ . '/../../includes/head.php';
-$title = 'Gestión de Trabajos';
+$title = 'Gestión de Trabajos | Nacional Tapizados';
+include __DIR__ . '/../../includes/navbar.php';
 ?>
 
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="fas fa-tools me-2"></i>Trabajos Realizados</h1>
-        <?php if (isAdmin()): ?>
+        <h1><i class="fas fa-tools me-2"></i>Trabajos</h1>
         <a href="crear.php" class="btn btn-primary">
             <i class="fas fa-plus me-1"></i> Nuevo Trabajo
         </a>
-        <?php endif; ?>
     </div>
 
     <?php if (isset($_SESSION['mensaje'])): ?>
@@ -87,11 +82,26 @@ $title = 'Gestión de Trabajos';
     <div class="card shadow">
         <div class="card-body">
             <form class="mb-4">
-                <div class="input-group">
-                    <input type="text" class="form-control" name="busqueda" value="<?= htmlspecialchars($busqueda) ?>" placeholder="Buscar trabajos...">
-                    <button class="btn btn-outline-secondary" type="submit">
-                        <i class="fas fa-search"></i>
-                    </button>
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label for="busqueda" class="form-label">Buscar (cliente o placa)</label>
+                        <input type="text" class="form-control" name="busqueda" value="<?= htmlspecialchars($busqueda) ?>">
+                    </div>
+                    <div class="col-md-5">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" name="estado">
+                            <option value="">Todos los estados</option>
+                            <option value="Pendiente" <?= $estado == 'Pendiente' ? 'selected' : '' ?>>Pendiente</option>
+                            <option value="En progreso" <?= $estado == 'En progreso' ? 'selected' : '' ?>>En progreso</option>
+                            <option value="Entregado" <?= $estado == 'Entregado' ? 'selected' : '' ?>>Entregado</option>
+                            <option value="Cancelado" <?= $estado == 'Cancelado' ? 'selected' : '' ?>>Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i> Filtrar
+                        </button>
+                    </div>
                 </div>
             </form>
 
@@ -102,11 +112,10 @@ $title = 'Gestión de Trabajos';
                             <th>ID</th>
                             <th>Cliente</th>
                             <th>Vehículo</th>
-                            <th>Cotización</th>
                             <th>Fecha Inicio</th>
                             <th>Fecha Fin</th>
-                            <th>Técnico</th>
                             <th>Estado</th>
+                            <th>Técnico</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -116,38 +125,36 @@ $title = 'Gestión de Trabajos';
                             <td><?= $trabajo['id_trabajos'] ?></td>
                             <td><?= htmlspecialchars($trabajo['nombre_cliente']) ?></td>
                             <td><?= htmlspecialchars($trabajo['marca_vehiculo']) ?> <?= htmlspecialchars($trabajo['modelo_vehiculo']) ?></td>
-                            <td>#<?= $trabajo['id_cotizacion'] ?></td>
                             <td><?= date('d/m/Y', strtotime($trabajo['fecha_inicio'])) ?></td>
                             <td><?= $trabajo['fecha_fin'] ? date('d/m/Y', strtotime($trabajo['fecha_fin'])) : '--' ?></td>
-                            <td><?= $trabajo['tecnico'] ?? '--' ?></td>
                             <td>
                                 <span class="badge bg-<?= 
                                     $trabajo['estado'] == 'Entregado' ? 'success' : 
-                                    ($trabajo['estado'] == 'En progreso' ? 'primary' : 
-                                    ($trabajo['estado'] == 'Cancelado' ? 'danger' : 'warning')) 
+                                    ($trabajo['estado'] == 'Cancelado' ? 'danger' : 
+                                    ($trabajo['estado'] == 'En progreso' ? 'primary' : 'warning')) 
                                 ?>">
                                     <?= $trabajo['estado'] ?>
                                 </span>
                             </td>
+                            <td><?= htmlspecialchars($trabajo['nombre_tecnico']) ?></td>
                             <td>
                                 <div class="d-flex">
                                     <a href="ver.php?id=<?= $trabajo['id_trabajos'] ?>" class="btn btn-sm btn-info me-2">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <?php if (isAdmin()): ?>
                                     <a href="editar.php?id=<?= $trabajo['id_trabajos'] ?>" class="btn btn-sm btn-warning me-2">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    <?php if ($trabajo['estado'] != 'Entregado' && $trabajo['estado'] != 'Cancelado'): ?>
                                     <div class="dropdown">
                                         <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                             <i class="fas fa-cogs"></i>
                                         </button>
                                         <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="index.php?cambiar_estado&id=<?= $trabajo['id_trabajos'] ?>&estado=En progreso">En progreso</a></li>
-                                            <li><a class="dropdown-item" href="index.php?cambiar_estado&id=<?= $trabajo['id_trabajos'] ?>&estado=Entregado">Entregado</a></li>
-                                            <li><a class="dropdown-item" href="index.php?cambiar_estado&id=<?= $trabajo['id_trabajos'] ?>&estado=Cancelado">Cancelar</a></li>
+                                            <li><a class="dropdown-item" href="procesar.php?accion=cambiar_estado&id=<?= $trabajo['id_trabajos'] ?>&estado=En progreso">En progreso</a></li>
+                                            <li><a class="dropdown-item" href="procesar.php?accion=cambiar_estado&id=<?= $trabajo['id_trabajos'] ?>&estado=Entregado">Entregado</a></li>
                                             <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item text-danger" href="index.php?eliminar=<?= $trabajo['id_trabajos'] ?>" onclick="return confirm('¿Eliminar este trabajo?')">Eliminar</a></li>
+                                            <li><a class="dropdown-item text-danger" href="procesar.php?accion=cambiar_estado&id=<?= $trabajo['id_trabajos'] ?>&estado=Cancelado">Cancelar</a></li>
                                         </ul>
                                     </div>
                                     <?php endif; ?>
@@ -164,7 +171,7 @@ $title = 'Gestión de Trabajos';
                 <ul class="pagination justify-content-center">
                     <?php if ($pagina > 1): ?>
                     <li class="page-item">
-                        <a class="page-link" href="?pagina=<?= $pagina-1 ?>&busqueda=<?= urlencode($busqueda) ?>">
+                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $pagina-1])) ?>">
                             Anterior
                         </a>
                     </li>
@@ -172,7 +179,7 @@ $title = 'Gestión de Trabajos';
 
                     <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
                     <li class="page-item <?= $i == $pagina ? 'active' : '' ?>">
-                        <a class="page-link" href="?pagina=<?= $i ?>&busqueda=<?= urlencode($busqueda) ?>">
+                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $i])) ?>">
                             <?= $i ?>
                         </a>
                     </li>
@@ -180,7 +187,7 @@ $title = 'Gestión de Trabajos';
 
                     <?php if ($pagina < $totalPaginas): ?>
                     <li class="page-item">
-                        <a class="page-link" href="?pagina=<?= $pagina+1 ?>&busqueda=<?= urlencode($busqueda) ?>">
+                        <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['pagina' => $pagina+1])) ?>">
                             Siguiente
                         </a>
                     </li>
@@ -192,4 +199,20 @@ $title = 'Gestión de Trabajos';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../../includes/footer.php'; ?>
+<?php include __DIR__ . '/../../includes/footer.php'; ?>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Confirmación antes de cambiar estado
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        if(item.classList.contains('text-danger')) {
+            item.addEventListener('click', function(e) {
+                if (!confirm('¿Está seguro de cancelar este trabajo?')) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
