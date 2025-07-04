@@ -79,7 +79,7 @@ $title = 'Nacional Tapizados - Editar Usuario';
                         <div class="col-md-6">
                             <label for="telefono" class="form-label">Teléfono *</label>
                             <input type="tel" class="form-control" id="telefono" name="telefono" 
-                                   value="<?= htmlspecialchars($usuario['telefono_ususario']) ?>" required>
+                                   value="<?= htmlspecialchars($usuario['telefono_usuario']) ?>" required>
                         </div>
                     </div>
                     

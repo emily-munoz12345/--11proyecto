@@ -32,10 +32,15 @@ try {
         exit;
     }
 
-    // Obtener fotos (si es un string con la ruta)
+    // Obtener fotos (maneja tanto string como array)
     $fotos = [];
     if (!empty($trabajo['fotos'])) {
-        $fotos = explode(',', $trabajo['fotos']);
+        if (is_array($trabajo['fotos'])) {
+            $fotos = $trabajo['fotos'];
+        } else {
+            // Si es string, separar por comas y limpiar espacios
+            $fotos = array_filter(array_map('trim', explode(',', $trabajo['fotos'])));
+        }
     }
 } catch (PDOException $e) {
     $_SESSION['mensaje'] = 'Error al obtener datos del trabajo: ' . $e->getMessage();
@@ -66,7 +71,7 @@ include __DIR__ . '/../../includes/navbar.php';
 
     <div class="card shadow">
         <div class="card-body">
-            <form action="procesar.php" method="POST" enctype="multipart/form-data">
+            <form action="procesar.php" method="POST" enctype="multipart/form-data" id="formEditarTrabajo">
                 <input type="hidden" name="accion" value="editar">
                 <input type="hidden" name="id" value="<?= $trabajo['id_trabajos'] ?>">
                 
@@ -105,9 +110,10 @@ include __DIR__ . '/../../includes/navbar.php';
                 
                 <div class="row mb-3">
                     <div class="col-md-12">
-                        <label for="fotos" class="form-label">Fotos adicionales</label>
-                        <input type="file" class="form-control" id="fotos" name="fotos[]" multiple accept="image/*">
-                        <small class="text-muted">Puedes seleccionar múltiples imágenes</small>
+                        <label for="nuevas_fotos" class="form-label">Fotos adicionales (máximo 5)</label>
+                        <input type="file" class="form-control" id="nuevas_fotos" name="fotos[]" multiple accept="image/*">
+                        <small class="text-muted">Puedes seleccionar hasta 5 imágenes adicionales (Max. 5MB cada una)</small>
+                        <div id="previewNuevasFotos" class="mt-2 d-flex flex-wrap gap-2"></div>
                     </div>
                 </div>
                 
@@ -117,14 +123,20 @@ include __DIR__ . '/../../includes/navbar.php';
                         <label class="form-label">Fotos existentes</label>
                         <div class="d-flex flex-wrap gap-2">
                             <?php foreach ($fotos as $index => $foto): ?>
-                            <div class="position-relative" style="width: 100px;">
-                                <img src="<?= htmlspecialchars($foto) ?>" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
-                                <a href="procesar.php?accion=eliminar_foto&id=<?= $trabajo['id_trabajos'] ?>&foto_index=<?= $index ?>" 
-                                   class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-                                   onclick="return confirm('¿Eliminar esta foto?')">
-                                    <i class="fas fa-times"></i>
-                                </a>
-                            </div>
+                                <?php if (!empty($foto)): ?>
+                                <div class="position-relative" style="width: 150px;">
+                                    <a href="<?= htmlspecialchars($foto) ?>" data-fancybox="gallery">
+                                        <img src="<?= htmlspecialchars($foto) ?>" class="img-thumbnail" 
+                                             style="width: 150px; height: 150px; object-fit: cover;">
+                                    </a>
+                                    <a href="procesar.php?accion=eliminar_foto&id=<?= $trabajo['id_trabajos'] ?>&foto=<?= urlencode($foto) ?>" 
+                                       class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" 
+                                       onclick="return confirm('¿Eliminar esta foto?')"
+                                       style="cursor: pointer;">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                </div>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </div>
                     </div>
@@ -153,12 +165,66 @@ include __DIR__ . '/../../includes/navbar.php';
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Actualizar fecha fin cuando se selecciona estado Entregado
-    document.getElementById('estado').addEventListener('change', function() {
-        if (this.value === 'Entregado' && !document.getElementById('fecha_fin').value) {
-            document.getElementById('fecha_fin').valueAsDate = new Date();
+// Vista previa de nuevas fotos seleccionadas
+document.getElementById('nuevas_fotos').addEventListener('change', function(e) {
+    const preview = document.getElementById('previewNuevasFotos');
+    preview.innerHTML = '';
+    const files = e.target.files;
+    
+    if (files.length > 5) {
+        alert('Solo puedes subir un máximo de 5 fotos adicionales');
+        this.value = '';
+        return;
+    }
+    
+    for (let i = 0; i < Math.min(files.length, 5); i++) {
+        const file = files[i];
+        if (!file.type.match('image.*')) continue;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '100px';
+            img.style.height = '100px';
+            img.style.objectFit = 'cover';
+            img.className = 'img-thumbnail';
+            preview.appendChild(img);
         }
-    });
+        reader.readAsDataURL(file);
+    }
+});
+
+// Validación antes de enviar
+document.getElementById('formEditarTrabajo').addEventListener('submit', function(e) {
+    const fotosInput = document.getElementById('nuevas_fotos');
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    
+    if (fotosInput.files) {
+        // Validar cantidad de fotos
+        if (fotosInput.files.length > 5) {
+            alert('Solo puedes subir un máximo de 5 fotos adicionales');
+            e.preventDefault();
+            return;
+        }
+        
+        // Validar tamaño de cada foto
+        for (let i = 0; i < fotosInput.files.length; i++) {
+            if (fotosInput.files[i].size > maxSize) {
+                alert('El archivo ' + fotosInput.files[i].name + ' excede el tamaño máximo de 5MB');
+                e.preventDefault();
+                return;
+            }
+        }
+    }
+});
+
+// Actualizar fecha fin cuando se selecciona estado Entregado
+document.getElementById('estado').addEventListener('change', function() {
+    if (this.value === 'Entregado' && !document.getElementById('fecha_fin').value) {
+        document.getElementById('fecha_fin').valueAsDate = new Date();
+    }
+});
 </script>
 </body>
 </html>

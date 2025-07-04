@@ -47,7 +47,7 @@ include __DIR__ . '/../../includes/navbar.php';
 
     <div class="card shadow">
         <div class="card-body">
-            <form action="procesar.php" method="POST" enctype="multipart/form-data">
+            <form action="procesar.php" method="POST" enctype="multipart/form-data" id="formTrabajo">
                 <input type="hidden" name="accion" value="crear">
                 
                 <div class="row mb-3">
@@ -85,8 +85,10 @@ include __DIR__ . '/../../includes/navbar.php';
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label for="fotos" class="form-label">Fotos (opcional)</label>
+                        <label for="fotos" class="form-label">Fotos (opcional, máximo 5)</label>
                         <input type="file" class="form-control" id="fotos" name="fotos[]" multiple accept="image/*">
+                        <small class="text-muted">Formatos permitidos: JPG, PNG, GIF. Máx. 5MB cada una</small>
+                        <div id="previewFotos" class="mt-2 d-flex flex-wrap gap-2"></div>
                     </div>
                 </div>
                 
@@ -111,5 +113,60 @@ include __DIR__ . '/../../includes/navbar.php';
 <?php include __DIR__ . '/../../includes/footer.php'; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Vista previa de fotos seleccionadas
+document.getElementById('fotos').addEventListener('change', function(e) {
+    const preview = document.getElementById('previewFotos');
+    preview.innerHTML = '';
+    const files = e.target.files;
+    
+    if (files.length > 5) {
+        alert('Solo puedes subir un máximo de 5 fotos');
+        this.value = '';
+        return;
+    }
+    
+    for (let i = 0; i < Math.min(files.length, 5); i++) {
+        const file = files[i];
+        if (!file.type.match('image.*')) continue;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '100px';
+            img.style.height = '100px';
+            img.style.objectFit = 'cover';
+            img.className = 'img-thumbnail';
+            preview.appendChild(img);
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Validación antes de enviar
+document.getElementById('formTrabajo').addEventListener('submit', function(e) {
+    const fotosInput = document.getElementById('fotos');
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    
+    if (fotosInput.files) {
+        // Validar cantidad de fotos
+        if (fotosInput.files.length > 5) {
+            alert('Solo puedes subir un máximo de 5 fotos');
+            e.preventDefault();
+            return;
+        }
+        
+        // Validar tamaño de cada foto
+        for (let i = 0; i < fotosInput.files.length; i++) {
+            if (fotosInput.files[i].size > maxSize) {
+                alert('El archivo ' + fotosInput.files[i].name + ' excede el tamaño máximo de 5MB');
+                e.preventDefault();
+                return;
+            }
+        }
+    }
+});
+</script>
 </body>
 </html>

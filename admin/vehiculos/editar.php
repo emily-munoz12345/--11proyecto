@@ -81,7 +81,7 @@ require_once __DIR__ . '/../../includes/navbar.php';
                     <div class="mb-3">
                         <label for="notas" class="form-label">Notas Adicionales</label>
                         <textarea class="form-control" id="notas" name="notas" rows="3"><?= 
-                            htmlspecialchars($vehiculo['nota_vehiculo']) 
+                            htmlspecialchars($vehiculo['notas_vehiculo']) 
                         ?></textarea>
                     </div>
                     

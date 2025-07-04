@@ -10,6 +10,14 @@ if (!isAdmin() && !isSeller()) {
     exit;
 }
 
+session_start();
+
+// Validar CSRF
+if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    header('Location: index.php?error=Token de seguridad inválido');
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php');
     exit;
@@ -34,6 +42,16 @@ if (!empty($errores)) {
     exit;
 }
 
+// Procesar servicios y valor adicional
+$servicios_data = json_decode($_POST['servicios_json'], true);
+if (json_last_error() !== JSON_ERROR_NONE || !is_array($servicios_data['servicios'])) {
+    header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id") .
+    '?error=Error en los servicios seleccionados');
+    exit;
+}
+
+$valor_adicional = isset($servicios_data['valor_adicional']) ? floatval($servicios_data['valor_adicional']) : 0;
+
 // Asignar valores
 $id_cliente = intval($_POST['cliente']);
 $id_vehiculo = intval($_POST['vehiculo']);
@@ -41,28 +59,24 @@ $subtotal = floatval($_POST['subtotal']);
 $iva = floatval($_POST['iva']);
 $total = floatval($_POST['total']);
 $notas = trim($_POST['notas'] ?? '');
-$servicios_json = $_POST['servicios_json'];
-
-// Validar servicios
-$servicios = json_decode($servicios_json, true);
-if (json_last_error() !== JSON_ERROR_NONE || !is_array($servicios)) {
-    $errores[] = 'Error en los servicios seleccionados';
-}
-
-if (!empty($errores)) {
-    header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id") .
-    '?error=' . urlencode(implode(', ', $errores)));
-    exit;
-}
 
 try {
     $conex->beginTransaction();
 
     if ($accion === 'crear') {
         // Insertar cotización
-        $sql = "INSERT INTO cotizaciones (id_usuario, id_cliente, id_vehiculo, fecha_cotizacion, 
-                subtotal_cotizacion, iva, total_cotizacion, estado_cotizacion, notas_cotizacion) 
-                VALUES (?, ?, ?, NOW(), ?, ?, ?, 'Pendiente', ?)";
+        $sql = "INSERT INTO cotizaciones (
+                id_usuario, 
+                id_cliente, 
+                id_vehiculo, 
+                fecha_cotizacion, 
+                subtotal_cotizacion, 
+                iva, 
+                total_cotizacion, 
+                valor_adicional,
+                estado_cotizacion, 
+                notas_cotizacion
+            ) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, 'Pendiente', ?)";
         $stmt = $conex->prepare($sql);
         $stmt->execute([
             $_SESSION['id_usuario'],
@@ -71,6 +85,7 @@ try {
             $subtotal,
             $iva,
             $total,
+            $valor_adicional,
             $notas
         ]);
         
@@ -84,6 +99,7 @@ try {
                 subtotal_cotizacion = ?, 
                 iva = ?, 
                 total_cotizacion = ?, 
+                valor_adicional = ?,
                 notas_cotizacion = ? 
                 WHERE id_cotizacion = ?";
         $stmt = $conex->prepare($sql);
@@ -93,6 +109,7 @@ try {
             $subtotal,
             $iva,
             $total,
+            $valor_adicional,
             $notas,
             $id
         ]);
@@ -111,7 +128,7 @@ try {
     $sqlServicios = "INSERT INTO cotizacion_servicios (id_cotizacion, id_servicio, precio) VALUES (?, ?, ?)";
     $stmtServicios = $conex->prepare($sqlServicios);
 
-    foreach ($servicios as $servicio) {
+    foreach ($servicios_data['servicios'] as $servicio) {
         if (!isset($servicio['id']) || !isset($servicio['precio'])) {
             throw new Exception('Datos de servicio inválidos');
         }

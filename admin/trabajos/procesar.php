@@ -43,18 +43,34 @@ try {
 
         // Procesar fotos si se subieron
         $fotos = [];
+        $maxFotos = 5;
+        $maxSize = 5 * 1024 * 1024; // 5MB
+
         if (!empty($_FILES['fotos']['name'][0])) {
             $uploadDir = __DIR__ . '/../../uploads/trabajos/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
 
+            $fileCount = 0;
             foreach ($_FILES['fotos']['tmp_name'] as $key => $tmp_name) {
-                $fileName = uniqid() . '_' . basename($_FILES['fotos']['name'][$key]);
+                if ($fileCount >= $maxFotos) break;
+                
+                // Validar tipo y tamaño de archivo
+                $fileType = strtolower(pathinfo($_FILES['fotos']['name'][$key], PATHINFO_EXTENSION));
+                $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+                
+                if (!in_array($fileType, $allowedTypes)) continue;
+                if ($_FILES['fotos']['size'][$key] > $maxSize) continue;
+                if ($_FILES['fotos']['error'][$key] !== UPLOAD_ERR_OK) continue;
+                
+                // Generar nombre único
+                $fileName = 'trabajo_' . uniqid() . '.' . $fileType;
                 $targetPath = $uploadDir . $fileName;
                 
                 if (move_uploaded_file($tmp_name, $targetPath)) {
                     $fotos[] = '/uploads/trabajos/' . $fileName;
+                    $fileCount++;
                 }
             }
         }
@@ -68,7 +84,7 @@ try {
             $fecha_inicio,
             $estado,
             $notas,
-            implode(',', $fotos)
+            !empty($fotos) ? implode(',', $fotos) : null
         ]);
 
         $id_trabajo = $conex->lastInsertId();
@@ -85,21 +101,42 @@ try {
         $stmt = $conex->prepare("SELECT fotos FROM trabajos WHERE id_trabajos = ?");
         $stmt->execute([$id]);
         $trabajo = $stmt->fetch();
-        $fotos = $trabajo['fotos'] ? explode(',', $trabajo['fotos']) : [];
+        $fotos = [];
+        
+        if (!empty($trabajo['fotos'])) {
+            $fotos = is_array($trabajo['fotos']) ? $trabajo['fotos'] : explode(',', $trabajo['fotos']);
+            $fotos = array_filter($fotos); // Eliminar elementos vacíos
+        }
 
         // Procesar nuevas fotos si se subieron
+        $maxFotos = 5;
+        $maxSize = 5 * 1024 * 1024; // 5MB
+
         if (!empty($_FILES['fotos']['name'][0])) {
             $uploadDir = __DIR__ . '/../../uploads/trabajos/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
 
+            $fileCount = 0;
             foreach ($_FILES['fotos']['tmp_name'] as $key => $tmp_name) {
-                $fileName = uniqid() . '_' . basename($_FILES['fotos']['name'][$key]);
+                if (count($fotos) + $fileCount >= $maxFotos) break;
+                
+                // Validar tipo y tamaño de archivo
+                $fileType = strtolower(pathinfo($_FILES['fotos']['name'][$key], PATHINFO_EXTENSION));
+                $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+                
+                if (!in_array($fileType, $allowedTypes)) continue;
+                if ($_FILES['fotos']['size'][$key] > $maxSize) continue;
+                if ($_FILES['fotos']['error'][$key] !== UPLOAD_ERR_OK) continue;
+                
+                // Generar nombre único
+                $fileName = 'trabajo_' . $id . '_' . uniqid() . '.' . $fileType;
                 $targetPath = $uploadDir . $fileName;
                 
                 if (move_uploaded_file($tmp_name, $targetPath)) {
                     $fotos[] = '/uploads/trabajos/' . $fileName;
+                    $fileCount++;
                 }
             }
         }
@@ -118,37 +155,43 @@ try {
             $fecha_fin,
             $estado,
             $notas,
-            implode(',', $fotos),
+            !empty($fotos) ? implode(',', $fotos) : null,
             $id
         ]);
 
         $mensaje = 'Trabajo actualizado exitosamente';
 
-    } elseif ($accion === 'eliminar_foto' && $id > 0 && isset($_GET['foto_index'])) {
+    } elseif ($accion === 'eliminar_foto' && $id > 0 && isset($_GET['foto'])) {
         // Eliminar una foto específica de un trabajo
-        $foto_index = intval($_GET['foto_index']);
+        $foto = urldecode($_GET['foto']);
         
         $stmt = $conex->prepare("SELECT fotos FROM trabajos WHERE id_trabajos = ?");
         $stmt->execute([$id]);
         $trabajo = $stmt->fetch();
         
         if ($trabajo) {
-            $fotos = $trabajo['fotos'] ? explode(',', $trabajo['fotos']) : [];
+            $fotos = [];
+            if (!empty($trabajo['fotos'])) {
+                $fotos = is_array($trabajo['fotos']) ? $trabajo['fotos'] : explode(',', $trabajo['fotos']);
+                $fotos = array_filter($fotos); // Eliminar elementos vacíos
+            }
             
-            if (isset($fotos[$foto_index])) {
+            // Buscar y eliminar la foto específica
+            $key = array_search($foto, $fotos);
+            if ($key !== false) {
                 // Eliminar archivo físico
-                $ruta_foto = __DIR__ . '/../..' . $fotos[$foto_index];
+                $ruta_foto = __DIR__ . '/../..' . $fotos[$key];
                 if (file_exists($ruta_foto)) {
                     unlink($ruta_foto);
                 }
                 
                 // Eliminar del array
-                unset($fotos[$foto_index]);
+                unset($fotos[$key]);
                 $fotos = array_values($fotos); // Reindexar array
                 
                 // Actualizar base de datos
                 $stmt = $conex->prepare("UPDATE trabajos SET fotos = ? WHERE id_trabajos = ?");
-                $stmt->execute([implode(',', $fotos), $id]);
+                $stmt->execute([!empty($fotos) ? implode(',', $fotos) : null, $id]);
             }
         }
         
@@ -172,7 +215,7 @@ try {
     $conex->commit();
     $_SESSION['mensaje'] = $mensaje;
     $_SESSION['tipo_mensaje'] = 'success';
-    header("Location: ver.php?id=$id");
+    header("Location: index.php?id=$id");
     exit;
 
 } catch (Exception $e) {

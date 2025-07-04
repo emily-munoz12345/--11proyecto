@@ -46,7 +46,8 @@ try {
     // Obtener fotos (si es un string con la ruta)
     $fotos = [];
     if (!empty($trabajo['fotos'])) {
-        $fotos = explode(',', $trabajo['fotos']);
+        $fotos = is_array($trabajo['fotos']) ? $trabajo['fotos'] : explode(',', $trabajo['fotos']);
+        $fotos = array_filter($fotos); // Eliminar elementos vacíos
     }
 } catch (PDOException $e) {
     $_SESSION['mensaje'] = 'Error al obtener datos del trabajo: ' . $e->getMessage();
@@ -149,16 +150,18 @@ include __DIR__ . '/../../includes/navbar.php';
         <div class="card-body">
             <div class="row">
                 <?php foreach ($fotos as $foto): ?>
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100">
-                        <img src="<?= htmlspecialchars($foto) ?>" class="card-img-top img-thumbnail" alt="Foto del trabajo">
-                        <div class="card-body text-center">
-                            <a href="<?= htmlspecialchars($foto) ?>" target="_blank" class="btn btn-sm btn-primary">
-                                <i class="fas fa-expand me-1"></i> Ampliar
-                            </a>
+                    <?php if (!empty($foto)): ?>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <img src="<?= htmlspecialchars($foto) ?>" class="card-img-top img-thumbnail" alt="Foto del trabajo">
+                            <div class="card-body text-center">
+                                <a href="<?= htmlspecialchars($foto) ?>" target="_blank" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-expand me-1"></i> Ampliar
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
+                    <?php endif; ?>
                 <?php endforeach; ?>
             </div>
         </div>
