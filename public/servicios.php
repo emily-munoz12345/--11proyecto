@@ -1,10 +1,10 @@
 <?php
-require_once __DIR__ . '/../includes/head.php';
+require_once __DIR__ . '/includes/head.php';
 $title = 'Nuestros Servicios - Nacional Tapizados';
 ?>
 
 <?php
-require_once __DIR__ . '/../includes/navbar.php';
+require_once __DIR__ . '/includes/navbar.php';
 ?>
 
 <main class="py-5">
@@ -34,7 +34,6 @@ require_once __DIR__ . '/../includes/navbar.php';
                                 </ul>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="badge bg-primary">3-7 días</span>
-                                    <a href="cotizaciones.php" class="btn btn-sm btn-outline-primary">Solicitar cotización</a>
                                 </div>
                             </div>
                         </div>
@@ -61,7 +60,6 @@ require_once __DIR__ . '/../includes/navbar.php';
                                 </ul>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="badge bg-primary">1-3 días</span>
-                                    <a href="cotizaciones.php" class="btn btn-sm btn-outline-primary">Solicitar cotización</a>
                                 </div>
                             </div>
                         </div>
@@ -88,7 +86,6 @@ require_once __DIR__ . '/../includes/navbar.php';
                                 </ul>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="badge bg-primary">4-8 horas</span>
-                                    <a href="cotizaciones.php" class="btn btn-sm btn-outline-primary">Solicitar cotización</a>
                                 </div>
                             </div>
                         </div>
@@ -105,7 +102,7 @@ require_once __DIR__ . '/../includes/navbar.php';
                         </div>
                         <div class="col-md-7">
                             <div class="card-body">
-                                <h3 class="h5">Personalización Premium</h3>
+                                <h3 class="h5">Personalización </h3>
                                 <p class="card-text">Diseños exclusivos para darle un toque único a tu vehículo.</p>
                                 <ul class="list-unstyled">
                                     <li><i class="fas fa-check text-primary me-2"></i> Costuras contrastantes</li>
@@ -115,7 +112,6 @@ require_once __DIR__ . '/../includes/navbar.php';
                                 </ul>
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="badge bg-primary">5-10 días</span>
-                                    <a href="cotizaciones.php" class="btn btn-sm btn-outline-primary">Solicitar cotización</a>
                                 </div>
                             </div>
                         </div>
@@ -124,46 +120,82 @@ require_once __DIR__ . '/../includes/navbar.php';
             </div>
         </div>
 
-        <!-- Proceso de Trabajo -->
-        <div class="row mt-5">
-            <div class="col-lg-8 mx-auto">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <h3 class="h4 text-center mb-4">Nuestro Proceso de Trabajo</h3>
-                        <div class="timeline">
-                            <div class="timeline-step">
-                                <div class="timeline-icon bg-primary text-white">1</div>
-                                <h5 class="h6">Evaluación</h5>
-                                <p class="small">Inspección detallada del vehículo y diagnóstico del trabajo requerido.</p>
-                            </div>
-                            <div class="timeline-step">
-                                <div class="timeline-icon bg-primary text-white">2</div>
-                                <h5 class="h6">Cotización</h5>
-                                <p class="small">Presupuesto detallado sin compromiso con opciones de materiales.</p>
-                            </div>
-                            <div class="timeline-step">
-                                <div class="timeline-icon bg-primary text-white">3</div>
-                                <h5 class="h6">Aprobación</h5>
-                                <p class="small">Selección de materiales y aprobación del diseño final.</p>
-                            </div>
-                            <div class="timeline-step">
-                                <div class="timeline-icon bg-primary text-white">4</div>
-                                <h5 class="h6">Ejecución</h5>
-                                <p class="small">Trabajo artesanal con supervisión constante de calidad.</p>
-                            </div>
-                            <div class="timeline-step">
-                                <div class="timeline-icon bg-primary text-white">5</div>
-                                <h5 class="h6">Entrega</h5>
-                                <p class="small">Revisión final y entrega con garantía documentada.</p>
-                            </div>
-                        </div>
-                    </div>
+ <!-- Proceso de Trabajo - Diseño Creativo -->
+<div class="process-wrapper py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-uppercase">Nuestro Proceso de Trabajo</h2>
+            <p class="lead">Nuestra cadena de valor en tapicería automotriz</p>
+        </div>
+
+        <!-- Proceso Visual -->
+        <div class="process-chain">
+            <!-- Paso 1 - Tangible -->
+            <div class="process-step process-tangible animate__animated animate__fadeIn">
+                <div class="process-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="process-content">
+                    <h4>Evaluación</h4>
+                    <p class="small text-muted">Diagnóstico detallado del vehículo</p>
+                </div>
+                <div class="process-connector"></div>
+            </div>
+
+            <!-- Paso 2 - Intangible -->
+            <div class="process-step process-intangible animate__animated animate__fadeIn animate__delay-1s">
+                <div class="process-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <div class="process-content">
+                    <h4>Cotización</h4>
+                    <p class="small text-muted">Presupuesto transparente</p>
+                </div>
+                <div class="process-connector"></div>
+            </div>
+
+            <!-- Paso 3 - Tangible -->
+            <div class="process-step process-tangible animate__animated animate__fadeIn animate__delay-2s">
+                <div class="process-icon">
+                    <i class="fas fa-thumbs-up"></i>
+                </div>
+                <div class="process-content">
+                    <h4>Aprobación</h4>
+                    <p class="small text-muted">Selección de materiales</p>
+                </div>
+                <div class="process-connector"></div>
+            </div>
+
+            <!-- Paso 4 - Intangible -->
+            <div class="process-step process-intangible animate__animated animate__fadeIn animate__delay-3s">
+                <div class="process-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="process-content">
+                    <h4>Ejecución</h4>
+                    <p class="small text-muted">Trabajo artesanal</p>
+                </div>
+                <div class="process-connector"></div>
+            </div>
+
+            <!-- Paso 5 - Tangible -->
+            <div class="process-step process-tangible animate__animated animate__fadeIn animate__delay-4s">
+                <div class="process-icon">
+                    <i class="fas fa-car-side"></i>
+                </div>
+                <div class="process-content">
+                    <h4>Entrega</h4>
+                    <p class="small text-muted">Con garantía documentada</p>
                 </div>
             </div>
+        </div>
+
+    </div>
+</div>
         </div>
     </div>
 </main>
 
 <?php
-require_once __DIR__ . '/../includes/footer.php';
+require_once __DIR__ . '/includes/footer.php';
 ?>

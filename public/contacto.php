@@ -1,10 +1,10 @@
 <?php
-require_once __DIR__ . '/../includes/head.php';
+require_once __DIR__ . '/includes/head.php';
 $title = 'Contacto - Nacional Tapizados';
 ?>
 
 <?php
-require_once __DIR__ . '/../includes/navbar.php';
+require_once __DIR__ . '/includes/navbar.php';
 ?>
 
 <main class="py-5">
@@ -138,5 +138,5 @@ require_once __DIR__ . '/../includes/navbar.php';
 </main>
 
 <?php
-require_once __DIR__ . '/../includes/footer.php';
+require_once __DIR__ . '/includes/footer.php';
 ?>

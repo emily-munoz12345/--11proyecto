@@ -1,10 +1,10 @@
 <?php
-require_once __DIR__ . '/../includes/head.php';
+require_once __DIR__ . '/includes/head.php';
 $title = 'Sobre Nosotros - Nacional Tapizados';
 ?>
 
 <?php
-require_once __DIR__ . '/../includes/navbar.php';
+require_once __DIR__ . '/includes/navbar.php';
 ?>
 
 <main class="py-5">
@@ -149,7 +149,6 @@ require_once __DIR__ . '/../includes/navbar.php';
                     <div class="col-lg-6 mb-4 mb-lg-0">
                         <div class="section-header mb-4">
                             <h2 class="fw-bold">Nuestras Instalaciones</h2>
-                            <p class="text-muted">Taller equipado con tecnología de punta</p>
                         </div>
                         <p>Contamos con un espacio de 800m² diseñado específicamente para el trabajo en tapicería automotriz, dividido en áreas especializadas:</p>
                         <ul class="list-unstyled">
@@ -172,5 +171,5 @@ require_once __DIR__ . '/../includes/navbar.php';
 </main>
 
 <?php
-require_once __DIR__ . '/../includes/footer.php';
+require_once __DIR__ . '/includes/footer.php';
 ?>

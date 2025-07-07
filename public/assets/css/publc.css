@@ -1,0 +1,487 @@
+@import 'variables.css';
+
+/* ===== ESTILOS BASE Y GENERALES ===== */
+body {
+  font-family: 'Roboto', sans-serif;
+  color: var(--text-dark);
+  background-color: var(--neutral-light);
+  line-height: 1.6;
+}
+
+/* ===== HERO SECTION ===== */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(90deg, rgba(94, 48, 35, 0.9) 30%, rgba(94, 48, 35, 0.5) 100%), 
+              url('/--11proyecto/public/assets/images/images.jpg') center/cover no-repeat;
+}
+
+.hero-text h1 {
+  font-size: 3.5rem;
+  line-height: 1.2;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.hero-text h1 span {
+  color: #FFD700; /* Cambiado a dorado (#FFD700) */
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.hero-text .lead {
+  font-size: 1.25rem;
+  max-width: 600px;
+}
+
+.badge-experiencia {
+  background: #FFD700; /* Cambiado a dorado (#FFD700) */
+  color: var(--text-dark) !important; /* Texto oscuro para contraste */
+  box-shadow: var(--shadow-md);
+  font-weight: 700;
+}
+
+.badge-experiencia span {
+  font-size: 1.75rem;
+}
+
+.scroll-down {
+  width: 50px;
+  height: 50px;
+  background: rgba(255,255,255,0.2);
+  animation: bounce 2s infinite;
+}
+
+/* ===== SECCIÓN SERVICIOS ===== */
+.card-servicio {
+  border-radius: 8px;
+  transition: var(--transition-normal);
+  border: 1px solid var(--neutral-medium);
+}
+
+.servicio-icono {
+  width: 70px;
+  height: 70px;
+  background: var(--accent-color);
+  color: var(--text-light);
+}
+
+/* ===== SOBRE NOSOTROS ===== */
+.sobre-nosotros {
+  background-color: var(--neutral-medium);
+}
+
+.badge-trabajos {
+  background: var(--primary-dark);
+  box-shadow: var(--shadow-md);
+}
+
+.lista-beneficios {
+  list-style: none;
+}
+
+.lista-beneficios li i {
+  color: var(--accent-color);
+}
+
+/* ===== TRABAJOS DESTACADOS ===== */
+.card-trabajo {
+  border-radius: 8px;
+}
+
+.card-trabajo img {
+  transition: var(--transition-normal);
+  height: 300px;
+  object-fit: cover;
+}
+
+.trabajo-overlay {
+  background: rgba(94, 48, 35, 0.8);
+  opacity: 0;
+  transition: var(--transition-normal);
+}
+
+/* ===== TESTIMONIOS ===== */
+.testimonios {
+  background-color: var(--neutral-medium);
+}
+
+.card-testimonio {
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.testimonio-icon {
+  color: var(--accent-color);
+}
+
+/* ===== CTA SECTION ===== */
+.cta {
+  background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+              url('/--11proyecto/public/assets/images/cta-bg.jpg') center/cover;
+}
+
+/* ===== EFECTOS HOVER ===== */
+.card-servicio:hover {
+  transform: translateY(-10px);
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.scroll-down:hover {
+  background: var(--accent-light);
+  color: var(--primary-dark) !important;
+}
+
+.card-trabajo:hover .trabajo-overlay {
+  opacity: 1;
+}
+
+.card-trabajo:hover img {
+  transform: scale(1.05);
+}
+
+/* ===== ANIMACIONES ===== */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-15px); }
+  60% { transform: translateY(-7px); }
+}
+
+/* ===== MEDIA QUERIES ===== */
+@media (max-width: 992px) {
+  .hero-text h1 {
+    font-size: 2.75rem;
+  }
+  
+  .badge-experiencia {
+    position: relative !important;
+    bottom: auto !important;
+    right: auto !important;
+    margin-top: 1.5rem;
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-text h1 {
+    font-size: 2.25rem;
+  }
+  
+  .hero-text .lead {
+    font-size: 1.1rem;
+  }
+  
+  .section-header h2 {
+    font-size: 2rem;
+  }
+}
+
+/* ===== CLASES COMPLEMENTARIAS PARA BOOTSTRAP ===== */
+.bg-accent {
+  background-color: var(--accent-color) !important;
+}
+
+.text-accent {
+  color: var(--accent-color) !important;
+}
+
+.bg-primary-dark {
+  background-color: var(--primary-dark) !important;
+}
+
+.hover-shadow {
+  transition: all 0.3s ease;
+}
+
+.hover-shadow:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+/* ===== NUEVAS CLASES PARA COLOR DORADO ===== */
+.text-gold {
+  color: #FFD700 !important;
+}
+
+.bg-gold {
+  background-color: #FFD700 !important;
+}
+
+.text-gold-dark {
+  color: #D4A017 !important; /* Versión más oscura del dorado */
+}
+
+/* ===== ESTILOS PARA TIMELINE ===== */
+.timeline-steps {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 2rem 0;
+}
+
+.timeline-step {
+  flex: 0 0 20%;
+  max-width: 20%;
+  padding: 0 var(--space-sm);
+  position: relative;
+}
+
+.timeline-step:not(:last-child):after {
+  content: "";
+  position: absolute;
+  top: 50px;
+  left: 75%;
+  width: 50%;
+  height: 3px;
+  background: var(--gradient-leather);
+  z-index: 1;
+}
+
+.timeline-content {
+  text-align: center;
+  position: relative;
+  transition: var(--transition-normal);
+}
+
+.timeline-content:hover {
+  transform: translateY(-5px);
+}
+
+.timeline-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  font-size: 1.5rem;
+  transition: var(--transition-normal);
+  box-shadow: var(--shadow-md);
+}
+
+.timeline-icon:hover {
+  transform: scale(1.1);
+}
+
+.timeline-step:nth-child(1) .timeline-icon {
+  background-color: var(--timeline-primary);
+}
+
+.timeline-step:nth-child(2) .timeline-icon {
+  background-color: var(--timeline-secondary);
+}
+
+.timeline-step:nth-child(3) .timeline-icon {
+  background-color: var(--timeline-accent);
+}
+
+.timeline-step:nth-child(4) .timeline-icon {
+  background-color: var(--accent-light);
+  color: var(--timeline-dark);
+}
+
+.timeline-step:nth-child(5) .timeline-icon {
+  background-color: #D4A017; /* Dorado oscuro */
+}
+
+.card-proceso {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.card-proceso-header {
+  background: var(--gradient-leather);
+  color: var(--text-light);
+  padding: var(--space-md) 0;
+}
+
+@media (max-width: 992px) {
+  .timeline-step {
+    flex: 0 0 100%;
+    max-width: 100%;
+    margin-bottom: var(--space-xl);
+  }
+  
+  .timeline-step:not(:last-child):after {
+    display: none;
+  }
+  
+  .timeline-steps {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+/* ===== ESTILOS PARA PROCESO VOLANTE ===== */
+.steering-process {
+  padding: var(--space-xxl) 0;
+  background: var(--neutral-light);
+}
+
+.process-container {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  height: 80vh;
+  min-height: 600px;
+}
+
+.steering-wheel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.steering-center {
+  background: var(--steering-center-bg);
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-light);
+  z-index: 3;
+  box-shadow: var(--shadow-lg);
+  border: 4px solid var(--steering-center-border);
+}
+
+.steering-center h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.steering-center p {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.process-step {
+  position: absolute;
+  width: 160px;
+  transform: rotate(var(--angle)) translate(200px) rotate(calc(-1 * var(--angle)));
+  transform-origin: center;
+  z-index: 2;
+  transition: var(--transition-normal);
+}
+
+.step-badge {
+  width: 40px;
+  height: 40px;
+  background: var(--step-badge-bg);
+  color: var(--text-light);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 10px;
+  font-weight: bold;
+  border: 2px solid var(--step-badge-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.step-content {
+  background: var(--step-content-bg);
+  padding: var(--space-md);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  transition: var(--transition-normal);
+}
+
+.step-content h3 {
+  color: var(--primary-dark);
+  margin-bottom: var(--space-xs);
+  font-size: 1.1rem;
+}
+
+.step-content p {
+  color: var(--text-dark);
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.process-step:hover {
+  transform: rotate(var(--angle)) translate(200px) rotate(calc(-1 * var(--angle))) scale(1.1);
+}
+
+.process-step:hover .step-content {
+  background: var(--primary-dark);
+  color: var(--text-light);
+}
+
+.process-step:hover .step-content h3 {
+  color: inherit;
+}
+
+.steering-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid var(--ring-color);
+}
+
+.ring-1 { width: 120%; height: 120%; opacity: 0.3; }
+.ring-2 { width: 140%; height: 140%; opacity: 0.2; }
+.ring-3 { width: 160%; height: 160%; opacity: 0.1; }
+
+@media (max-width: 768px) {
+  .process-container {
+    height: 120vw;
+    min-height: 400px;
+  }
+  
+  .process-step {
+    transform: rotate(var(--angle)) translate(30vw) rotate(calc(-1 * var(--angle)));
+    width: 120px;
+  }
+  
+  .steering-center {
+    width: 140px;
+    height: 140px;
+  }
+}
+/* ===== ESTILOS PARA GUÍA DE CUIDADOS MINIMALISTA ===== */
+.care-guide-minimal {
+    background-color: var(--neutral-light);
+    border-radius: 8px;
+}
+
+.care-guide-minimal .table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.care-guide-minimal th {
+    font-weight: 600;
+    color: var(--primary-dark);
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.care-guide-minimal td {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+    vertical-align: top;
+}
+
+.care-guide-minimal tr:last-child {
+    border-bottom: none !important;
+}
+
+.care-guide-minimal ul li {
+    position: relative;
+    padding-left: 0;
+    margin-bottom: 0.5rem;
+}

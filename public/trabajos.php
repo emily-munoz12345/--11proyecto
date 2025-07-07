@@ -1,10 +1,10 @@
 <?php
-require_once __DIR__ . '/../includes/head.php';
+require_once __DIR__ . '/includes/head.php';
 $title = 'Trabajos Realizados - Nacional Tapizados';
 ?>
 
 <?php
-require_once __DIR__ . '/../includes/navbar.php';
+require_once __DIR__ . '/includes/navbar.php';
 ?>
 
 <main class="py-5">
@@ -16,20 +16,20 @@ require_once __DIR__ . '/../includes/navbar.php';
 
         <!-- Filtros -->
         <div class="row mb-4">
-            <div class="col-md-6 mx-auto text-center">
+            <div class="col-md-8 mx-auto text-center">
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-primary active">Todos</button>
-                    <button type="button" class="btn btn-outline-primary">Tapizado Completo</button>
-                    <button type="button" class="btn btn-outline-primary">Reparaciones</button>
-                    <button type="button" class="btn btn-outline-primary">Personalización</button>
+                    <button type="button" class="btn btn-outline-secondary filter-btn active" data-filter="all">Todos</button>
+                    <button type="button" class="btn btn-outline-primary filter-btn" data-filter="tapizado">Tapizado Completo</button>
+                    <button type="button" class="btn btn-outline-primary filter-btn" data-filter="reparaciones">Reparaciones</button>
+                    <button type="button" class="btn btn-outline-primary filter-btn" data-filter="personalizacion">Personalización</button>
                 </div>
             </div>
         </div>
 
         <!-- Galería de Trabajos -->
-        <div class="row g-4">
-            <!-- Trabajo 1 -->
-            <div class="col-md-4">
+        <div class="row g-4" id="trabajos-container">
+            <!-- Trabajo 1 - Tapizado -->
+            <div class="col-md-4 trabajo-item" data-category="tapizado">
                 <div class="card h-100 border-0 shadow-sm">
                     <img src="assets/images/trabajo1.jpg" class="card-img-top" alt="Tapizado en piel - Mercedes-Benz">
                     <div class="card-body">
@@ -45,8 +45,8 @@ require_once __DIR__ . '/../includes/navbar.php';
                 </div>
             </div>
 
-            <!-- Trabajo 2 -->
-            <div class="col-md-4">
+            <!-- Trabajo 2 - Reparaciones -->
+            <div class="col-md-4 trabajo-item" data-category="reparaciones">
                 <div class="card h-100 border-0 shadow-sm">
                     <img src="assets/images/trabajo2.jpg" class="card-img-top" alt="Restauración clásico - Chevrolet Camaro">
                     <div class="card-body">
@@ -54,7 +54,7 @@ require_once __DIR__ . '/../includes/navbar.php';
                         <p class="text-muted mb-2"><strong>Vehículo:</strong> Chevrolet Camaro 1969</p>
                         <p class="card-text">Restauración fiel al diseño original con materiales modernos que mantienen el aspecto vintage pero con mayor durabilidad.</p>
                         <ul class="list-unstyled">
-                            <li><strong>Materiales:</strong> Vinilo premium con textura similar al original</li>
+                            <li><strong>Materiales:</strong> Vinilo con textura similar al original</li>
                             <li><strong>Tiempo:</strong> 8 días laborales</li>
                             <li><strong>Garantía:</strong> 3 años</li>
                         </ul>
@@ -62,8 +62,8 @@ require_once __DIR__ . '/../includes/navbar.php';
                 </div>
             </div>
 
-            <!-- Trabajo 3 -->
-            <div class="col-md-4">
+            <!-- Trabajo 3 - Personalización -->
+            <div class="col-md-4 trabajo-item" data-category="personalizacion">
                 <div class="card h-100 border-0 shadow-sm">
                     <img src="assets/images/trabajo3.jpg" class="card-img-top" alt="Personalización - Ford Mustang">
                     <div class="card-body">
@@ -78,16 +78,39 @@ require_once __DIR__ . '/../includes/navbar.php';
                     </div>
                 </div>
             </div>
-
-            <!-- Más trabajos... -->
         </div>
 
-        <div class="text-center mt-5">
-            <a href="contacto.php" class="btn btn-primary btn-lg">Solicitar Cotización</a>
-        </div>
     </div>
 </main>
 
+<!-- Agrega jQuery si no lo tienes ya -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Manejar el clic en los botones de filtro
+    $('.filter-btn').click(function() {
+        // Remover la clase active de todos los botones
+        $('.filter-btn').removeClass('active');
+        // Agregar la clase active al botón clickeado
+        $(this).addClass('active');
+        
+        // Obtener el valor del filtro
+        var filter = $(this).data('filter');
+        
+        // Mostrar todos los elementos si el filtro es 'all'
+        if (filter === 'all') {
+            $('.trabajo-item').show();
+        } else {
+            // Ocultar todos los elementos
+            $('.trabajo-item').hide();
+            // Mostrar solo los elementos con la categoría correspondiente
+            $('.trabajo-item[data-category="' + filter + '"]').show();
+        }
+    });
+});
+</script>
+
 <?php
-require_once __DIR__ . '/../includes/footer.php';
+require_once __DIR__ . '/includes/footer.php';
 ?>

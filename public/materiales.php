@@ -1,16 +1,16 @@
 <?php
-require_once __DIR__ . '/../includes/head.php';
+require_once __DIR__ . '/includes/head.php';
 $title = 'Materiales - Nacional Tapizados';
 ?>
 
 <?php
-require_once __DIR__ . '/../includes/navbar.php';
+require_once __DIR__ . '/includes/navbar.php';
 ?>
 
 <main class="py-5">
     <div class="container">
         <div class="section-header text-center mb-5">
-            <h1 class="fw-bold">Materiales Premium</h1>
+            <h1 class="fw-bold">Materiales </h1>
             <p class="lead text-muted">Calidad y durabilidad para cada necesidad</p>
         </div>
 
@@ -20,11 +20,11 @@ require_once __DIR__ . '/../includes/navbar.php';
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="row g-0">
                         <div class="col-md-5">
-                            <img src="assets/images/material-piel.jpg" class="img-fluid rounded-start h-100" alt="Piel natural">
+                            <img src="assets/images/material-cuero.jpg" class="img-fluid rounded-start h-100" alt="Piel natural">
                         </div>
                         <div class="col-md-7">
                             <div class="card-body">
-                                <h3 class="h5">Piel Natural Premium</h3>
+                                <h3 class="h5">Cuero Natural </h3>
                                 <p class="card-text">La opción más exclusiva para tu vehículo, disponible en múltiples texturas y colores.</p>
                                 <ul class="list-unstyled">
                                     <li><strong>Ventajas:</strong> Durabilidad extrema, confort superior, aspecto lujoso</li>
@@ -66,11 +66,11 @@ require_once __DIR__ . '/../includes/navbar.php';
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="row g-0">
                         <div class="col-md-5">
-                            <img src="assets/images/material-vinilo.jpg" class="img-fluid rounded-start h-100" alt="Vinilo premium">
+                            <img src="assets/images/material-vinilcuero.jpg" class="img-fluid rounded-start h-100" alt="Vinilo premium">
                         </div>
                         <div class="col-md-7">
                             <div class="card-body">
-                                <h3 class="h5">Vinilo Premium</h3>
+                                <h3 class="h5">Vinilcuero</h3>
                                 <p class="card-text">Opción económica sin sacrificar calidad, con gran variedad de texturas y colores.</p>
                                 <ul class="list-unstyled">
                                     <li><strong>Ventajas:</strong> Resistente a líquidos, fácil limpieza, económico</li>
@@ -107,57 +107,111 @@ require_once __DIR__ . '/../includes/navbar.php';
                 </div>
             </div>
         </div>
-
-        <div class="row mt-5">
-            <div class="col-lg-8 mx-auto">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <h3 class="h4 text-center mb-4">Guía de Cuidados para tus Materiales</h3>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Material</th>
-                                        <th>Frecuencia Limpieza</th>
-                                        <th>Productos Recomendados</th>
-                                        <th>Qué Evitar</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Piel Natural</td>
-                                        <td>Cada 3-6 meses</td>
-                                        <td>Hidratantes específicos, limpiadores pH neutro</td>
-                                        <td>Productos con alcohol, exposición solar prolongada</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Alcántara</td>
-                                        <td>Cada 2-4 meses</td>
-                                        <td>Espumas limpiadoras para microfibra</td>
-                                        <td>Cepillos duros, limpieza en seco</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Vinilo</td>
-                                        <td>Mensual</td>
-                                        <td>Jabón neutro, protectores UV</td>
-                                        <td>Aceites, siliconas</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Tela Técnica</td>
-                                        <td>Quincenal</td>
-                                        <td>Aspirado, espumas secas</td>
-                                        <td>Lavado con agua, frotar fuerte</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="h4 text-center mb-4 pb-2 border-bottom border-3 border-primary-dark">Guía de Cuidados para tus Materiales</h3>
+                
+                <div class="care-guide-minimal">
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <thead>
+                                <tr class="border-bottom border-2 border-primary-dark">
+                                    <th class="text-start ps-4" style="width: 20%;">Material</th>
+                                    <th class="text-start" style="width: 15%;">Frecuencia</th>
+                                    <th class="text-start" style="width: 30%;">Productos Recomendados</th>
+                                    <th class="text-start" style="width: 20%;">Qué Evitar</th>
+                                    <th class="text-end pe-4" style="width: 15%;">Vida Útil</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Cuero Natural -->
+                                <tr class="border-bottom border-1 border-neutral-medium">
+                                    <td class="ps-4"><strong>Cuero Natural</strong></td>
+                                    <td>Cada 3-6 meses</td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0">
+                                            <li>• Hidratantes específicos</li>
+                                            <li>• Limpiadores pH neutro</li>
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0">
+                                            <li>• Productos con alcohol</li>
+                                            <li>• Exposición solar prolongada</li>
+                                        </ul>
+                                    </td>
+                                    <td class="pe-4 text-end">8-10 años</td>
+                                </tr>
+                                
+                                <!-- Alcántara -->
+                                <tr class="border-bottom border-1 border-neutral-medium">
+                                    <td class="ps-4"><strong>Alcántara</strong></td>
+                                    <td>Cada 2-4 meses</td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0">
+                                            <li>• Espumas limpiadoras</li>
+                                            <li>• Cepillos suaves</li>
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0">
+                                            <li>• Cepillos duros</li>
+                                            <li>• Limpieza en seco</li>
+                                        </ul>
+                                    </td>
+                                    <td class="pe-4 text-end">6-8 años</td>
+                                </tr>
+                                
+                                <!-- Vinilcuero -->
+                                <tr class="border-bottom border-1 border-neutral-medium">
+                                    <td class="ps-4"><strong>Vinilcuero</strong></td>
+                                    <td>Mensual</td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0">
+                                            <li>• Jabón neutro</li>
+                                            <li>• Protectores UV</li>
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0">
+                                            <li>• Aceites</li>
+                                            <li>• Siliconas</li>
+                                        </ul>
+                                    </td>
+                                    <td class="pe-4 text-end">4-6 años</td>
+                                </tr>
+                                
+                                <!-- Tela Técnica -->
+                                <tr class="border-bottom border-1 border-neutral-medium">
+                                    <td class="ps-4"><strong>Tela Técnica</strong></td>
+                                    <td>Quincenal</td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0">
+                                            <li>• Aspirado</li>
+                                            <li>• Espumas secas</li>
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0">
+                                            <li>• Lavado con agua</li>
+                                            <li>• Frotar fuerte</li>
+                                        </ul>
+                                    </td>
+                                    <td class="pe-4 text-end">5-7 años</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+    </div>
 </main>
 
 <?php
-require_once __DIR__ . '/../includes/footer.php';
+require_once __DIR__ . '/includes/footer.php';
 ?>
