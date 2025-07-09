@@ -2,8 +2,8 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-require_once __DIR__ . '/../../php/conexion.php';
-require_once __DIR__ . '/../../php/auth.php';
+require_once __DIR__ . '/../../../php/conexion.php';
+require_once __DIR__ . '/../../../php/auth.php';
 
 // Verificar permisos (solo Admin y Vendedor)
 if (!isAdmin() && !isSeller()) {
@@ -82,136 +82,155 @@ require_once __DIR__ . '/../../includes/head.php';
 $title = 'Gestión de Clientes | Nacional Tapizados';
 ?>
 
-    <?php
-require_once __DIR__ . '/../../includes/navbar.php';
-?>
-    
-    <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="fas fa-users me-2"></i>Gestión de Clientes</h1>
-            <a href="crear.php" class="btn btn-primary">
-                <i class="fas fa-plus-circle me-1"></i>Nuevo Cliente
-            </a>
-        </div>
-        
-    <?php if (!empty($_SESSION['mensaje'])): ?>
-        <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?> alert-dismissible fade show">
-            <?= $_SESSION['mensaje'] ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        <?php 
-        // Limpiar los mensajes después de mostrarlos
-        $_SESSION['mensaje'] = '';
-        $_SESSION['tipo_mensaje'] = '';
-        ?>
-    <?php endif; ?>
-        
-        <!-- Buscador -->
-        <form class="mb-4">
-            <div class="input-group">
-                <input type="text" class="form-control" name="busqueda" value="<?= htmlspecialchars($busqueda) ?>" 
-                       placeholder="Buscar por nombre o correo">
-                <button class="btn btn-outline-secondary" type="submit">
-                    <i class="fas fa-search"></i>
-                </button>
-                <?php if (!empty($busqueda)): ?>
-                    <a href="index.php" class="btn btn-outline-danger">
-                        <i class="fas fa-times"></i>
-                    </a>
+<body class="bg-light">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar estilo moderno -->
+<?php include __DIR__ . '/../../includes/sidebar.php'; ?>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <!-- Barra superior -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="fas fa-users me-2"></i>Gestión de Clientes
+                    </h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <a href="crear.php" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus-circle me-1"></i> Nuevo Cliente
+                            </a>
+                        </div>
+                        <div class="text-muted small">
+                            Rol actual: <strong><?= isAdmin() ? 'Administrador' : 'Vendedor' ?></strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mensajes -->
+                <?php if (!empty($_SESSION['mensaje'])): ?>
+                    <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?> alert-dismissible fade show">
+                        <?= $_SESSION['mensaje'] ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <?php 
+                    $_SESSION['mensaje'] = '';
+                    $_SESSION['tipo_mensaje'] = '';
+                    ?>
                 <?php endif; ?>
-            </div>
-        </form>
-        
-        <!-- Tabla de clientes -->
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Correo</th>
-                        <th>Teléfono</th>
-                        <th>Registro</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (count($clientes) > 0): ?>
-                        <?php foreach ($clientes as $cliente): ?>
-                            <tr>
-                                <td><?= $cliente['id_cliente'] ?></td>
-                                <td><?= htmlspecialchars($cliente['nombre_cliente']) ?></td>
-                                <td><?= htmlspecialchars($cliente['correo_cliente']) ?></td>
-                                <td><?= htmlspecialchars($cliente['telefono_cliente']) ?></td>
-                                <td><?= date('d/m/Y', strtotime($cliente['fecha_registro'])) ?></td>
-                                <td>
-                                    <div class="d-flex">
-                                        <a href="editar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-sm btn-warning me-2">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="index.php?eliminar=<?= $cliente['id_cliente'] ?>" 
-                                           class="btn btn-sm btn-danger"
-                                           onclick="return confirm('¿Eliminar este cliente?')">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="6" class="text-center py-4">No se encontraron clientes</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-            
-            <!-- Paginación -->
-            <?php if ($totalPaginas > 1): ?>
-                <nav aria-label="Paginación">
-                    <ul class="pagination justify-content-center">
-                        <?php if ($pagina > 1): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="?pagina=<?= $pagina-1 ?>&busqueda=<?= urlencode($busqueda) ?>">
-                                    Anterior
-                                </a>
-                            </li>
+
+                <!-- Buscador -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form class="row g-3">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" name="busqueda" value="<?= htmlspecialchars($busqueda) ?>" 
+                                    placeholder="Buscar por nombre o correo">
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-primary w-100" type="submit">
+                                    <i class="fas fa-search me-1"></i> Buscar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Tabla de clientes -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Correo</th>
+                                        <th>Teléfono</th>
+                                        <th>Registro</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (count($clientes) > 0): ?>
+                                        <?php foreach ($clientes as $cliente): ?>
+                                            <tr>
+                                                <td><?= $cliente['id_cliente'] ?></td>
+                                                <td><?= htmlspecialchars($cliente['nombre_cliente']) ?></td>
+                                                <td><?= htmlspecialchars($cliente['correo_cliente']) ?></td>
+                                                <td><?= htmlspecialchars($cliente['telefono_cliente']) ?></td>
+                                                <td><?= date('d/m/Y', strtotime($cliente['fecha_registro'])) ?></td>
+                                                <td class="text-end">
+                                                    <div class="btn-group" role="group">
+                                                        <a href="editar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-sm btn-outline-secondary">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <a href="index.php?eliminar=<?= $cliente['id_cliente'] ?>" 
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            onclick="return confirm('¿Eliminar este cliente?')">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4">No se encontraron clientes</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        <?php if ($totalPaginas > 1): ?>
+                            <nav aria-label="Paginación" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    <?php if ($pagina > 1): ?>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?pagina=<?= $pagina-1 ?>&busqueda=<?= urlencode($busqueda) ?>">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+                                    
+                                    <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
+                                        <li class="page-item <?= $i == $pagina ? 'active' : '' ?>">
+                                            <a class="page-link" href="?pagina=<?= $i ?>&busqueda=<?= urlencode($busqueda) ?>">
+                                                <?= $i ?>
+                                            </a>
+                                        </li>
+                                    <?php endfor; ?>
+                                    
+                                    <?php if ($pagina < $totalPaginas): ?>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?pagina=<?= $pagina+1 ?>&busqueda=<?= urlencode($busqueda) ?>">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+                                </ul>
+                            </nav>
                         <?php endif; ?>
-                        
-                        <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-                            <li class="page-item <?= $i == $pagina ? 'active' : '' ?>">
-                                <a class="page-link" href="?pagina=<?= $i ?>&busqueda=<?= urlencode($busqueda) ?>">
-                                    <?= $i ?>
-                                </a>
-                            </li>
-                        <?php endfor; ?>
-                        
-                        <?php if ($pagina < $totalPaginas): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="?pagina=<?= $pagina+1 ?>&busqueda=<?= urlencode($busqueda) ?>">
-                                    Siguiente
-                                </a>
-                            </li>
-                        <?php endif; ?>
-                    </ul>
-                </nav>
-            <?php endif; ?>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
-        <?php
-require_once __DIR__ . '/../../includes/footer.php';
-?>
+    <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Confirmación antes de eliminar
-        document.querySelectorAll('.btn-danger').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                if (!confirm('¿Está seguro de eliminar este cliente?')) {
-                    e.preventDefault();
-                }
-            });
+        // Toggle sidebar para móviles
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.querySelector('[data-bs-toggle="collapse"]');
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    document.querySelector('#sidebarMenu').classList.toggle('show');
+                });
+            }
         });
     </script>
 </body>
