@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../php/conexion.php';
-require_once __DIR__ . '/../../php/auth.php';
+require_once __DIR__ . '/../../../php/conexion.php';
+require_once __DIR__ . '/../../../php/auth.php';
 
 // Solo administradores pueden gestionar usuarios
 if (!isAdmin()) {
@@ -67,9 +67,7 @@ require_once __DIR__ . '/../../includes/head.php';
 $title = 'Gestión de Usuarios | Nacional Tapizados';
 ?>
 
-    <?php
-require_once __DIR__ . '/../../includes/navbar.php';
-?>
+<?php include __DIR__ . '/../../includes/sidebar.php'; ?>
 
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">

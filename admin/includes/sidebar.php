@@ -62,7 +62,7 @@
             </li>
             <?php endif; ?>
             <li class="nav-item mt-auto">
-                <a class="nav-link logout-link" href="../../../php/logout.php">
+                <a class="nav-link logout-link" href="/--11proyecto/php/logout.php">
                     <i class="fas fa-sign-out-alt me-2"></i>
                     <span>Cerrar Sesión</span>
                 </a>
