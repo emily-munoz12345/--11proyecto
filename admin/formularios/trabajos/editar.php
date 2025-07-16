@@ -1,8 +1,8 @@
 <?php
-require_once __DIR__ . '/../../php/conexion.php';
-require_once __DIR__ . '/../../php/auth.php';
+require_once __DIR__ . '/../../../php/conexion.php';
+require_once __DIR__ . '/../../../php/auth.php';
 
-if (!isAdmin() && !isTecnico()) {
+if (!isAdmin() && !isTechnician()) {
     header('Location: ../dashboard.php');
     exit;
 }
@@ -51,7 +51,7 @@ try {
 
 require_once __DIR__ . '/../../includes/head.php';
 $title = 'Editar Trabajo | Nacional Tapizados';
-include __DIR__ . '/../../includes/navbar.php';
+include __DIR__ . '/../../includes/sidebar.php';
 ?>
 
 <div class="container py-4">

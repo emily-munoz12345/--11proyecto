@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../php/conexion.php';
-require_once __DIR__ . '/../../php/auth.php';
+require_once __DIR__ . '/../../../php/conexion.php';
+require_once __DIR__ . '/../../../php/auth.php';
 
 if (!isAdmin() && !isSeller()) {
     header('Location: ../dashboard.php');
@@ -61,7 +61,7 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
 ?>
 
     <?php
-require_once __DIR__ . '/../../includes/navbar.php';
+require_once __DIR__ . '/../../includes/sidebar.php';
 ?>
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">

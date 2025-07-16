@@ -345,37 +345,30 @@ require_once __DIR__ . '/../php/auth.php';
     <?php include __DIR__ . '/includes/footer.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://kit.fontawesome.com/<?= FONT_AWESOME_KIT ?>.js" crossorigin="anonymous"></script>
-    <script>
-        // Toggle sidebar mejorado
-        document.getElementById('sidebarToggle').addEventListener('click', function() {
-            const sidebar = document.querySelector('.sidebar');
-            const contentWrapper = document.querySelector('.content-wrapper');
-            
-            sidebar.classList.toggle('active');
-            contentWrapper.classList.toggle('sidebar-collapsed');
-            
-            // Opcional: Guardar estado
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('active'));
-        });
+   
+<script>
+    // Toggle sidebar mejorado
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.querySelector('.admin-sidebar');
+        const contentWrapper = document.querySelector('.content-wrapper');
         
-        // Cargar estado al inicio (opcional)
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            document.querySelector('.sidebar').classList.add('active');
-            document.querySelector('.content-wrapper').classList.add('sidebar-collapsed');
+        if (sidebarToggle && sidebar && contentWrapper) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                contentWrapper.classList.toggle('sidebar-collapsed');
+                
+                // Guardar estado en localStorage
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            });
+            
+            // Cargar estado al inicio
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                sidebar.classList.add('collapsed');
+                contentWrapper.classList.add('sidebar-collapsed');
+            }
         }
-
-        // Actualizar dinámicamente los valores del dashboard (ejemplo)
-        document.addEventListener('DOMContentLoaded', function() {
-            // Aquí podrías agregar llamadas AJAX para actualizar los valores
-            // fetch('/api/dashboard-stats')
-            //     .then(response => response.json())
-            //     .then(data => {
-            //         document.querySelector('.summary-value:nth-child(1)').textContent = data.clientes;
-            //         document.querySelector('.summary-value:nth-child(2)').textContent = data.vehiculos;
-            //         // etc...
-            //     });
-        });
-    </script>
+    });
+</script>
 </body>
 </html>

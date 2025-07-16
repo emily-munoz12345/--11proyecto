@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 12-07-2025 a las 02:03:44
+-- Tiempo de generación: 03-07-2025 a las 04:40:16
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -45,7 +45,7 @@ INSERT INTO `clientes` (`id_cliente`, `nombre_cliente`, `correo_cliente`, `telef
 (1, 'María González', 'maria@gmail.com', '3102546859', 'Calle 123 #45-67, Bogotá', '2025-06-26 01:10:35', 'Cliente frecuente'),
 (2, 'Pedro Sánchez', 'pedro@gmail.com', '3215648957', 'Carrera 8 #12-34, Medellín', '2025-06-26 01:10:35', 'Prefiere contacto por WhatsApp'),
 (3, 'Luisa Martínez', 'luisamartinez@gmail.com', '3115468951', 'Avenida 5 #10-20, Cali', '2025-06-27 01:27:30', 'Nuevo cliente'),
-(4, 'Fernando Reyes', 'ferrereyes@gmail.com', '3205648912', 'cr 9 # 58-12', '2025-07-03 03:42:15', 'Cliente Nuevo');
+(4, 'Fernando Reyes', 'ferrereyes@gmail.com', '3124435221', 'cr 9 # 58-12', '2025-06-27 01:26:40', 'Cliente Nuevo');
 
 -- --------------------------------------------------------
 
@@ -93,11 +93,9 @@ CREATE TABLE `cotizaciones` (
 --
 
 INSERT INTO `cotizaciones` (`id_cotizacion`, `id_usuario`, `id_cliente`, `id_vehiculo`, `fecha_cotizacion`, `subtotal_cotizacion`, `valor_adicional`, `iva`, `total_cotizacion`, `estado_cotizacion`, `notas_cotizacion`) VALUES
-(1, 3, 1, 1, '2025-07-03 02:59:42', 180.00, 4000.00, 34.20, 218.20, 'Aprobado', 'Cliente aprobó presupuesto incluyendo el adicional de dos tornillos'),
-(2, 1, 2, 2, '2025-06-26 01:10:35', 120000.00, 0.00, 999.99, 142800.00, 'Pendiente', 'Esperando confirmación'),
-(3, 3, 3, 3, '2025-06-26 01:10:35', 180000.00, 0.00, 999.99, 214200.00, 'Completada', 'Trabajo terminado el 10/06'),
-(4, 1, 4, 4, '2025-07-03 03:28:58', 300.00, 5000.00, 57.00, 362.00, 'Pendiente', 'el cliente aprobó el valor adicional de los 5 broches');
-
+(1, 3, 1, 1, '2025-06-30 02:53:32', 185.00, 35.00, 35.15, 220.15, 'Aprobado', 'Cliente aprobó presupuesto incluyendo el adicional de dos tornillos'),
+(2, 1, 2, 2, '2025-06-26 01:10:35', 120000.00, 0.00, 22800.00, 142800.00, 'Pendiente', 'Esperando confirmación'),
+(3, 3, 3, 3, '2025-06-26 01:10:35', 180000.00, 0.00, 34200.00, 214200.00, 'Completada', 'Trabajo terminado el 10/06');
 -- --------------------------------------------------------
 
 --
@@ -115,12 +113,9 @@ CREATE TABLE `cotizacion_servicios` (
 --
 
 INSERT INTO `cotizacion_servicios` (`id_cotizacion`, `id_servicio`, `precio`) VALUES
-(2, 2, 120000.00),
-(3, 3, 180000.00),
 (1, 3, 180000.00),
-(4, 2, 120000.00),
-(4, 3, 180000.00);
-
+(2, 2, 120000.00),
+(3, 3, 180000.00);
 -- --------------------------------------------------------
 
 --
@@ -146,7 +141,7 @@ INSERT INTO `materiales` (`id_material`, `nombre_material`, `descripcion_materia
 (1, 'Vinilcuero', 'Material sintético de alta durabilidad', 45000.00, 25, 'Tapicería', 'Textiles S.A.', '2025-06-26 01:10:35'),
 (2, 'Espuma HD', 'Espuma de alta densidad 2cm grosor', 18000.00, 15, 'Reparación', 'Espumas Colombia', '2025-06-26 01:10:35'),
 (3, 'Alfombra automotriz', 'Color gris, resistente a humedad', 32000.00, 8, 'Cueros', 'Autopartes Ltda.', '2025-06-28 20:01:20'),
-(4, 'Alcantara', 'Material suave al tacto, lujoso y duradero', 75000.00, 8, 'Telas', 'Estilo Automotriz', '2025-07-03 03:43:29');
+(4, 'Alcantara', 'Material suave al tacto, lujoso y duradero', 75000.00, 12, 'Telas', 'Estilo Automotriz', '2025-06-28 20:30:09');
 
 -- --------------------------------------------------------
 
@@ -192,7 +187,7 @@ INSERT INTO `servicios` (`id_servicio`, `nombre_servicio`, `descripcion_servicio
 (1, 'Tapizado completo', 'Tapizado de asientos en vinilcuero', 350000.00, '3 días', 'Tapicería'),
 (2, 'Cambio de alfombra', 'Instalación de alfombra', 120000.00, '1 día', 'Interior'),
 (3, 'Reparación de asiento', 'Arreglo de estructura y espuma', 180000.00, '2 días', 'Reparación'),
-(4, 'Tratamiento de cuero', 'Aplicación de producto para cuidar cuero de asientos', 100000.00, '1 día', 'Mantenimiento');
+(4, 'Tratamiento de cuero', 'Aplicación de producto para cuidar cuero de asientos', 50000.00, '2 horas', 'Mantenimiento');
 
 -- --------------------------------------------------------
 
@@ -201,26 +196,43 @@ INSERT INTO `servicios` (`id_servicio`, `nombre_servicio`, `descripcion_servicio
 --
 
 CREATE TABLE `trabajos` (
-  `id_trabajos` int(11) NOT NULL,
+  `id_trabajos` int(11) NOT NULL AUTO_INCREMENT,
   `id_cotizacion` int(11) NOT NULL,
   `fecha_inicio` date NOT NULL,
-  `fecha_fin` date NOT NULL,
-  `estado` enum('Pendiente','En progreso','Entregado','Cancelado') NOT NULL,
-  `notas` text NOT NULL,
-  `fotos` varchar(255) NOT NULL
+  `fecha_fin` date DEFAULT NULL,
+  `estado` enum('Pendiente','En progreso','Entregado','Cancelado') NOT NULL DEFAULT 'Pendiente',
+  `notas` text DEFAULT NULL,
+  `fotos` text DEFAULT NULL,
+  PRIMARY KEY (`id_trabajos`),
+  KEY `id_cotizacion` (`id_cotizacion`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 --
 -- Volcado de datos para la tabla `trabajos`
 --
 
 INSERT INTO `trabajos` (`id_trabajos`, `id_cotizacion`, `fecha_inicio`, `fecha_fin`, `estado`, `notas`, `fotos`) VALUES
-(1, 1, '2025-06-10', '2025-06-13', 'Entregado', 'Cliente satisfecho con el trabajo', '/fotos/trabajo1.jpg,/uploads/trabajos/6865fa62a362a_Captura de pantalla (1).png'),
-(2, 2, '2025-06-15', '0000-00-00', 'Pendiente', 'Esperando aprobación final', ''),
-(3, 3, '2025-06-05', '2025-06-07', 'Entregado', 'Se realizó ajuste adicional', '/fotos/trabajo3.jpg');
+(1, 1, '2025-06-10', '2025-06-13', 'Entregado', 'Cliente satisfecho con el trabajo', '/fotos/trabajo1_1.jpg,/fotos/trabajo1_2.jpg'),
+(2, 2, '2025-06-15', NULL, 'Pendiente', 'Esperando aprobación final', NULL),
+(3, 3, '2025-06-05', '2025-06-07', 'Entregado', 'Se realizó ajuste adicional', '/fotos/trabajo3_1.jpg,/fotos/trabajo3_2.jpg,/fotos/trabajo3_3.jpg');
 
 -- --------------------------------------------------------
 
+--
+-- Estructura de tabla para la tabla `trabajo_fotos`
+--
+
+CREATE TABLE IF NOT EXISTS `trabajo_fotos` (
+  `id_foto` int(11) NOT NULL AUTO_INCREMENT,
+  `id_trabajo` int(11) NOT NULL,
+  `ruta_foto` varchar(255) NOT NULL,
+  `fecha_subida` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id_foto`),
+  KEY `id_trabajo` (`id_trabajo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+--
+-- Volcado de datos para la tabla `trabajo_fotos`
+--
+INSERT INTO `trabajo_fotos` (`id_trabajo`, `ruta_foto`) VALUES
 --
 -- Estructura de tabla para la tabla `usuarios`
 --
@@ -243,7 +255,7 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id_usuario`, `id_rol`, `username_usuario`, `contrasena_usuario`, `nombre_completo`, `correo_usuario`, `telefono_usuario`, `fecha_creacion`, `activo_usuario`, `ultima_actividad`) VALUES
-(1, 1, 'admin1', 'erosramazoti', 'Jose Alonso', 'alonso@tallertapiceria.com', '3204569555', '2025-07-08 01:51:51', 'Activo', '2025-07-07 20:51:51'),
+(1, 1, 'admin1', 'erosramazoti', 'Jose Alonso', 'alonso@tallertapiceria.com', '3204569555', '2025-06-29 02:14:06', 'Activo', '2025-06-28 21:14:06'),
 (2, 2, 'tecnico1', 'argos1.3', 'Johan Sebastian', 'johan@tallertapiceria.com', '3625489561', '2025-06-30 02:14:54', 'Activo', '2025-06-26 19:51:53'),
 (3, 3, 'vendedor1', 'eros ramazoti', 'Yamm Alonso', 'yamm@tallertapiceria.com', '3125468579', '2025-06-29 02:10:56', 'Activo', '2025-06-28 21:10:56'),
 (4, 1, 'admin2', 'argos 1.3', 'Edith Diasmin', 'edit@gmail.com', '3122654845', '2025-06-28 22:02:00', 'Activo', '2025-06-28 17:02:00');
@@ -268,10 +280,9 @@ CREATE TABLE `vehiculos` (
 
 INSERT INTO `vehiculos` (`id_vehiculo`, `marca_vehiculo`, `modelo_vehiculo`, `placa_vehiculo`, `notas_vehiculo`) VALUES
 (1, 'Toyota', 'Corolla', 'ABC123', 'Color blanco, año 2020'),
-(2, 'Chevrolet', 'Spark', 'DEF654', 'Color azul, año 2018'),
+(2, 'Chevrolet', 'Spark', 'DEF456', 'Color azul, año 2018'),
 (3, 'Renault', 'Logan', 'GHI789', 'Color gris, año 2019'),
-(4, 'Honda', 'Civic', 'JKL9101', 'carro gris');
-
+(4, 'Honda', 'Civic', 'JKL9101', 'carro rojo');
 --
 -- Índices para tablas volcadas
 --
@@ -351,49 +362,49 @@ ALTER TABLE `vehiculos`
 -- AUTO_INCREMENT de la tabla `clientes`
 --
 ALTER TABLE `clientes`
-  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `cotizaciones`
 --
 ALTER TABLE `cotizaciones`
-  MODIFY `id_cotizacion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_cotizacion` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `materiales`
 --
 ALTER TABLE `materiales`
-  MODIFY `id_material` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_material` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `roles`
 --
 ALTER TABLE `roles`
-  MODIFY `id_rol` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_rol` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `servicios`
 --
 ALTER TABLE `servicios`
-  MODIFY `id_servicio` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_servicio` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `trabajos`
 --
 ALTER TABLE `trabajos`
-  MODIFY `id_trabajos` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_trabajos` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `vehiculos`
 --
 ALTER TABLE `vehiculos`
-  MODIFY `id_vehiculo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id_vehiculo` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- Restricciones para tablas volcadas

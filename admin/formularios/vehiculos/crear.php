@@ -2,8 +2,8 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-require_once __DIR__ . '/../../php/conexion.php';
-require_once __DIR__ . '/../../php/auth.php';
+require_once __DIR__ . '/../../../php/conexion.php';
+require_once __DIR__ . '/../../../php/auth.php';
 
 // Verificar permisos
 if (!isAdmin() && !isSeller()) {
@@ -25,7 +25,7 @@ try {
 
 require_once __DIR__ . '/../../includes/head.php';
 $title = 'Nacional Tapizados - Nuevo Vehículo';
-include __DIR__ . '/../../includes/navbar.php';
+include __DIR__ . '/../../includes/sidebar.php';
 ?>
 
 <div class="container py-4">

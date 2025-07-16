@@ -2,8 +2,8 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-require_once __DIR__ . '/../../php/conexion.php';
-require_once __DIR__ . '/../../php/auth.php';
+require_once __DIR__ . '/../../../php/conexion.php';
+require_once __DIR__ . '/../../../php/auth.php';
 
 if (!isAdmin()) {
     header('Location: ../dashboard.php');
@@ -14,7 +14,7 @@ if (!isAdmin()) {
 require_once __DIR__ . '/../../includes/head.php';
 $title = 'Nacional Tapizados - Nuevo Material';
 ?>
-    <?php include '../../includes/navbar.php'; ?>
+    <?php include '../../includes/sidebar.php'; ?>
     
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
