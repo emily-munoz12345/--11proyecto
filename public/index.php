@@ -41,9 +41,6 @@ $title = 'Nacional Tapizados - Expertos en Tapicería Automotriz';
             </div>
             <h3 class="h4 fw-bold mb-3">Tapizado Completo</h3>
             <p class="text-muted mb-4">Renovación total con materiales de primera calidad y diseño personalizado.</p>
-            <a href="servicios.php" class="btn btn-link text-primary text-decoration-none fw-bold">
-              Más información <i class="fas fa-arrow-right ms-2"></i>
-            </a>
           </div>
         </div>
       </div>
@@ -57,9 +54,6 @@ $title = 'Nacional Tapizados - Expertos en Tapicería Automotriz';
             </div>
             <h3 class="h4 fw-bold mb-3">Reparaciones</h3>
             <p class="text-muted mb-4">Solución profesional para roturas y desgastes en los asientos.</p>
-            <a href="servicios.php" class="btn btn-link text-primary text-decoration-none fw-bold">
-              Más información <i class="fas fa-arrow-right ms-2"></i>
-            </a>
           </div>
         </div>
       </div>
@@ -73,9 +67,6 @@ $title = 'Nacional Tapizados - Expertos en Tapicería Automotriz';
             </div>
             <h3 class="h4 fw-bold mb-3">Impermeabilización</h3>
             <p class="text-muted mb-4">Protección contra líquidos y manchas para mantener tus asientos.</p>
-            <a href="servicios.php" class="btn btn-link text-primary text-decoration-none fw-bold">
-              Más información <i class="fas fa-arrow-right ms-2"></i>
-            </a>
           </div>
         </div>
       </div>
@@ -89,9 +80,6 @@ $title = 'Nacional Tapizados - Expertos en Tapicería Automotriz';
             </div>
             <h3 class="h4 fw-bold mb-3">Personalización</h3>
             <p class="text-muted mb-4">Diseños exclusivos para darle un toque único a tu vehículo.</p>
-            <a href="servicios.php" class="btn btn-link text-primary text-decoration-none fw-bold">
-              Más información <i class="fas fa-arrow-right ms-2"></i>
-            </a>
           </div>
         </div>
       </div>
@@ -206,11 +194,6 @@ $title = 'Nacional Tapizados - Expertos en Tapicería Automotriz';
               "Excelente trabajo en el tapizado de mi camioneta. Quedó como nueva y el trato fue impecable."
             </blockquote>
             <div class="testimonio-autor d-flex align-items-center">
-              <img src="/--11proyecto/public/assets/images/cliente1.jpg" class="rounded-circle me-3" width="60" height="60" alt="Juan Pérez">
-              <div>
-                <h4 class="h6 fw-bold mb-0">Juan Pérez</h4>
-                <small class="text-muted">Toyota Hilux</small>
-              </div>
             </div>
           </div>
         </div>
@@ -227,11 +210,6 @@ $title = 'Nacional Tapizados - Expertos en Tapicería Automotriz';
               "La personalización que hicieron a mi auto superó todas mis expectativas. ¡Recomendados!"
             </blockquote>
             <div class="testimonio-autor d-flex align-items-center">
-              <img src="/--11proyecto/public/assets/images/cliente2.jpg" class="rounded-circle me-3" width="60" height="60" alt="María González">
-              <div>
-                <h4 class="h6 fw-bold mb-0">María González</h4>
-                <small class="text-muted">Volkswagen Beetle</small>
-              </div>
             </div>
           </div>
         </div>
@@ -248,11 +226,6 @@ $title = 'Nacional Tapizados - Expertos en Tapicería Automotriz';
               "Profesionales desde el primer contacto. El resultado final fue exactamente lo que quería."
             </blockquote>
             <div class="testimonio-autor d-flex align-items-center">
-              <img src="/--11proyecto/public/assets/images/cliente3.jpg" class="rounded-circle me-3" width="60" height="60" alt="Carlos Rojas">
-              <div>
-                <h4 class="h6 fw-bold mb-0">Carlos Rojas</h4>
-                <small class="text-muted">Ford Mustang</small>
-              </div>
             </div>
           </div>
         </div>

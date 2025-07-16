@@ -8,22 +8,25 @@
         </div>
         <p class="footer-about">Más de 25 años transformando vehículos con trabajos de tapicería de alta calidad y diseño personalizado.</p>
         <div class="social-icons">
-          <a href="#"><i class="fab fa-facebook-f"></i></a>
-          <a href="#"><i class="fab fa-instagram"></i></a>
-          <a href="#"><i class="fab fa-whatsapp"></i></a>
+                          <a href="(aca se pega el link del perfil del usuario)" 
+                    class="btn btn-primary" 
+                    target="_blank">
+                <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="https://instagram.com/(nombre de usuario)" 
+                    class="btn btn-danger" 
+                    target="_blank">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                          <a href="https://wa.me/573204948958?text=Hola%2C%20quiero%20más%20información" 
+                    class="btn btn-success" 
+                    target="_blank">
+                    <i class="fab fa-whatsapp"></i> 
+                </a>
         </div>
       </div>
 
-      <div class="footer-col">
-        <h3 class="footer-title">Servicios</h3>
-        <ul class="footer-links">
-          <li><a href="#">Tapizado completo</a></li>
-          <li><a href="#">Reparaciones</a></li>
-          <li><a href="#">Impermeabilización</a></li>
-          <li><a href="#">Personalización</a></li>
-          <li><a href="#">Restauración clásica</a></li>
-        </ul>
-      </div>
+
 
       <div class="footer-col">
         <h3 class="footer-title">Contacto</h3>
