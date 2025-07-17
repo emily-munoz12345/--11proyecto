@@ -13,7 +13,7 @@
                     target="_blank">
                 <i class="fab fa-facebook-f"></i>
                 </a>
-                <a href="https://instagram.com/(nombre de usuario)" 
+                <a href="https://instagram.com/nacionalde_tapizados/" 
                     class="btn btn-danger" 
                     target="_blank">
                     <i class="fab fa-instagram"></i>

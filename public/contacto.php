@@ -18,10 +18,9 @@ require_once __DIR__ . '/includes/navbar.php';
                     <div class="card-body">
                         <h3 class="h5 mb-3"><i class="fas fa-map-marker-alt text-primary me-2"></i> Visítanos</h3>
                         <address class="mb-0">
-                            Av. Principal 1234<br>
-                            Col. Industrial<br>
+                            Cr 13 # 4.43<br>
                             Ciudad, Estado 12345<br>
-                            México
+                            Colombia<br>
                         </address>
                     </div>
                 </div>
@@ -29,16 +28,15 @@ require_once __DIR__ . '/includes/navbar.php';
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body">
                         <h3 class="h5 mb-3"><i class="fas fa-phone-alt text-primary me-2"></i> Llámanos</h3>
-                        <p class="mb-2"><strong>Ventas:</strong> <a href="tel:+525512345678">55 1234 5678</a></p>
-                        <p class="mb-0"><strong>Soporte:</strong> <a href="tel:+525598765432">55 9876 5432</a></p>
+                        <p class="mb-2"><strong>Ventas:</strong> <a href="tel:+525512345678">57 1234 5678</a></p>
+                        <p class="mb-0"><strong>Soporte:</strong> <a href="tel:+525598765432">57 9876 5432</a></p>
                     </div>
                 </div>
                 
                 <div class="card border-0 shadow-sm">
                     <div class="card-body">
                         <h3 class="h5 mb-3"><i class="fas fa-envelope text-primary me-2"></i> Escríbenos</h3>
-                        <p class="mb-2"><strong>General:</strong> <a href="mailto:info@nacionaltapizados.com">info@nacionaltapizados.com</a></p>
-                        <p class="mb-0"><strong>Cotizaciones:</strong> <a href="mailto:cotizaciones@nacionaltapizados.com">cotizaciones@nacionaltapizados.com</a></p>
+                        <p class="mb-2"><strong>General:</strong> <a href="mailto:info@nacionaltapizados.com">olfonsojose@gmail.com</a></p>
                     </div>
                 </div>
             </div>
@@ -96,7 +94,7 @@ require_once __DIR__ . '/includes/navbar.php';
         </div>
         
         <div class="row mt-5">
-            <div class="col-md-4 mb-4 mb-md-0">
+            <div class="col-md-6 mb-6 mb-md-0">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
                         <div class="icon-box bg-primary bg-opacity-10 text-primary mb-3">
@@ -111,7 +109,7 @@ require_once __DIR__ . '/includes/navbar.php';
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 mb-4 mb-md-0">
+            <div class="col-md-6 mb-6 mb-md-0">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
                         <div class="icon-box bg-primary bg-opacity-10 text-primary mb-3">
@@ -122,17 +120,7 @@ require_once __DIR__ . '/includes/navbar.php';
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body text-center p-4">
-                        <div class="icon-box bg-primary bg-opacity-10 text-primary mb-3">
-                            <i class="fas fa-parking fa-2x"></i>
-                        </div>
-                        <h3 class="h5">Estacionamiento</h3>
-                        <p class="mb-0">Contamos con área de estacionamiento seguro para nuestros clientes durante la evaluación y entrega de su vehículo.</p>
-                    </div>
-                </div>
-            </div>
+
         </div>
     </div>
 </main>

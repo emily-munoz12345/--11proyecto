@@ -110,7 +110,7 @@ require_once __DIR__ . '/includes/navbar.php';
                                     <div class="icon-box bg-primary bg-opacity-10 text-primary mb-3">
                                         <i class="fas fa-medal fa-2x"></i>
                                     </div>
-                                    <h5 class="card-title">Calidad Artesanal</h5>
+                                    <h5 class="card-title">Calidad</h5>
                                     <p class="card-text">Cada pieza es tratada con el mismo cuidado y atención al detalle que caracteriza el trabajo artesanal.</p>
                                 </div>
                             </div>
