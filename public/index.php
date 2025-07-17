@@ -85,6 +85,9 @@ $title = 'Nacional Tapizados - Expertos en Tapicería Automotriz';
       </div>
     </div>
   </div>
+      <div class="text-center mt-5">
+      <a href="servicios.php" class="btn btn-outline-primary btn-lg px-4 py-2">Mas informacion</a>
+    </div>
 </section>
 
 <!-- Sobre Nosotros -->

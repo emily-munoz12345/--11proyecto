@@ -81,17 +81,22 @@ require_once __DIR__ . '/includes/navbar.php';
             </div>
         </div>
         
-        <div class="row mt-5">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-0">
-                        <div class="ratio ratio-16x9">
-                            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d123456.78901234567!2d-99.12345678901234!3d19.123456789012345!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTnCsDA3JzI0LjQiTiA5OcKwMDcnMjQuNCJX!5e0!3m2!1sen!2smx!4v1234567890123!5m2!1sen!2smx" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-                        </div>
-                    </div>
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe 
+                        src="https://maps.google.com/maps?q=Cra.+13+%23+4-43,+Tunja,+Boyac%C3%A1&output=embed"
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy">
+                    </iframe>
                 </div>
             </div>
         </div>
+    </div>
+</div>
         
         <div class="row mt-5">
             <div class="col-md-6 mb-6 mb-md-0">
