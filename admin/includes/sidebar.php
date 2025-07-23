@@ -1,12 +1,8 @@
 <aside class="admin-sidebar">
-    <!-- Botón de toggle para móviles -->
-    <span class="sidebar-toggle d-flex d-lg-none position-absolute end-0 top-0 mt-3 me-3">
-        <i class="hamburger align-self-center"></i>
-    </span>
 
     <div class="sidebar-header text-center py-4">
         <h4 class="sidebar-title">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-2.5">
                 <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path>
                 <circle cx="7" cy="17" r="2"></circle>
                 <path d="M9 17h6"></path>
@@ -25,11 +21,9 @@
                         <path d="m12 14 4-4"></path>
                         <path d="M3.34 19a10 10 0 1 1 17.32 0"></path>
                     </svg>
-                    <span>Dashboard</span>
+                    <span>Inicio</span>
                 </a>
             </li>
-            
-            <li class="sidebar-divider">Gestión</li>
             
             <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/formularios/clientes/index.php">
@@ -148,7 +142,7 @@
         align-items: center;
         justify-content: center;
         border-radius: 50%;
-        background: rgba(0,0,0,0.1);
+        background: hsla(0, 66.30%, 83.70%, 0.83);
         z-index: 10;
         transition: all 0.3s ease;
     }

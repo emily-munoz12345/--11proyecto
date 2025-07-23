@@ -11,11 +11,11 @@
             </div>
             
             <nav class="footer-links">
-                <a href="#" class="footer-link" data-bs-toggle="modal" data-bs-target="#helpModal">
+                <a href="/--11proyecto/admin/ayuda.php" class="footer-link" data-bs-toggle="modal" data-bs-target="#helpModal">
                     <i class="fas fa-question-circle"></i>
                     <span>Ayuda</span>
                 </a>
-                <a href="#" class="footer-link">
+                <a href="/--11proyecto/admin/ajustes.php" class="footer-link">
                     <i class="fas fa-cog"></i>
                     <span>Ajustes</span>
                 </a>
