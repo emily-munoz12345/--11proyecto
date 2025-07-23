@@ -1,9 +1,38 @@
-<?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
-require_once __DIR__ . '/../php/conexion.php';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<?php
 require_once __DIR__ . '/../php/auth.php';
+require_once __DIR__ . '/../php/conexion.php';
+
+requireAuth();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -11,6 +40,18 @@ require_once __DIR__ . '/../php/auth.php';
     <?php include __DIR__ . '/includes/head.php'; ?>
     <title>Dashboard - Sistema de Tapicería</title>
     <style>
+        .admin-body {
+            background-color: #f8f9fa;
+        }
+        .content-wrapper {
+            margin-left: 250px;
+            transition: all 0.3s;
+            min-height: 100vh;
+        }
+        .sidebar-collapsed .content-wrapper {
+            margin-left: 80px;
+        }
+
         /* ===== ESTILOS DEL DASHBOARD ===== */
         .admin-body {
             background-color: var(--neutral-light);
@@ -244,9 +285,8 @@ require_once __DIR__ . '/../php/auth.php';
     <!-- Sidebar -->
     <?php include __DIR__ . '/includes/sidebar.php'; ?>
 
-    <!-- Main Content Wrapper -->
+    <!-- Main Content -->
     <div class="content-wrapper">
-        <!-- Main Content -->
         <main class="main-content">
             <div class="dashboard-header">
                 <button class="sidebar-toggle d-lg-none" id="sidebarToggle">
@@ -342,33 +382,12 @@ require_once __DIR__ . '/../php/auth.php';
         </main>
     </div>
 
-    <?php include __DIR__ . '/includes/footer.php'; ?>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-   
-<script>
-    // Toggle sidebar mejorado
-    document.addEventListener('DOMContentLoaded', function() {
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebar = document.querySelector('.admin-sidebar');
-        const contentWrapper = document.querySelector('.content-wrapper');
-        
-        if (sidebarToggle && sidebar && contentWrapper) {
-            sidebarToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('collapsed');
-                contentWrapper.classList.toggle('sidebar-collapsed');
-                
-                // Guardar estado en localStorage
-                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-            });
-            
-            // Cargar estado al inicio
-            if (localStorage.getItem('sidebarCollapsed') === 'true') {
-                sidebar.classList.add('collapsed');
-                contentWrapper.classList.add('sidebar-collapsed');
-            }
-        }
-    });
-</script>
+    <script>
+        // Toggle sidebar
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.querySelector('.admin-sidebar').classList.toggle('collapsed');
+            document.querySelector('.content-wrapper').classList.toggle('sidebar-collapsed');
+        });
+    </script>
 </body>
 </html>
