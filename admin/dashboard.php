@@ -1,283 +1,123 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <?php
 require_once __DIR__ . '/../php/auth.php';
 require_once __DIR__ . '/../php/conexion.php';
 
 requireAuth();
+
+// Función auxiliar para obtener conteos con PDO
+function getCount($conex, $table) {
+    try {
+        $stmt = $conex->query("SELECT COUNT(*) as total FROM $table");
+        return $stmt->fetch()['total'];
+    } catch (PDOException $e) {
+        error_log("Error al contar registros en $table: " . $e->getMessage());
+        return 0;
+    }
+}
+
+// Obtener el rol del usuario actual
+$userRole = getUserRole();
+
+// URLs de redirección (ajusta según tu estructura de archivos)
+$urls = [
+    'clientes' => 'clientes/listar_clientes.php',
+    'vehiculos' => 'vehiculos/listar_vehiculos.php',
+    'cotizaciones' => 'cotizaciones/listar_cotizaciones.php',
+    'materiales' => 'materiales/listar_materiales.php',
+    'servicios' => 'servicios/listar_servicios.php',
+    'trabajos' => 'trabajos/listar_trabajos.php',
+    'usuarios' => 'usuarios/listar_usuarios.php',
+    'roles' => 'roles/listar_roles.php'
+];
+
+// Definir qué tarjetas puede ver cada rol
+$allowedCards = [
+    'Administrador' => ['clientes', 'vehiculos', 'cotizaciones', 'materiales', 'servicios', 'trabajos', 'usuarios', 'roles'],
+    'Técnico' => ['clientes', 'vehiculos', 'trabajos', 'materiales'],
+    'Vendedor' => ['clientes', 'vehiculos', 'cotizaciones', 'servicios']
+];
+
+// Obtener solo los conteos necesarios según el rol
+$counts = [];
+foreach ($allowedCards[$userRole] as $card) {
+    $counts[$card] = getCount($conex, $card);
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <?php include __DIR__ . '/includes/head.php'; ?>
-    <title>Dashboard - Sistema de Tapicería</title>
+    <title>Panel de control - Sistema de Tapicería</title>
     <style>
-        .admin-body {
-            background-color: #f8f9fa;
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
         }
-        .content-wrapper {
-            margin-left: 250px;
-            transition: all 0.3s;
-            min-height: 100vh;
-        }
-        .sidebar-collapsed .content-wrapper {
-            margin-left: 80px;
-        }
-
-        /* ===== ESTILOS DEL DASHBOARD ===== */
-        .admin-body {
-            background-color: var(--neutral-light);
-            color: var(--text-dark);
-        }
-
-        /* Contenedor principal */
-        .content-wrapper {
-            margin-left: var(--sidebar-width);
-            transition: var(--transition-normal);
-            min-height: 100vh;
-            background-color: var(--neutral-light);
-        }
-
-        .content-wrapper.sidebar-collapsed {
-            margin-left: 80px;
-        }
-
-        /* Cabecera del dashboard */
-        .dashboard-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: var(--space-md) var(--space-lg);
-            background-color: var(--text-light);
-            box-shadow: var(--shadow-sm);
-            height: var(--header-height);
-            position: sticky;
-            top: 0;
-            z-index: var(--z-header);
-        }
-
-        .sidebar-toggle {
-            background: none;
-            border: none;
-            color: var(--primary-dark);
-            font-size: 1.25rem;
-            cursor: pointer;
-            transition: var(--transition-fast);
-        }
-
-        .sidebar-toggle:hover {
-            color: var(--accent-color);
-        }
-
-        .dashboard-title {
-            color: var(--primary-dark);
-            font-weight: 600;
-            margin: 0;
-        }
-
-        /* Información de usuario */
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: var(--space-md);
-        }
-
-        .user-greeting {
-            color: var(--text-dark);
-            font-size: 0.95rem;
-        }
-
-        .user-greeting strong {
-            color: var(--primary-dark);
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--accent-color);
-            color: var(--text-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-        }
-
-        /* Contenido principal */
-        .main-content {
-            padding: var(--space-lg);
-        }
-
-        .dashboard-content {
-            margin-top: var(--space-lg);
-        }
-
-        /* Tarjetas principales */
-        .dashboard-card {
-            background-color: var(--text-light);
-            border-radius: 8px;
-            box-shadow: var(--shadow-sm);
-            border: var(--border-soft);
-            margin-bottom: var(--space-lg);
-            transition: var(--transition-normal);
-        }
-
-        .dashboard-card:hover {
-            box-shadow: var(--shadow-md);
-        }
-
-        .card-body {
-            padding: var(--space-lg);
-        }
-
-        .card-title {
-            color: var(--primary-dark);
-            font-weight: 600;
-            margin-bottom: var(--space-md);
-        }
-
-        .user-role {
-            background-color: var(--accent-color);
-            color: var(--text-light);
-            font-weight: 500;
-            padding: var(--space-xs) var(--space-sm);
-            border-radius: 20px;
-        }
-
-        /* Tarjetas de resumen */
+        
         .summary-card {
             background-color: var(--text-light);
             border-radius: 8px;
             box-shadow: var(--shadow-sm);
             border: var(--border-soft);
-            height: 100%;
             transition: var(--transition-normal);
+            height: 100%;
+            cursor: pointer;
         }
-
+        
         .summary-card:hover {
             transform: translateY(-5px);
             box-shadow: var(--shadow-md);
+            background-color: #f8f9fa;
         }
-
-        .summary-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--space-md);
+        
+        .summary-card a {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+            padding: 1rem;
         }
-
-        .summary-title {
-            color: var(--secondary-dark);
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-bottom: var(--space-xs);
-        }
-
-        .summary-value {
-            color: var(--primary-dark);
-            font-weight: 700;
-            font-size: 1.75rem;
-            margin: 0;
-        }
-
-        .summary-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: var(--neutral-medium);
-            color: var(--primary-dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-        }
-
-        /* Efectos específicos para cada tarjeta */
-        .summary-card:nth-child(1) .summary-icon {
+        
+        /* Colores para tarjetas */
+        .card-clientes .summary-icon {
             background-color: rgba(94, 48, 35, 0.1);
             color: var(--primary-dark);
         }
-
-        .summary-card:nth-child(2) .summary-icon {
+        
+        .card-vehiculos .summary-icon {
             background-color: rgba(140, 74, 63, 0.1);
             color: var(--secondary-dark);
         }
-
-        .summary-card:nth-child(3) .summary-icon {
+        
+        .card-cotizaciones .summary-icon {
             background-color: rgba(181, 113, 87, 0.1);
             color: var(--accent-color);
         }
-
-        .summary-card:nth-child(4) .summary-icon {
+        
+        .card-materiales .summary-icon {
             background-color: rgba(212, 163, 115, 0.1);
             color: var(--accent-light);
         }
-
-        /* Responsive */
-        @media (max-width: 992px) {
-            .content-wrapper {
-                margin-left: 0;
-            }
-            
-            .content-wrapper.sidebar-collapsed {
-                margin-left: 0;
-            }
-            
-            .dashboard-header {
-                padding: var(--space-md);
-            }
-            
-            .user-greeting {
-                display: none;
-            }
+        
+        .card-servicios .summary-icon {
+            background-color: rgba(94, 114, 228, 0.1);
+            color: #5e72e4;
         }
-
-        @media (max-width: 768px) {
-            .main-content {
-                padding: var(--space-md);
-            }
-            
-            .card-body {
-                padding: var(--space-md);
-            }
-            
-            .summary-value {
-                font-size: 1.5rem;
-            }
-            
-            .summary-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 1rem;
-            }
+        
+        .card-trabajos .summary-icon {
+            background-color: rgba(245, 54, 92, 0.1);
+            color: #f5365c;
+        }
+        
+        .card-usuarios .summary-icon {
+            background-color: rgba(45, 206, 137, 0.1);
+            color: #2dce89;
+        }
+        
+        .card-roles .summary-icon {
+            background-color: rgba(255, 159, 67, 0.1);
+            color: #ff9f43;
         }
     </style>
 </head>
@@ -307,72 +147,128 @@ requireAuth();
                         <div class="dashboard-card">
                             <div class="card-body">
                                 <h5 class="card-title">Resumen del Sistema</h5>
-                                <p>Rol actual: <span class="badge user-role"><?= htmlspecialchars(getUserRole()) ?></span></p>
+                                <p>Rol actual: <span class="badge user-role"><?= htmlspecialchars($userRole) ?></span></p>
                                 
-                                <div class="row mt-4">
-                                    <div class="col-md-3 mb-3">
-                                        <div class="summary-card">
-                                            <div class="card-body">
-                                                <div class="summary-content">
-                                                    <div>
-                                                        <h6 class="summary-title">Clientes</h6>
-                                                        <h3 class="summary-value">3</h3>
-                                                    </div>
-                                                    <div class="summary-icon">
-                                                        <i class="fas fa-users"></i>
-                                                    </div>
-                                                </div>
+                                <div class="summary-grid">
+                                    <?php if (in_array('clientes', $allowedCards[$userRole])): ?>
+                                    <!-- Clientes -->
+                                    <div class="summary-card card-clientes" onclick="window.location.href='<?= $urls['clientes'] ?>'">
+                                        <div class="summary-content">
+                                            <div>
+                                                <h6 class="summary-title">Clientes</h6>
+                                                <h3 class="summary-value"><?= $counts['clientes'] ?></h3>
+                                            </div>
+                                            <div class="summary-icon">
+                                                <i class="fas fa-users"></i>
                                             </div>
                                         </div>
                                     </div>
+                                    <?php endif; ?>
                                     
-                                    <div class="col-md-3 mb-3">
-                                        <div class="summary-card">
-                                            <div class="card-body">
-                                                <div class="summary-content">
-                                                    <div>
-                                                        <h6 class="summary-title">Vehículos</h6>
-                                                        <h3 class="summary-value">3</h3>
-                                                    </div>
-                                                    <div class="summary-icon">
-                                                        <i class="fas fa-car"></i>
-                                                    </div>
-                                                </div>
+                                    <?php if (in_array('vehiculos', $allowedCards[$userRole])): ?>
+                                    <!-- Vehículos -->
+                                    <div class="summary-card card-vehiculos" onclick="window.location.href='<?= $urls['vehiculos'] ?>'">
+                                        <div class="summary-content">
+                                            <div>
+                                                <h6 class="summary-title">Vehículos</h6>
+                                                <h3 class="summary-value"><?= $counts['vehiculos'] ?></h3>
+                                            </div>
+                                            <div class="summary-icon">
+                                                <i class="fas fa-car"></i>
                                             </div>
                                         </div>
                                     </div>
+                                    <?php endif; ?>
                                     
-                                    <div class="col-md-3 mb-3">
-                                        <div class="summary-card">
-                                            <div class="card-body">
-                                                <div class="summary-content">
-                                                    <div>
-                                                        <h6 class="summary-title">Cotizaciones</h6>
-                                                        <h3 class="summary-value">3</h3>
-                                                    </div>
-                                                    <div class="summary-icon">
-                                                        <i class="fas fa-file-invoice-dollar"></i>
-                                                    </div>
-                                                </div>
+                                    <?php if (in_array('cotizaciones', $allowedCards[$userRole])): ?>
+                                    <!-- Cotizaciones -->
+                                    <div class="summary-card card-cotizaciones" onclick="window.location.href='<?= $urls['cotizaciones'] ?>'">
+                                        <div class="summary-content">
+                                            <div>
+                                                <h6 class="summary-title">Cotizaciones</h6>
+                                                <h3 class="summary-value"><?= $counts['cotizaciones'] ?></h3>
+                                            </div>
+                                            <div class="summary-icon">
+                                                <i class="fas fa-file-invoice-dollar"></i>
                                             </div>
                                         </div>
                                     </div>
+                                    <?php endif; ?>
                                     
-                                    <div class="col-md-3 mb-3">
-                                        <div class="summary-card">
-                                            <div class="card-body">
-                                                <div class="summary-content">
-                                                    <div>
-                                                        <h6 class="summary-title">Materiales</h6>
-                                                        <h3 class="summary-value">3</h3>
-                                                    </div>
-                                                    <div class="summary-icon">
-                                                        <i class="fas fa-archive"></i>
-                                                    </div>
-                                                </div>
+                                    <?php if (in_array('materiales', $allowedCards[$userRole])): ?>
+                                    <!-- Materiales -->
+                                    <div class="summary-card card-materiales" onclick="window.location.href='<?= $urls['materiales'] ?>'">
+                                        <div class="summary-content">
+                                            <div>
+                                                <h6 class="summary-title">Materiales</h6>
+                                                <h3 class="summary-value"><?= $counts['materiales'] ?></h3>
+                                            </div>
+                                            <div class="summary-icon">
+                                                <i class="fas fa-archive"></i>
                                             </div>
                                         </div>
                                     </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (in_array('servicios', $allowedCards[$userRole])): ?>
+                                    <!-- Servicios -->
+                                    <div class="summary-card card-servicios" onclick="window.location.href='<?= $urls['servicios'] ?>'">
+                                        <div class="summary-content">
+                                            <div>
+                                                <h6 class="summary-title">Servicios</h6>
+                                                <h3 class="summary-value"><?= $counts['servicios'] ?></h3>
+                                            </div>
+                                            <div class="summary-icon">
+                                                <i class="fas fa-concierge-bell"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (in_array('trabajos', $allowedCards[$userRole])): ?>
+                                    <!-- Trabajos -->
+                                    <div class="summary-card card-trabajos" onclick="window.location.href='<?= $urls['trabajos'] ?>'">
+                                        <div class="summary-content">
+                                            <div>
+                                                <h6 class="summary-title">Trabajos</h6>
+                                                <h3 class="summary-value"><?= $counts['trabajos'] ?></h3>
+                                            </div>
+                                            <div class="summary-icon">
+                                                <i class="fas fa-tools"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (in_array('usuarios', $allowedCards[$userRole])): ?>
+                                    <!-- Usuarios -->
+                                    <div class="summary-card card-usuarios" onclick="window.location.href='<?= $urls['usuarios'] ?>'">
+                                        <div class="summary-content">
+                                            <div>
+                                                <h6 class="summary-title">Usuarios</h6>
+                                                <h3 class="summary-value"><?= $counts['usuarios'] ?></h3>
+                                            </div>
+                                            <div class="summary-icon">
+                                                <i class="fas fa-user-shield"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (in_array('roles', $allowedCards[$userRole])): ?>
+                                    <!-- Roles -->
+                                    <div class="summary-card card-roles" onclick="window.location.href='<?= $urls['roles'] ?>'">
+                                        <div class="summary-content">
+                                            <div>
+                                                <h6 class="summary-title">Roles</h6>
+                                                <h3 class="summary-value"><?= $counts['roles'] ?></h3>
+                                            </div>
+                                            <div class="summary-icon">
+                                                <i class="fas fa-user-tag"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
