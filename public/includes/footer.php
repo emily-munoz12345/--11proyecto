@@ -122,10 +122,15 @@
     margin-bottom: var(--space-md);
     line-height: 1.6;
   }
-
-  .social-icons {
-    display: flex;
-    gap: var(--space-md);
+  .social-icons a i {
+    color: #996515; 
+     /* Opcional: añade transición para efecto hover */
+    transition: color 0.3s ease;
+  }
+  
+  /* Opcional: cambia el color al pasar el mouse */
+  .social-icons a:hover i {
+    color: #B8860B;
   }
 
   .footer-title {

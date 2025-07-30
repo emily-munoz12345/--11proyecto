@@ -22,7 +22,7 @@
     top: 0;
     bottom: 0;
     z-index: 1000; /* Asegura que esté por encima */
-    width: 250px;
+    width: 300px;
     background: #2c3e50;
     color: white;
     transition: all 0.3s;

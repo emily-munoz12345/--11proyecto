@@ -1,3 +1,4 @@
+
 <aside class="admin-sidebar">
 
     <div class="sidebar-header text-center py-4">
@@ -142,13 +143,13 @@
         align-items: center;
         justify-content: center;
         border-radius: 50%;
-        background: hsla(0, 66.30%, 83.70%, 0.83);
+        background: rgba(0,0,0,0.2);
         z-index: 10;
         transition: all 0.3s ease;
     }
     
     .sidebar-toggle:hover {
-        background: rgba(0,0,0,0.2);
+        background: hsla(0, 66.30%, 83.70%, 0.83);
     }
     
     .hamburger {
