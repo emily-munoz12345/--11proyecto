@@ -120,79 +120,75 @@ require_once __DIR__ . '/includes/navbar.php';
             </div>
         </div>
 
- <!-- Proceso de Trabajo - Diseño Creativo -->
-<div class="process-wrapper py-5">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="fw-bold text-uppercase">Nuestro Proceso de Trabajo</h2>
-            <p class="lead">Nuestra cadena de valor en tapicería automotriz</p>
+    </div><!-- Proceso de Trabajo - Diseño Creativo -->
+    <div class="process-wrapper py-5">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold text-uppercase">Nuestro Proceso de Trabajo</h2>
+                <p class="lead">Nuestra cadena de valor en tapicería automotriz</p>
+            </div>
+
+            <!-- Proceso Visual -->
+            <div class="process-chain d-flex justify-content-between">
+                <!-- Paso 1 - Tangible -->
+                <div class="process-step process-tangible animate__animated animate__fadeIn">
+                    <div class="process-icon">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div class="process-content">
+                        <h4>Evaluación</h4>
+                        <p class="small text-muted">Diagnóstico detallado del vehículo</p>
+                    </div>
+                </div>
+
+                <!-- Paso 2 - Intangible -->
+                <div class="process-step process-intangible animate__animated animate__fadeIn animate__delay-1s">
+                    <div class="process-icon">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <div class="process-content">
+                        <h4>Cotización</h4>
+                        <p class="small text-muted">Presupuesto transparente</p>
+                    </div>
+                </div>
+
+                <!-- Paso 3 - Tangible -->
+                <div class="process-step process-tangible animate__animated animate__fadeIn animate__delay-2s">
+                    <div class="process-icon">
+                        <i class="fas fa-thumbs-up"></i>
+                    </div>
+                    <div class="process-content">
+                        <h4>Aprobación</h4>
+                        <p class="small text-muted">Selección de materiales</p>
+                    </div>
+                </div>
+
+                <!-- Paso 4 - Intangible -->
+                <div class="process-step process-intangible animate__animated animate__fadeIn animate__delay-3s">
+                    <div class="process-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div class="process-content">
+                        <h4>Ejecución</h4>
+                        <p class="small text-muted">Trabajo artesanal</p>
+                    </div>
+                </div>
+
+                <!-- Paso 5 - Tangible -->
+                <div class="process-step process-tangible animate__animated animate__fadeIn animate__delay-4s">
+                    <div class="process-icon">
+                        <i class="fas fa-car-side"></i>
+                    </div>
+                    <div class="process-content">
+                        <h4>Entrega</h4>
+                        <p class="small text-muted">Con garantía documentada</p>
+                    </div>
+                </div>
+            </div>
+
         </div>
-
-        <!-- Proceso Visual -->
-        <div class="process-chain">
-            <!-- Paso 1 - Tangible -->
-            <div class="process-step process-tangible animate__animated animate__fadeIn">
-                <div class="process-icon">
-                    <i class="fas fa-clipboard-check"></i>
-                </div>
-                <div class="process-content">
-                    <h4>Evaluación</h4>
-                    <p class="small text-muted">Diagnóstico detallado del vehículo</p>
-                </div>
-                <div class="process-connector"></div>
-            </div>
-
-            <!-- Paso 2 - Intangible -->
-            <div class="process-step process-intangible animate__animated animate__fadeIn animate__delay-1s">
-                <div class="process-icon">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                </div>
-                <div class="process-content">
-                    <h4>Cotización</h4>
-                    <p class="small text-muted">Presupuesto transparente</p>
-                </div>
-                <div class="process-connector"></div>
-            </div>
-
-            <!-- Paso 3 - Tangible -->
-            <div class="process-step process-tangible animate__animated animate__fadeIn animate__delay-2s">
-                <div class="process-icon">
-                    <i class="fas fa-thumbs-up"></i>
-                </div>
-                <div class="process-content">
-                    <h4>Aprobación</h4>
-                    <p class="small text-muted">Selección de materiales</p>
-                </div>
-                <div class="process-connector"></div>
-            </div>
-
-            <!-- Paso 4 - Intangible -->
-            <div class="process-step process-intangible animate__animated animate__fadeIn animate__delay-3s">
-                <div class="process-icon">
-                    <i class="fas fa-tools"></i>
-                </div>
-                <div class="process-content">
-                    <h4>Ejecución</h4>
-                    <p class="small text-muted">Trabajo artesanal</p>
-                </div>
-                <div class="process-connector"></div>
-            </div>
-
-            <!-- Paso 5 - Tangible -->
-            <div class="process-step process-tangible animate__animated animate__fadeIn animate__delay-4s">
-                <div class="process-icon">
-                    <i class="fas fa-car-side"></i>
-                </div>
-                <div class="process-content">
-                    <h4>Entrega</h4>
-                    <p class="small text-muted">Con garantía documentada</p>
-                </div>
-            </div>
-        </div>
-
     </div>
-</div>
-        </div>
+    </div>
     </div>
 </main>
 
