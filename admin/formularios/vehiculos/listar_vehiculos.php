@@ -1,13 +1,13 @@
 <?php
 require_once __DIR__ . '/../../../php/conexion.php';
 
-// Consulta para obtener los registros de la tabla clientes
-$stmt = $conex->query("SELECT * FROM clientes");
-$clientes = $stmt->fetchAll();
+// Consulta para obtener los registros de la tabla vehiculos
+$stmt = $conex->query("SELECT * FROM vehiculos");
+$vehiculos = $stmt->fetchAll();
 
 // Obtener estadísticas
-$totalClientes = count($clientes);
-$ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_registro')) : null;
+$totalVehiculos = count($vehiculos);
+$ultimoRegistro = $totalVehiculos > 0 ? max(array_column($vehiculos, 'id_vehiculo')) : null;
 ?>
 
 <!DOCTYPE html>
@@ -15,7 +15,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Clientes | Nacional Tapizados</title>
+    <title>Lista de Vehículos | Nacional Tapizados</title>
     <style>
         body {
             background-image: url('https://pfst.cf2.poecdn.net/base/image/fe72e5f0bf336b4faca086bc6a42c20a45e904d165e796b52eca655a143283b8?w=1024&h=768&pmaid=426747789');
@@ -115,8 +115,8 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             background-color: rgba(140, 74, 63, 0.9);
         }
 
-        /* Estilos para la lista de clientes */
-        .client-list {
+        /* Estilos para la lista de vehículos */
+        .vehicle-list {
             background-color: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(8px);
             border-radius: 12px;
@@ -127,7 +127,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             overflow-y: auto;
         }
 
-        .client-item {
+        .vehicle-item {
             padding: 1.2rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             cursor: pointer;
@@ -137,36 +137,36 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             align-items: center;
         }
 
-        .client-item:hover {
+        .vehicle-item:hover {
             background-color: rgba(255, 255, 255, 0.2);
         }
 
-        .client-item:last-child {
+        .vehicle-item:last-child {
             border-bottom: none;
         }
 
-        .client-name {
+        .vehicle-name {
             font-weight: 500;
             font-size: 1.1rem;
         }
 
-        .client-description {
+        .vehicle-description {
             font-size: 0.9rem;
             color: rgba(255, 255, 255, 0.7);
             margin-top: 0.3rem;
         }
 
-        .client-info {
+        .vehicle-info {
             flex-grow: 1;
         }
 
-        .client-arrow {
+        .vehicle-arrow {
             margin-left: 1rem;
             opacity: 0.7;
             transition: all 0.3s ease;
         }
 
-        .client-item:hover .client-arrow {
+        .vehicle-item:hover .vehicle-arrow {
             opacity: 1;
             transform: translateX(3px);
         }
@@ -317,12 +317,12 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
                 flex-direction: column;
             }
             
-            .client-item {
+            .vehicle-item {
                 flex-direction: column;
                 align-items: flex-start;
             }
             
-            .client-arrow {
+            .vehicle-arrow {
                 display: none;
             }
             
@@ -345,52 +345,50 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             <i class="fas fa-arrow-left"></i> Volver
         </a>
         
-        <h1><i class="fas fa-users"></i> Lista de Clientes</h1>
+        <h1><i class="fas fa-car"></i> Lista de Vehículos</h1>
         
-        <!-- Resumen de clientes -->
+        <!-- Resumen de vehículos -->
         <div class="summary-cards">
             <div class="summary-card">
-                <h3>Total de Clientes</h3>
-                <p><?php echo $totalClientes; ?></p>
+                <h3>Total de Vehículos</h3>
+                <p><?php echo $totalVehiculos; ?></p>
             </div>
             <div class="summary-card">
                 <h3>Último Registro</h3>
-                <p><?php echo $ultimoRegistro ? date('d/m/Y', strtotime($ultimoRegistro)) : 'N/A'; ?></p>
+                <p><?php echo $ultimoRegistro ? 'ID: ' . $ultimoRegistro : 'N/A'; ?></p>
             </div>
         </div>
         
         <!-- Buscador -->
         <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" placeholder="Buscar cliente por nombre..." onkeyup="filterClients()">
-            <button class="search-button" onclick="filterClients()">
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar vehículo por marca, modelo o placa..." onkeyup="filterVehicles()">
+            <button class="search-button" onclick="filterVehicles()">
                 <i class="fas fa-search"></i> Buscar
             </button>
         </div>
         
-        <!-- Lista de clientes -->
-        <div class="client-list" id="clientList">
-            <?php foreach ($clientes as $cliente): 
-                $shortDescription = !empty($cliente['notas_cliente']) 
-                    ? (strlen($cliente['notas_cliente']) > 50 
-                        ? substr($cliente['notas_cliente'], 0, 50) . '...' 
-                        : $cliente['notas_cliente'])
-                    : 'Sin descripción disponible';
+        <!-- Lista de vehículos -->
+        <div class="vehicle-list" id="vehicleList">
+            <?php foreach ($vehiculos as $vehiculo): 
+                $shortDescription = !empty($vehiculo['notas_vehiculo']) 
+                    ? (strlen($vehiculo['notas_vehiculo']) > 50 
+                        ? substr($vehiculo['notas_vehiculo'], 0, 50) . '...' 
+                        : $vehiculo['notas_vehiculo'])
+                    : 'Sin notas disponibles';
             ?>
-                <div class="client-item" 
-                     onclick="showClientDetails(
-                         '<?php echo htmlspecialchars($cliente['id_cliente'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['nombre_cliente'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['correo_cliente'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['telefono_cliente'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['direccion_cliente'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['fecha_registro'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['notas_cliente'], ENT_QUOTES); ?>'
+                <div class="vehicle-item" 
+                     onclick="showVehicleDetails(
+                         '<?php echo htmlspecialchars($vehiculo['id_vehiculo'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($vehiculo['marca_vehiculo'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($vehiculo['modelo_vehiculo'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($vehiculo['placa_vehiculo'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($vehiculo['notas_vehiculo'], ENT_QUOTES); ?>'
                      )">
-                    <div class="client-info">
-                        <div class="client-name"><?php echo htmlspecialchars($cliente['nombre_cliente']); ?></div>
-                        <div class="client-description"><?php echo htmlspecialchars($shortDescription); ?></div>
+                    <div class="vehicle-info">
+                        <div class="vehicle-name"><?php echo htmlspecialchars($vehiculo['marca_vehiculo'] . ' ' . $vehiculo['modelo_vehiculo']); ?></div>
+                        <div class="vehicle-description">Placa: <?php echo htmlspecialchars($vehiculo['placa_vehiculo']); ?> - <?php echo htmlspecialchars($shortDescription); ?></div>
                     </div>
-                    <div class="client-arrow">
+                    <div class="vehicle-arrow">
                         <i class="fas fa-chevron-right"></i>
                     </div>
                 </div>
@@ -399,103 +397,86 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
     </div>
     
     <!-- Overlay para fondo oscuro -->
-    <div class="overlay" id="overlay" onclick="hideClientDetails()"></div>
+    <div class="overlay" id="overlay" onclick="hideVehicleDetails()"></div>
     
-    <!-- Tarjeta flotante de detalles del cliente -->
-    <div class="floating-card" id="clientDetailCard">
+    <!-- Tarjeta flotante de detalles del vehículo -->
+    <div class="floating-card" id="vehicleDetailCard">
         <div class="card-header">
-            <h2 class="card-title" id="detailClientName"></h2>
-            <button class="close-detail close-card" onclick="hideClientDetails()">
+            <h2 class="card-title" id="detailVehicleName"></h2>
+            <button class="close-detail close-card" onclick="hideVehicleDetails()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         
         <div class="card-content">
             <div class="detail-item">
-                <div class="detail-label">ID Cliente</div>
-                <div class="detail-value" id="detailClientId"></div>
+                <div class="detail-label">ID Vehículo</div>
+                <div class="detail-value" id="detailVehicleId"></div>
             </div>
             
             <div class="detail-item">
-                <div class="detail-label">Correo Electrónico</div>
-                <div class="detail-value" id="detailClientEmail"></div>
+                <div class="detail-label">Marca</div>
+                <div class="detail-value" id="detailVehicleBrand"></div>
             </div>
             
             <div class="detail-item">
-                <div class="detail-label">Teléfono</div>
-                <div class="detail-value" id="detailClientPhone"></div>
+                <div class="detail-label">Modelo</div>
+                <div class="detail-value" id="detailVehicleModel"></div>
             </div>
             
             <div class="detail-item">
-                <div class="detail-label">Dirección</div>
-                <div class="detail-value" id="detailClientAddress"></div>
-            </div>
-            
-            <div class="detail-item">
-                <div class="detail-label">Fecha de Registro</div>
-                <div class="detail-value" id="detailClientDate"></div>
+                <div class="detail-label">Placa</div>
+                <div class="detail-value" id="detailVehiclePlate"></div>
             </div>
             
             <div class="notes-section">
                 <div class="detail-label">Notas</div>
-                <div class="detail-value" id="detailClientNotes"></div>
+                <div class="detail-value" id="detailVehicleNotes"></div>
             </div>
         </div>
     </div>
 
     <!-- Scripts -->
     <script>
-        // Función para filtrar clientes
-        function filterClients() {
+        // Función para filtrar vehículos
+        function filterVehicles() {
             const input = document.getElementById('searchInput');
             const filter = input.value.toUpperCase();
-            const clientList = document.getElementById('clientList');
-            const clients = clientList.getElementsByClassName('client-item');
+            const vehicleList = document.getElementById('vehicleList');
+            const vehicles = vehicleList.getElementsByClassName('vehicle-item');
             
-            for (let i = 0; i < clients.length; i++) {
-                const clientName = clients[i].querySelector('.client-name').textContent;
-                if (clientName.toUpperCase().indexOf(filter) > -1) {
-                    clients[i].style.display = "flex";
+            for (let i = 0; i < vehicles.length; i++) {
+                const vehicleName = vehicles[i].querySelector('.vehicle-name').textContent;
+                const vehiclePlate = vehicles[i].querySelector('.vehicle-description').textContent;
+                if (vehicleName.toUpperCase().indexOf(filter) > -1 || vehiclePlate.toUpperCase().indexOf(filter) > -1) {
+                    vehicles[i].style.display = "flex";
                 } else {
-                    clients[i].style.display = "none";
+                    vehicles[i].style.display = "none";
                 }
             }
         }
         
-        // Función para mostrar detalles del cliente
-        function showClientDetails(id, name, email, phone, address, date, notes) {
-            document.getElementById('detailClientId').textContent = id;
-            document.getElementById('detailClientName').textContent = name;
-            document.getElementById('detailClientEmail').textContent = email || 'No especificado';
-            document.getElementById('detailClientPhone').textContent = phone || 'No especificado';
-            document.getElementById('detailClientAddress').textContent = address || 'No especificado';
-            
-            // Formatear fecha
-            if (date) {
-                const formattedDate = new Date(date).toLocaleDateString('es-ES', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
-                document.getElementById('detailClientDate').textContent = formattedDate;
-            } else {
-                document.getElementById('detailClientDate').textContent = 'No especificada';
-            }
-            
-            document.getElementById('detailClientNotes').textContent = notes || 'No hay notas disponibles';
+        // Función para mostrar detalles del vehículo
+        function showVehicleDetails(id, marca, modelo, placa, notas) {
+            document.getElementById('detailVehicleId').textContent = id;
+            document.getElementById('detailVehicleName').textContent = marca + ' ' + modelo;
+            document.getElementById('detailVehicleBrand').textContent = marca || 'No especificada';
+            document.getElementById('detailVehicleModel').textContent = modelo || 'No especificado';
+            document.getElementById('detailVehiclePlate').textContent = placa || 'No especificada';
+            document.getElementById('detailVehicleNotes').textContent = notas || 'No hay notas disponibles';
             
             // Mostrar overlay y tarjeta flotante
             document.getElementById('overlay').style.display = 'block';
-            document.getElementById('clientDetailCard').style.display = 'block';
+            document.getElementById('vehicleDetailCard').style.display = 'block';
             
             // Deshabilitar scroll del body
             document.body.style.overflow = 'hidden';
         }
         
-        // Función para ocultar detalles del cliente
-        function hideClientDetails() {
+        // Función para ocultar detalles del vehículo
+        function hideVehicleDetails() {
             document.getElementById('overlay').style.display = 'none';
-            document.getElementById('clientDetailCard').style.display = 'none';
+            document.getElementById('vehicleDetailCard').style.display = 'none';
             
             // Habilitar scroll del body
             document.body.style.overflow = 'auto';
@@ -504,12 +485,12 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
         // Cerrar con tecla ESC
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
-                hideClientDetails();
+                hideVehicleDetails();
             }
         });
         
         // Inicializar el filtro al cargar la página
-        document.addEventListener('DOMContentLoaded', filterClients);
+        document.addEventListener('DOMContentLoaded', filterVehicles);
     </script>
 </body>
 </html>

@@ -1,13 +1,14 @@
 <?php
 require_once __DIR__ . '/../../../php/conexion.php';
 
-// Consulta para obtener los registros de la tabla clientes
-$stmt = $conex->query("SELECT * FROM clientes");
-$clientes = $stmt->fetchAll();
+// Consulta para obtener los registros de la tabla servicios
+$stmt = $conex->query("SELECT * FROM servicios ORDER BY precio_servicio DESC");
+$servicios = $stmt->fetchAll();
 
 // Obtener estadísticas
-$totalClientes = count($clientes);
-$ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_registro')) : null;
+$totalServicios = count($servicios);
+$servicioMasCaro = $servicios ? max(array_column($servicios, 'precio_servicio')) : 0;
+$servicioMasBarato = $servicios ? min(array_column($servicios, 'precio_servicio')) : 0;
 ?>
 
 <!DOCTYPE html>
@@ -15,7 +16,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Clientes | Nacional Tapizados</title>
+    <title>Lista de Servicios | Nacional Tapizados</title>
     <style>
         body {
             background-image: url('https://pfst.cf2.poecdn.net/base/image/fe72e5f0bf336b4faca086bc6a42c20a45e904d165e796b52eca655a143283b8?w=1024&h=768&pmaid=426747789');
@@ -115,8 +116,8 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             background-color: rgba(140, 74, 63, 0.9);
         }
 
-        /* Estilos para la lista de clientes */
-        .client-list {
+        /* Estilos para la lista de servicios */
+        .service-list {
             background-color: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(8px);
             border-radius: 12px;
@@ -127,7 +128,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             overflow-y: auto;
         }
 
-        .client-item {
+        .service-item {
             padding: 1.2rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             cursor: pointer;
@@ -137,36 +138,56 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             align-items: center;
         }
 
-        .client-item:hover {
+        .service-item:hover {
             background-color: rgba(255, 255, 255, 0.2);
         }
 
-        .client-item:last-child {
+        .service-item:last-child {
             border-bottom: none;
         }
 
-        .client-name {
+        .service-name {
             font-weight: 500;
             font-size: 1.1rem;
         }
 
-        .client-description {
+        .service-description {
             font-size: 0.9rem;
             color: rgba(255, 255, 255, 0.7);
             margin-top: 0.3rem;
         }
 
-        .client-info {
+        .service-info {
             flex-grow: 1;
         }
 
-        .client-arrow {
+        .service-price {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-left: 1rem;
+            background-color: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+        }
+
+        .service-time {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-left: 1rem;
+            background-color: rgba(33, 150, 243, 0.2);
+            color: #2196F3;
+        }
+
+        .service-arrow {
             margin-left: 1rem;
             opacity: 0.7;
             transition: all 0.3s ease;
         }
 
-        .client-item:hover .client-arrow {
+        .service-item:hover .service-arrow {
             opacity: 1;
             transform: translateX(3px);
         }
@@ -317,12 +338,17 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
                 flex-direction: column;
             }
             
-            .client-item {
+            .service-item {
                 flex-direction: column;
                 align-items: flex-start;
             }
             
-            .client-arrow {
+            .service-price, .service-time {
+                margin-left: 0;
+                margin-top: 0.5rem;
+            }
+            
+            .service-arrow {
                 display: none;
             }
             
@@ -345,52 +371,61 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             <i class="fas fa-arrow-left"></i> Volver
         </a>
         
-        <h1><i class="fas fa-users"></i> Lista de Clientes</h1>
+        <h1><i class="fas fa-tools"></i> Lista de Servicios</h1>
         
-        <!-- Resumen de clientes -->
+        <!-- Resumen de servicios -->
         <div class="summary-cards">
             <div class="summary-card">
-                <h3>Total de Clientes</h3>
-                <p><?php echo $totalClientes; ?></p>
+                <h3>Total Servicios</h3>
+                <p><?php echo $totalServicios; ?></p>
             </div>
             <div class="summary-card">
-                <h3>Último Registro</h3>
-                <p><?php echo $ultimoRegistro ? date('d/m/Y', strtotime($ultimoRegistro)) : 'N/A'; ?></p>
+                <h3>Servicio Más Costoso</h3>
+                <p>$<?php echo number_format($servicioMasCaro, 2); ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Servicio Más Económico</h3>
+                <p>$<?php echo number_format($servicioMasBarato, 2); ?></p>
             </div>
         </div>
         
         <!-- Buscador -->
         <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" placeholder="Buscar cliente por nombre..." onkeyup="filterClients()">
-            <button class="search-button" onclick="filterClients()">
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar servicio por nombre o categoría..." onkeyup="filterServices()">
+            <button class="search-button" onclick="filterServices()">
                 <i class="fas fa-search"></i> Buscar
             </button>
         </div>
         
-        <!-- Lista de clientes -->
-        <div class="client-list" id="clientList">
-            <?php foreach ($clientes as $cliente): 
-                $shortDescription = !empty($cliente['notas_cliente']) 
-                    ? (strlen($cliente['notas_cliente']) > 50 
-                        ? substr($cliente['notas_cliente'], 0, 50) . '...' 
-                        : $cliente['notas_cliente'])
+        <!-- Lista de servicios -->
+        <div class="service-list" id="serviceList">
+            <?php foreach ($servicios as $servicio): 
+                $shortDescription = !empty($servicio['descripcion_servicio']) 
+                    ? (strlen($servicio['descripcion_servicio']) > 50 
+                        ? substr($servicio['descripcion_servicio'], 0, 50) . '...' 
+                        : $servicio['descripcion_servicio'])
                     : 'Sin descripción disponible';
             ?>
-                <div class="client-item" 
-                     onclick="showClientDetails(
-                         '<?php echo htmlspecialchars($cliente['id_cliente'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['nombre_cliente'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['correo_cliente'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['telefono_cliente'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['direccion_cliente'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['fecha_registro'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($cliente['notas_cliente'], ENT_QUOTES); ?>'
+                <div class="service-item" 
+                     onclick="showServiceDetails(
+                         '<?php echo htmlspecialchars($servicio['id_servicio'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($servicio['nombre_servicio'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($servicio['descripcion_servicio'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($servicio['precio_servicio'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($servicio['tiempo_estimado'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($servicio['categoria_servicio'], ENT_QUOTES); ?>'
                      )">
-                    <div class="client-info">
-                        <div class="client-name"><?php echo htmlspecialchars($cliente['nombre_cliente']); ?></div>
-                        <div class="client-description"><?php echo htmlspecialchars($shortDescription); ?></div>
+                    <div class="service-info">
+                        <div class="service-name"><?php echo htmlspecialchars($servicio['nombre_servicio']); ?></div>
+                        <div class="service-description"><?php echo htmlspecialchars($shortDescription); ?></div>
                     </div>
-                    <div class="client-arrow">
+                    <div class="service-price">
+                        $<?php echo htmlspecialchars(number_format($servicio['precio_servicio'], 2)); ?>
+                    </div>
+                    <div class="service-time">
+                        <?php echo htmlspecialchars($servicio['tiempo_estimado']); ?>
+                    </div>
+                    <div class="service-arrow">
                         <i class="fas fa-chevron-right"></i>
                     </div>
                 </div>
@@ -399,103 +434,85 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
     </div>
     
     <!-- Overlay para fondo oscuro -->
-    <div class="overlay" id="overlay" onclick="hideClientDetails()"></div>
+    <div class="overlay" id="overlay" onclick="hideServiceDetails()"></div>
     
-    <!-- Tarjeta flotante de detalles del cliente -->
-    <div class="floating-card" id="clientDetailCard">
+    <!-- Tarjeta flotante de detalles del servicio -->
+    <div class="floating-card" id="serviceDetailCard">
         <div class="card-header">
-            <h2 class="card-title" id="detailClientName"></h2>
-            <button class="close-detail close-card" onclick="hideClientDetails()">
+            <h2 class="card-title" id="detailServiceName"></h2>
+            <button class="close-detail close-card" onclick="hideServiceDetails()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         
         <div class="card-content">
             <div class="detail-item">
-                <div class="detail-label">ID Cliente</div>
-                <div class="detail-value" id="detailClientId"></div>
+                <div class="detail-label">ID Servicio</div>
+                <div class="detail-value" id="detailServiceId"></div>
             </div>
             
             <div class="detail-item">
-                <div class="detail-label">Correo Electrónico</div>
-                <div class="detail-value" id="detailClientEmail"></div>
+                <div class="detail-label">Precio</div>
+                <div class="detail-value" id="detailServicePrice"></div>
             </div>
             
             <div class="detail-item">
-                <div class="detail-label">Teléfono</div>
-                <div class="detail-value" id="detailClientPhone"></div>
+                <div class="detail-label">Tiempo Estimado</div>
+                <div class="detail-value" id="detailServiceTime"></div>
             </div>
             
             <div class="detail-item">
-                <div class="detail-label">Dirección</div>
-                <div class="detail-value" id="detailClientAddress"></div>
-            </div>
-            
-            <div class="detail-item">
-                <div class="detail-label">Fecha de Registro</div>
-                <div class="detail-value" id="detailClientDate"></div>
+                <div class="detail-label">Categoría</div>
+                <div class="detail-value" id="detailServiceCategory"></div>
             </div>
             
             <div class="notes-section">
-                <div class="detail-label">Notas</div>
-                <div class="detail-value" id="detailClientNotes"></div>
+                <div class="detail-label">Descripción</div>
+                <div class="detail-value" id="detailServiceDescription"></div>
             </div>
         </div>
     </div>
 
     <!-- Scripts -->
     <script>
-        // Función para filtrar clientes
-        function filterClients() {
+        // Función para filtrar servicios
+        function filterServices() {
             const input = document.getElementById('searchInput');
             const filter = input.value.toUpperCase();
-            const clientList = document.getElementById('clientList');
-            const clients = clientList.getElementsByClassName('client-item');
+            const serviceList = document.getElementById('serviceList');
+            const services = serviceList.getElementsByClassName('service-item');
             
-            for (let i = 0; i < clients.length; i++) {
-                const clientName = clients[i].querySelector('.client-name').textContent;
-                if (clientName.toUpperCase().indexOf(filter) > -1) {
-                    clients[i].style.display = "flex";
+            for (let i = 0; i < services.length; i++) {
+                const serviceName = services[i].querySelector('.service-name').textContent;
+                const serviceCategory = services[i].querySelector('.service-description').textContent;
+                if (serviceName.toUpperCase().indexOf(filter) > -1 || serviceCategory.toUpperCase().indexOf(filter) > -1) {
+                    services[i].style.display = "flex";
                 } else {
-                    clients[i].style.display = "none";
+                    services[i].style.display = "none";
                 }
             }
         }
         
-        // Función para mostrar detalles del cliente
-        function showClientDetails(id, name, email, phone, address, date, notes) {
-            document.getElementById('detailClientId').textContent = id;
-            document.getElementById('detailClientName').textContent = name;
-            document.getElementById('detailClientEmail').textContent = email || 'No especificado';
-            document.getElementById('detailClientPhone').textContent = phone || 'No especificado';
-            document.getElementById('detailClientAddress').textContent = address || 'No especificado';
-            
-            // Formatear fecha
-            if (date) {
-                const formattedDate = new Date(date).toLocaleDateString('es-ES', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
-                document.getElementById('detailClientDate').textContent = formattedDate;
-            } else {
-                document.getElementById('detailClientDate').textContent = 'No especificada';
-            }
-            
-            document.getElementById('detailClientNotes').textContent = notes || 'No hay notas disponibles';
+        // Función para mostrar detalles del servicio
+        function showServiceDetails(id, name, description, price, time, category) {
+            document.getElementById('detailServiceId').textContent = id;
+            document.getElementById('detailServiceName').textContent = name;
+            document.getElementById('detailServiceDescription').textContent = description || 'No hay descripción disponible';
+            document.getElementById('detailServiceTime').textContent = time || 'No especificado';
+            document.getElementById('detailServiceCategory').textContent = category || 'No especificada';
             
             // Mostrar overlay y tarjeta flotante
             document.getElementById('overlay').style.display = 'block';
-            document.getElementById('clientDetailCard').style.display = 'block';
+            document.getElementById('serviceDetailCard').style.display = 'block';
             
             // Deshabilitar scroll del body
             document.body.style.overflow = 'hidden';
         }
         
-        // Función para ocultar detalles del cliente
-        function hideClientDetails() {
+        // Función para ocultar detalles del servicio
+        function hideServiceDetails() {
             document.getElementById('overlay').style.display = 'none';
-            document.getElementById('clientDetailCard').style.display = 'none';
+            document.getElementById('serviceDetailCard').style.display = 'none';
             
             // Habilitar scroll del body
             document.body.style.overflow = 'auto';
@@ -504,12 +521,12 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
         // Cerrar con tecla ESC
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
-                hideClientDetails();
+                hideServiceDetails();
             }
         });
         
         // Inicializar el filtro al cargar la página
-        document.addEventListener('DOMContentLoaded', filterClients);
+        document.addEventListener('DOMContentLoaded', filterServices);
     </script>
 </body>
 </html>
