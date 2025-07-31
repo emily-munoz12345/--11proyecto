@@ -22,13 +22,12 @@ $userRole = getUserRole();
 // URLs de redirección (ajusta según tu estructura de archivos)
 $urls = [
     'clientes' => 'formularios/clientes/listar_clientes.php',
-    'vehiculos' => 'vehiculos/listar_vehiculos.php',
-    'cotizaciones' => 'cotizaciones/listar_cotizaciones.php',
-    'materiales' => 'materiales/listar_materiales.php',
-    'servicios' => 'servicios/listar_servicios.php',
-    'trabajos' => 'trabajos/listar_trabajos.php',
-    'usuarios' => 'usuarios/listar_usuarios.php',
-    'roles' => 'roles/listar_roles.php'
+    'vehiculos' => 'formularios/vehiculos/listar_vehiculos.php',
+    'cotizaciones' => 'formularios/cotizaciones/listar_cotizaciones.php',
+    'materiales' => 'formularios/materiales/listar_materiales.php',
+    'servicios' => 'formularios/servicios/listar_servicios.php',
+    'trabajos' => 'formularios/trabajos/listar_trabajos.php',
+    'usuarios' => 'formularios/usuarios/listar_usuarios.php',
 ];
 
 // Definir qué tarjetas puede ver cada rol
@@ -420,21 +419,6 @@ foreach ($allowedCards[$userRole] as $card) {
                                     </div>
                                     <div class="summary-icon">
                                         <i class="fas fa-user-shield"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if (in_array('roles', $allowedCards[$userRole])): ?>
-                            <!-- Roles -->
-                            <div class="summary-card card-roles" onclick="window.location.href='<?= $urls['roles'] ?>'">
-                                <div class="summary-content">
-                                    <div>
-                                        <h3 class="summary-title">Roles</h3>
-                                        <p class="summary-value"><?= $counts['roles'] ?></p>
-                                    </div>
-                                    <div class="summary-icon">
-                                        <i class="fas fa-user-tag"></i>
                                     </div>
                                 </div>
                             </div>

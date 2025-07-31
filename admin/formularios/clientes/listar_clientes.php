@@ -12,6 +12,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -205,11 +206,12 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
         }
 
         @keyframes fadeInUp {
-            from { 
+            from {
                 opacity: 0;
                 transform: translate(-50%, -40%);
             }
-            to { 
+
+            to {
                 opacity: 1;
                 transform: translate(-50%, -50%);
             }
@@ -308,29 +310,29 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
                 margin: 1rem;
                 padding: 1rem;
             }
-            
+
             .summary-cards {
                 flex-direction: column;
             }
-            
+
             .search-container {
                 flex-direction: column;
             }
-            
+
             .client-item {
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
             .client-arrow {
                 display: none;
             }
-            
+
             .floating-card {
                 width: 95%;
                 padding: 1.5rem;
             }
-            
+
             .card-content {
                 grid-template-columns: 1fr;
             }
@@ -339,14 +341,15 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
+
 <body>
+
+    <a href="javascript:history.back()" class="back-button">
+        <i class="fas fa-arrow-left"></i> Volver
+    </a>
+
+    <h1><i class="fas fa-users"></i> Lista de Clientes</h1>
     <div class="main-container">
-        <a href="javascript:history.back()" class="back-button">
-            <i class="fas fa-arrow-left"></i> Volver
-        </a>
-        
-        <h1><i class="fas fa-users"></i> Lista de Clientes</h1>
-        
         <!-- Resumen de clientes -->
         <div class="summary-cards">
             <div class="summary-card">
@@ -358,7 +361,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
                 <p><?php echo $ultimoRegistro ? date('d/m/Y', strtotime($ultimoRegistro)) : 'N/A'; ?></p>
             </div>
         </div>
-        
+
         <!-- Buscador -->
         <div class="search-container">
             <input type="text" id="searchInput" class="search-input" placeholder="Buscar cliente por nombre..." onkeyup="filterClients()">
@@ -366,18 +369,18 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
                 <i class="fas fa-search"></i> Buscar
             </button>
         </div>
-        
+
         <!-- Lista de clientes -->
         <div class="client-list" id="clientList">
-            <?php foreach ($clientes as $cliente): 
-                $shortDescription = !empty($cliente['notas_cliente']) 
-                    ? (strlen($cliente['notas_cliente']) > 50 
-                        ? substr($cliente['notas_cliente'], 0, 50) . '...' 
+            <?php foreach ($clientes as $cliente):
+                $shortDescription = !empty($cliente['notas_cliente'])
+                    ? (strlen($cliente['notas_cliente']) > 50
+                        ? substr($cliente['notas_cliente'], 0, 50) . '...'
                         : $cliente['notas_cliente'])
                     : 'Sin descripción disponible';
             ?>
-                <div class="client-item" 
-                     onclick="showClientDetails(
+                <div class="client-item"
+                    onclick="showClientDetails(
                          '<?php echo htmlspecialchars($cliente['id_cliente'], ENT_QUOTES); ?>',
                          '<?php echo htmlspecialchars($cliente['nombre_cliente'], ENT_QUOTES); ?>',
                          '<?php echo htmlspecialchars($cliente['correo_cliente'], ENT_QUOTES); ?>',
@@ -397,10 +400,10 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             <?php endforeach; ?>
         </div>
     </div>
-    
+
     <!-- Overlay para fondo oscuro -->
     <div class="overlay" id="overlay" onclick="hideClientDetails()"></div>
-    
+
     <!-- Tarjeta flotante de detalles del cliente -->
     <div class="floating-card" id="clientDetailCard">
         <div class="card-header">
@@ -409,33 +412,33 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        
+
         <div class="card-content">
             <div class="detail-item">
                 <div class="detail-label">ID Cliente</div>
                 <div class="detail-value" id="detailClientId"></div>
             </div>
-            
+
             <div class="detail-item">
                 <div class="detail-label">Correo Electrónico</div>
                 <div class="detail-value" id="detailClientEmail"></div>
             </div>
-            
+
             <div class="detail-item">
                 <div class="detail-label">Teléfono</div>
                 <div class="detail-value" id="detailClientPhone"></div>
             </div>
-            
+
             <div class="detail-item">
                 <div class="detail-label">Dirección</div>
                 <div class="detail-value" id="detailClientAddress"></div>
             </div>
-            
+
             <div class="detail-item">
                 <div class="detail-label">Fecha de Registro</div>
                 <div class="detail-value" id="detailClientDate"></div>
             </div>
-            
+
             <div class="notes-section">
                 <div class="detail-label">Notas</div>
                 <div class="detail-value" id="detailClientNotes"></div>
@@ -451,7 +454,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             const filter = input.value.toUpperCase();
             const clientList = document.getElementById('clientList');
             const clients = clientList.getElementsByClassName('client-item');
-            
+
             for (let i = 0; i < clients.length; i++) {
                 const clientName = clients[i].querySelector('.client-name').textContent;
                 if (clientName.toUpperCase().indexOf(filter) > -1) {
@@ -461,7 +464,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
                 }
             }
         }
-        
+
         // Función para mostrar detalles del cliente
         function showClientDetails(id, name, email, phone, address, date, notes) {
             document.getElementById('detailClientId').textContent = id;
@@ -469,7 +472,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             document.getElementById('detailClientEmail').textContent = email || 'No especificado';
             document.getElementById('detailClientPhone').textContent = phone || 'No especificado';
             document.getElementById('detailClientAddress').textContent = address || 'No especificado';
-            
+
             // Formatear fecha
             if (date) {
                 const formattedDate = new Date(date).toLocaleDateString('es-ES', {
@@ -481,35 +484,36 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             } else {
                 document.getElementById('detailClientDate').textContent = 'No especificada';
             }
-            
+
             document.getElementById('detailClientNotes').textContent = notes || 'No hay notas disponibles';
-            
+
             // Mostrar overlay y tarjeta flotante
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('clientDetailCard').style.display = 'block';
-            
+
             // Deshabilitar scroll del body
             document.body.style.overflow = 'hidden';
         }
-        
+
         // Función para ocultar detalles del cliente
         function hideClientDetails() {
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('clientDetailCard').style.display = 'none';
-            
+
             // Habilitar scroll del body
             document.body.style.overflow = 'auto';
         }
-        
+
         // Cerrar con tecla ESC
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 hideClientDetails();
             }
         });
-        
+
         // Inicializar el filtro al cargar la página
         document.addEventListener('DOMContentLoaded', filterClients);
     </script>
 </body>
+
 </html>

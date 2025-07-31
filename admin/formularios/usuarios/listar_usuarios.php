@@ -1,13 +1,20 @@
 <?php
 require_once __DIR__ . '/../../../php/conexion.php';
 
-// Consulta para obtener los registros de la tabla servicios
-$stmt = $conex->query("SELECT * FROM servicios");
-$servicios = $stmt->fetchAll();
+// Consulta para obtener los registros de la tabla usuarios con información de roles
+$stmt = $conex->query("
+    SELECT u.*, r.nombre_rol 
+    FROM usuarios u 
+    JOIN roles r ON u.id_rol = r.id_rol
+");
+$usuarios = $stmt->fetchAll();
 
 // Obtener estadísticas
-$totalServicios = count($servicios);
-$serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_servicio'));
+$totalUsuarios = count($usuarios);
+$usuariosPorRol = array_count_values(array_column($usuarios, 'nombre_rol'));
+$usuariosActivos = count(array_filter($usuarios, function($usuario) {
+    return $usuario['activo_usuario'] === 'Activo';
+}));
 ?>
 
 <!DOCTYPE html>
@@ -16,7 +23,7 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Servicios | Nacional Tapizados</title>
+    <title>Lista de Usuarios | Nacional Tapizados</title>
     <style>
         body {
             background-image: url('https://pfst.cf2.poecdn.net/base/image/fe72e5f0bf336b4faca086bc6a42c20a45e904d165e796b52eca655a143283b8?w=1024&h=768&pmaid=426747789');
@@ -116,8 +123,8 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
             background-color: rgba(140, 74, 63, 0.9);
         }
 
-        /* Estilos para la lista de servicios */
-        .service-list {
+        /* Estilos para la lista de usuarios */
+        .user-list {
             background-color: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(8px);
             border-radius: 12px;
@@ -128,7 +135,7 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
             overflow-y: auto;
         }
 
-        .service-item {
+        .user-item {
             padding: 1.2rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             cursor: pointer;
@@ -138,30 +145,30 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
             align-items: center;
         }
 
-        .service-item:hover {
+        .user-item:hover {
             background-color: rgba(255, 255, 255, 0.2);
         }
 
-        .service-item:last-child {
+        .user-item:last-child {
             border-bottom: none;
         }
 
-        .service-name {
+        .user-name {
             font-weight: 500;
             font-size: 1.1rem;
         }
 
-        .service-description {
+        .user-username {
             font-size: 0.9rem;
             color: rgba(255, 255, 255, 0.7);
             margin-top: 0.3rem;
         }
 
-        .service-info {
+        .user-info {
             flex-grow: 1;
         }
 
-        .service-price {
+        .user-role {
             background-color: rgba(255, 255, 255, 0.2);
             padding: 0.3rem 0.6rem;
             border-radius: 12px;
@@ -169,21 +176,25 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
             margin-left: 1rem;
         }
 
-        .service-category {
-            background-color: rgba(140, 74, 63, 0.3);
+        .user-status {
+            background-color: rgba(0, 128, 0, 0.3);
             padding: 0.3rem 0.6rem;
             border-radius: 12px;
             font-size: 0.8rem;
             margin-left: 0.5rem;
         }
 
-        .service-arrow {
+        .user-status.inactive {
+            background-color: rgba(255, 0, 0, 0.3);
+        }
+
+        .user-arrow {
             margin-left: 1rem;
             opacity: 0.7;
             transition: all 0.3s ease;
         }
 
-        .service-item:hover .service-arrow {
+        .user-item:hover .user-arrow {
             opacity: 1;
             transform: translateX(3px);
         }
@@ -291,21 +302,7 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
             color: #fff;
         }
 
-        .price-tag {
-            font-weight: bold;
-            color: #88d8b0;
-        }
-
-        .time-estimate {
-            display: inline-block;
-            padding: 0.3rem 0.6rem;
-            background-color: rgba(0, 191, 255, 0.2);
-            color: #00bfff;
-            border-radius: 12px;
-            font-size: 0.9rem;
-        }
-
-        .category-tag {
+        .role-tag {
             display: inline-block;
             padding: 0.3rem 0.6rem;
             background-color: rgba(140, 74, 63, 0.3);
@@ -313,7 +310,24 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
             font-size: 0.9rem;
         }
 
-        .description-section {
+        .status-tag {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+
+        .status-active {
+            background-color: rgba(0, 128, 0, 0.3);
+            color: #7cfc00;
+        }
+
+        .status-inactive {
+            background-color: rgba(255, 0, 0, 0.3);
+            color: #ff6347;
+        }
+
+        .contact-section {
             grid-column: 1 / -1;
             background-color: rgba(0, 0, 0, 0.2);
             padding: 1.5rem;
@@ -357,17 +371,17 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
                 flex-direction: column;
             }
 
-            .service-item {
+            .user-item {
                 flex-direction: column;
                 align-items: flex-start;
             }
 
-            .service-price, .service-category {
+            .user-role, .user-status {
                 margin-left: 0;
                 margin-top: 0.5rem;
             }
 
-            .service-arrow {
+            .user-arrow {
                 display: none;
             }
 
@@ -391,17 +405,21 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
         <i class="fas fa-arrow-left"></i> Volver
     </a>
 
-    <h1><i class="fas fa-concierge-bell"></i> Lista de Servicios</h1>
+    <h1><i class="fas fa-users"></i> Lista de Usuarios</h1>
     <div class="main-container">
-        <!-- Resumen de servicios -->
+        <!-- Resumen de usuarios -->
         <div class="summary-cards">
             <div class="summary-card">
-                <h3>Total de Servicios</h3>
-                <p><?php echo $totalServicios; ?></p>
+                <h3>Total de Usuarios</h3>
+                <p><?php echo $totalUsuarios; ?></p>
             </div>
-            <?php foreach ($serviciosPorCategoria as $categoria => $cantidad): ?>
+            <div class="summary-card">
+                <h3>Usuarios Activos</h3>
+                <p><?php echo $usuariosActivos; ?></p>
+            </div>
+            <?php foreach ($usuariosPorRol as $rol => $cantidad): ?>
                 <div class="summary-card">
-                    <h3><?php echo htmlspecialchars($categoria); ?></h3>
+                    <h3><?php echo htmlspecialchars($rol); ?></h3>
                     <p><?php echo $cantidad; ?></p>
                 </div>
             <?php endforeach; ?>
@@ -409,41 +427,38 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
 
         <!-- Buscador -->
         <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" placeholder="Buscar servicio por nombre..." onkeyup="filterServices()">
-            <button class="search-button" onclick="filterServices()">
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar usuario por nombre..." onkeyup="filterUsers()">
+            <button class="search-button" onclick="filterUsers()">
                 <i class="fas fa-search"></i> Buscar
             </button>
         </div>
 
-        <!-- Lista de servicios -->
-        <div class="service-list" id="serviceList">
-            <?php foreach ($servicios as $servicio):
-                $shortDescription = !empty($servicio['descripcion_servicio'])
-                    ? (strlen($servicio['descripcion_servicio']) > 50
-                        ? substr($servicio['descripcion_servicio'], 0, 50) . '...'
-                        : $servicio['descripcion_servicio'])
-                    : 'Sin descripción disponible';
-            ?>
-                <div class="service-item"
-                    onclick="showServiceDetails(
-                         '<?php echo htmlspecialchars($servicio['id_servicio'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($servicio['nombre_servicio'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($servicio['descripcion_servicio'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($servicio['precio_servicio'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($servicio['tiempo_estimado'], ENT_QUOTES); ?>',
-                         '<?php echo htmlspecialchars($servicio['categoria_servicio'], ENT_QUOTES); ?>'
+        <!-- Lista de usuarios -->
+        <div class="user-list" id="userList">
+            <?php foreach ($usuarios as $usuario): ?>
+                <div class="user-item"
+                    onclick="showUserDetails(
+                         '<?php echo htmlspecialchars($usuario['id_usuario'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($usuario['nombre_completo'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($usuario['username_usuario'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($usuario['nombre_rol'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($usuario['correo_usuario'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($usuario['telefono_usuario'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($usuario['activo_usuario'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($usuario['fecha_creacion'], ENT_QUOTES); ?>',
+                         '<?php echo htmlspecialchars($usuario['ultima_actividad'], ENT_QUOTES); ?>'
                      )">
-                    <div class="service-info">
-                        <div class="service-name"><?php echo htmlspecialchars($servicio['nombre_servicio']); ?></div>
-                        <div class="service-description"><?php echo htmlspecialchars($shortDescription); ?></div>
+                    <div class="user-info">
+                        <div class="user-name"><?php echo htmlspecialchars($usuario['nombre_completo']); ?></div>
+                        <div class="user-username">@<?php echo htmlspecialchars($usuario['username_usuario']); ?></div>
                     </div>
-                    <div class="service-price">
-                        $<?php echo number_format($servicio['precio_servicio'], 0, ',', '.'); ?>
+                    <div class="user-role">
+                        <?php echo htmlspecialchars($usuario['nombre_rol']); ?>
                     </div>
-                    <div class="service-category">
-                        <?php echo htmlspecialchars($servicio['categoria_servicio']); ?>
+                    <div class="user-status <?php echo $usuario['activo_usuario'] === 'Inactivo' ? 'inactive' : ''; ?>">
+                        <?php echo htmlspecialchars($usuario['activo_usuario']); ?>
                     </div>
-                    <div class="service-arrow">
+                    <div class="user-arrow">
                         <i class="fas fa-chevron-right"></i>
                     </div>
                 </div>
@@ -452,92 +467,113 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
     </div>
 
     <!-- Overlay para fondo oscuro -->
-    <div class="overlay" id="overlay" onclick="hideServiceDetails()"></div>
+    <div class="overlay" id="overlay" onclick="hideUserDetails()"></div>
 
-    <!-- Tarjeta flotante de detalles del servicio -->
-    <div class="floating-card" id="serviceDetailCard">
+    <!-- Tarjeta flotante de detalles del usuario -->
+    <div class="floating-card" id="userDetailCard">
         <div class="card-header">
-            <h2 class="card-title" id="detailServiceName"></h2>
-            <button class="close-detail close-card" onclick="hideServiceDetails()">
+            <h2 class="card-title" id="detailUserName"></h2>
+            <button class="close-detail close-card" onclick="hideUserDetails()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
 
         <div class="card-content">
             <div class="detail-item">
-                <div class="detail-label">ID Servicio</div>
-                <div class="detail-value" id="detailServiceId"></div>
+                <div class="detail-label">ID Usuario</div>
+                <div class="detail-value" id="detailUserId"></div>
             </div>
 
             <div class="detail-item">
-                <div class="detail-label">Precio</div>
-                <div class="detail-value"><span class="price-tag" id="detailServicePrice"></span></div>
+                <div class="detail-label">Nombre de Usuario</div>
+                <div class="detail-value" id="detailUserUsername"></div>
             </div>
 
             <div class="detail-item">
-                <div class="detail-label">Tiempo Estimado</div>
-                <div class="detail-value"><span class="time-estimate" id="detailServiceTime"></span></div>
+                <div class="detail-label">Rol</div>
+                <div class="detail-value"><span class="role-tag" id="detailUserRole"></span></div>
             </div>
 
             <div class="detail-item">
-                <div class="detail-label">Categoría</div>
-                <div class="detail-value"><span class="category-tag" id="detailServiceCategory"></span></div>
+                <div class="detail-label">Estado</div>
+                <div class="detail-value"><span class="status-tag" id="detailUserStatus"></span></div>
             </div>
 
-            <div class="description-section">
-                <div class="detail-label">Descripción Completa</div>
-                <div class="detail-value" id="detailServiceDescription"></div>
+            <div class="detail-item">
+                <div class="detail-label">Fecha de Creación</div>
+                <div class="detail-value" id="detailUserCreationDate"></div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">Última Actividad</div>
+                <div class="detail-value" id="detailUserLastActivity"></div>
+            </div>
+
+            <div class="contact-section">
+                <div class="detail-label">Información de Contacto</div>
+                <div class="detail-value"><i class="fas fa-envelope"></i> <span id="detailUserEmail"></span></div>
+                <div class="detail-value"><i class="fas fa-phone"></i> <span id="detailUserPhone"></span></div>
             </div>
         </div>
     </div>
 
     <!-- Scripts -->
     <script>
-        // Función para filtrar servicios
-        function filterServices() {
+        // Función para filtrar usuarios
+        function filterUsers() {
             const input = document.getElementById('searchInput');
             const filter = input.value.toUpperCase();
-            const serviceList = document.getElementById('serviceList');
-            const services = serviceList.getElementsByClassName('service-item');
+            const userList = document.getElementById('userList');
+            const users = userList.getElementsByClassName('user-item');
 
-            for (let i = 0; i < services.length; i++) {
-                const serviceName = services[i].querySelector('.service-name').textContent;
-                if (serviceName.toUpperCase().indexOf(filter) > -1) {
-                    services[i].style.display = "flex";
+            for (let i = 0; i < users.length; i++) {
+                const userName = users[i].querySelector('.user-name').textContent;
+                const userUsername = users[i].querySelector('.user-username').textContent;
+                if (userName.toUpperCase().indexOf(filter) > -1 || userUsername.toUpperCase().indexOf(filter) > -1) {
+                    users[i].style.display = "flex";
                 } else {
-                    services[i].style.display = "none";
+                    users[i].style.display = "none";
                 }
             }
         }
 
-        // Función para mostrar detalles del servicio
-        function showServiceDetails(id, name, description, price, time, category) {
-            document.getElementById('detailServiceId').textContent = id;
-            document.getElementById('detailServiceName').textContent = name;
+        // Función para mostrar detalles del usuario
+        function showUserDetails(id, name, username, role, email, phone, status, creationDate, lastActivity) {
+            document.getElementById('detailUserId').textContent = id;
+            document.getElementById('detailUserName').textContent = name;
+            document.getElementById('detailUserUsername').textContent = '@' + username;
+            document.getElementById('detailUserRole').textContent = role;
             
-            // Formatear precio
-            if (price) {
-                document.getElementById('detailServicePrice').textContent = '$' + parseFloat(price).toLocaleString('es-ES');
-            } else {
-                document.getElementById('detailServicePrice').textContent = 'No especificado';
-            }
+            // Estado con color
+            const statusElement = document.getElementById('detailUserStatus');
+            statusElement.textContent = status;
+            statusElement.className = 'status-tag ' + (status === 'Activo' ? 'status-active' : 'status-inactive');
             
-            document.getElementById('detailServiceTime').textContent = time || 'No especificado';
-            document.getElementById('detailServiceCategory').textContent = category || 'No especificada';
-            document.getElementById('detailServiceDescription').textContent = description || 'No hay descripción disponible';
+            document.getElementById('detailUserEmail').textContent = email || 'No especificado';
+            document.getElementById('detailUserPhone').textContent = phone || 'No especificado';
+            
+            // Formatear fechas
+            const formatDate = (dateString) => {
+                if (!dateString) return 'No disponible';
+                const date = new Date(dateString);
+                return date.toLocaleString('es-ES');
+            };
+            
+            document.getElementById('detailUserCreationDate').textContent = formatDate(creationDate);
+            document.getElementById('detailUserLastActivity').textContent = formatDate(lastActivity);
 
             // Mostrar overlay y tarjeta flotante
             document.getElementById('overlay').style.display = 'block';
-            document.getElementById('serviceDetailCard').style.display = 'block';
+            document.getElementById('userDetailCard').style.display = 'block';
 
             // Deshabilitar scroll del body
             document.body.style.overflow = 'hidden';
         }
 
-        // Función para ocultar detalles del servicio
-        function hideServiceDetails() {
+        // Función para ocultar detalles del usuario
+        function hideUserDetails() {
             document.getElementById('overlay').style.display = 'none';
-            document.getElementById('serviceDetailCard').style.display = 'none';
+            document.getElementById('userDetailCard').style.display = 'none';
 
             // Habilitar scroll del body
             document.body.style.overflow = 'auto';
@@ -546,12 +582,12 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
         // Cerrar con tecla ESC
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
-                hideServiceDetails();
+                hideUserDetails();
             }
         });
 
         // Inicializar el filtro al cargar la página
-        document.addEventListener('DOMContentLoaded', filterServices);
+        document.addEventListener('DOMContentLoaded', filterUsers);
     </script>
 </body>
 
