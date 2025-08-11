@@ -271,26 +271,7 @@ INSERT INTO `vehiculos` (`id_vehiculo`, `marca_vehiculo`, `modelo_vehiculo`, `pl
 (2, 'Chevrolet', 'Spark', 'DEF654', 'Color azul, año 2018'),
 (3, 'Renault', 'Logan', 'GHI789', 'Color gris, año 2019'),
 (4, 'Honda', 'Civic', 'JKL9101', 'carro gris');
---
---
-CREATE TABLE `mensajes_contacto` (
-  `id_mensaje` int(11) NOT NULL,
-  `nombre_completo` varchar(100) NOT NULL,
-  `correo_electronico` varchar(100) NOT NULL,
-  `telefono` varchar(25) DEFAULT NULL,
-  `asunto` varchar(50) NOT NULL,
-  `mensaje` text NOT NULL,
-  `fecha_envio` timestamp NOT NULL DEFAULT current_timestamp(),
-  `leido` tinyint(1) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
---
--- Volcado de datos para la tabla `mensajes_contacto`
---
 
-INSERT INTO `mensajes_contacto` (`id_mensaje`, `nombre_completo`, `correo_electronico`, `telefono`, `asunto`, `mensaje`, `fecha_envio`, `leido`) VALUES
-(1, 'Carlos Andrés Pérez', 'carlos.perez@example.com', '3201234567', 'cotizacion', 'Buen día, necesito una cotización para tapizar los asientos de mi Toyota Corolla 2020. ¿Podrían enviarme información sobre materiales y precios?', '2025-07-10 08:15:22', 1),
-(2, 'María Fernanda Gómez', 'maria.gomez@example.com', '3159876543', 'consulta', 'Hola, quisiera saber si trabajan con materiales ecológicos para tapicería y cuál sería el tiempo estimado para un vehículo mediano.', '2025-07-11 14:30:45', 0),
-(3, 'Jorge Eduardo Rodríguez', 'jorge.rodriguez@example.com', '3104567890', 'garantia', 'El tapizado que me hicieron hace 3 meses presenta desgaste prematuro. Quisiera información sobre la garantía del trabajo realizado.', '2025-07-12 09:05:18', 1);
 --
 -- Índices para tablas volcadas
 --
@@ -361,10 +342,6 @@ ALTER TABLE `usuarios`
 --
 ALTER TABLE `vehiculos`
   ADD PRIMARY KEY (`id_vehiculo`);
---
---
-ALTER TABLE `mensajes_contacto`
-  ADD PRIMARY KEY (`id_mensaje`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas
@@ -417,10 +394,7 @@ ALTER TABLE `usuarios`
 --
 ALTER TABLE `vehiculos`
   MODIFY `id_vehiculo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
---
---
-ALTER TABLE `mensajes_contacto`
-  MODIFY `id_mensaje` int(11) NOT NULL AUTO_INCREMENT;
+
 --
 -- Restricciones para tablas volcadas
 --

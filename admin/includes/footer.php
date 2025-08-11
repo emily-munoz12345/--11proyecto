@@ -11,7 +11,7 @@
             </div>
             
             <nav class="footer-links">
-                <a href="/--11proyecto/admin/ayuda.php" class="footer-link" data-bs-toggle="modal" data-bs-target="#helpModal">
+                <a href="/--11proyecto/admin/ayuda/ayuda.php" class="footer-link" >
                     <i class="fas fa-question-circle"></i>
                     <span>Ayuda</span>
                 </a>

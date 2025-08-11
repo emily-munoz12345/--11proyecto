@@ -1,10 +1,8 @@
 <?php
-require_once __DIR__ . '/../php/conexion.php';
-require_once __DIR__ . '/../php/auth.php';
+require_once __DIR__ . '../../../php/conexion.php';
+require_once __DIR__ . '../../../php/auth.php';
 
-
-
-require_once __DIR__ . '/includes/head.php';
+require_once __DIR__ . '../../includes/head.php';
 ?>
 
 <!DOCTYPE html>
@@ -12,7 +10,7 @@ require_once __DIR__ . '/includes/head.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ayuda y Soporte | Nacional Tapizados</title>
+    <title>Ayuda Administrativa | Nacional Tapizados</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -284,7 +282,7 @@ require_once __DIR__ . '/includes/head.php';
 <body class="admin-body">
     <div class="admin-container">
         <!-- Sidebar -->
-        <?php include __DIR__ . '/includes/sidebar.php'; ?>
+        <?php include __DIR__ . '../../includes/sidebar.php'; ?>
         <a href="javascript:history.back()" class="back-button">
             <i class="fas fa-arrow-left"></i> Volver
         </a>
@@ -293,45 +291,45 @@ require_once __DIR__ . '/includes/head.php';
             <div class="help-container">
                 <header class="help-header">
                     <h1>
-                        <i class="fas fa-question-circle"></i> Ayuda y Soporte
+                        <i class="fas fa-headset"></i> Soporte Administrativo
                     </h1>
-                    <p>Encuentra respuestas a tus preguntas, información de contacto y recursos útiles para sacar el máximo provecho de nuestro sistema.</p>
+                    <p>Recursos y asistencia técnica para el personal administrativo de Nacional Tapizados. Aquí encontrarás guías, contactos de soporte y respuestas a preguntas frecuentes sobre el sistema interno.</p>
                 </header>
 
                 <!-- Preguntas Frecuentes -->
                 <section class="help-section">
                     <h2>
-                        <i class="fas fa-question"></i> Preguntas Frecuentes
+                        <i class="fas fa-question-circle"></i> Preguntas Frecuentes - Área Administrativa
                     </h2>
                     <div class="faq-container">
                         <article class="faq-item">
-                            <h3><span>1</span> ¿Cómo puedo crear una cuenta?</h3>
-                            <p>Para crear una cuenta, dirígete a la página de registro y completa el formulario con tus datos personales y de contacto. Recibirás un correo electrónico de confirmación para activar tu cuenta.</p>
+                            <h3><span>1</span> ¿Cómo gestionar usuarios y permisos?</h3>
+                            <p>Desde el módulo de Usuarios en el panel de administración puedes crear, editar y desactivar cuentas. Los roles y permisos se asignan en la pestaña "Configuración de acceso".</p>
                         </article>
                         
                         <article class="faq-item">
-                            <h3><span>2</span> ¿Cómo puedo restablecer mi contraseña?</h3>
-                            <p>Si olvidaste tu contraseña, haz clic en "¿Olvidaste tu contraseña?" en la página de inicio de sesión. Ingresa tu correo electrónico y sigue las instrucciones que recibirás para crear una nueva contraseña segura.</p>
+                            <h3><span>2</span> ¿Cómo generar reportes personalizados?</h3>
+                            <p>En la sección de Reportes, selecciona el tipo de informe, ajusta los filtros y fechas según necesites. Puedes exportar a PDF, Excel o programar envíos automáticos.</p>
                         </article>
                         
                         <article class="faq-item">
-                            <h3><span>3</span> ¿Qué métodos de pago aceptan?</h3>
-                            <p>Aceptamos diversos métodos de pago incluyendo tarjetas de crédito (Visa, MasterCard, American Express), transferencias bancarias y pagos en efectivo en nuestras instalaciones.</p>
+                            <h3><span>3</span> ¿Qué hacer si el sistema muestra errores?</h3>
+                            <p>Primero verifica tu conexión a internet. Si el problema persiste, registra el código de error y contacta a soporte técnico. No intentes soluciones que puedan afectar la integridad de los datos.</p>
                         </article>
                         
                         <article class="faq-item">
-                            <h3><span>4</span> ¿Cómo programo una cita?</h3>
-                            <p>Puedes programar una cita desde tu panel de control seleccionando el servicio que necesitas, la fecha y hora disponibles que mejor se ajusten a tu agenda.</p>
+                            <h3><span>4</span> ¿Cómo actualizar inventario?</h3>
+                            <p>Dirígete al módulo de Inventario, selecciona "Actualizar existencias". Puedes hacer ajustes manuales o cargar un archivo CSV con las nuevas cantidades.</p>
                         </article>
                         
                         <article class="faq-item">
-                            <h3><span>5</span> ¿Cuál es el tiempo de entrega?</h3>
-                            <p>El tiempo de entrega varía según el tipo de trabajo. Para tapicería estándar, el tiempo promedio es de 5-7 días hábiles. Trabajos complejos pueden requerir más tiempo.</p>
+                            <h3><span>5</span> ¿Cómo procesar devoluciones?</h3>
+                            <p>En el módulo de Ventas, busca la transacción original, selecciona "Procesar devolución" y sigue el asistente. El sistema ajustará automáticamente el inventario y los registros contables.</p>
                         </article>
                         
                         <article class="faq-item">
-                            <h3><span>6</span> ¿Ofrecen garantía?</h3>
-                            <p>Sí, todos nuestros trabajos tienen una garantía de 6 meses contra defectos de fabricación. La garantía no cubre daños por mal uso o desgaste normal.</p>
+                            <h3><span>6</span> ¿Cómo configurar alertas del sistema?</h3>
+                            <p>En Configuración > Notificaciones puedes activar alertas para niveles bajos de inventario, pagos pendientes, citas próximas y otros eventos importantes.</p>
                         </article>
                     </div>
                 </section>
@@ -339,35 +337,35 @@ require_once __DIR__ . '/includes/head.php';
                 <!-- Contacto -->
                 <section class="help-section">
                     <h2>
-                        <i class="fas fa-envelope"></i> Contacto
+                        <i class="fas fa-life-ring"></i> Soporte Técnico
                     </h2>
                     <div class="contact-card">
-                        <p>Si no encuentras respuesta a tu pregunta en nuestra sección de ayuda, nuestro equipo de soporte está disponible para ayudarte.</p>
+                        <p>Para problemas técnicos urgentes o consultas sobre el sistema administrativo, contacta a nuestro equipo de soporte interno.</p>
                         
                         <div class="contact-method">
-                            <i class="fas fa-envelope"></i>
+                            <i class="fas fa-ticket-alt"></i>
                             <div>
-                                <h4>Correo Electrónico</h4>
-                                <p><a href="mailto:soporte@nacionaltapizados.com">soporte@nacionaltapizados.com</a></p>
-                                <p>Respuesta en menos de 24 horas</p>
+                                <h4>Sistema de Tickets</h4>
+                                <p><a href="https://soporte.nacionaltapizados.com" target="_blank">Abrir un ticket de soporte</a></p>
+                                <p>Seguimiento prioritario para problemas del sistema</p>
                             </div>
                         </div>
                         
                         <div class="contact-method">
                             <i class="fas fa-phone"></i>
                             <div>
-                                <h4>Teléfono</h4>
-                                <p><a href="tel:+573001234567">+57 300 123 4567</a></p>
-                                <p>Lunes a Viernes: 8:00 AM - 6:00 PM</p>
+                                <h4>Soporte Urgente</h4>
+                                <p><a href="tel:+573001234567">Ext. 101 (Interno)</a></p>
+                                <p>Disponible 24/7 para emergencias del sistema</p>
                             </div>
                         </div>
                         
                         <div class="contact-method">
-                            <i class="fas fa-map-marker-alt"></i>
+                            <i class="fas fa-users"></i>
                             <div>
-                                <h4>Dirección</h4>
-                                <p>Calle 123 #45-67, Bogotá, Colombia</p>
-                                <p>Horario de atención: Lunes a Sábado 9:00 AM - 5:00 PM</p>
+                                <h4>Capacitación</h4>
+                                <p><a href="mailto:capacitacion@nacionaltapizados.com">capacitacion@nacionaltapizados.com</a></p>
+                                <p>Solicita sesiones de entrenamiento para tu equipo</p>
                             </div>
                         </div>
                     </div>
@@ -376,52 +374,97 @@ require_once __DIR__ . '/includes/head.php';
                 <!-- Recursos -->
                 <section class="help-section">
                     <h2>
-                        <i class="fas fa-book"></i> Recursos Útiles
+                        <i class="fas fa-tools"></i> Recursos Administrativos
                     </h2>
                     <div class="resources-grid">
                         <div class="resource-card">
                             <div class="resource-icon">
-                                <i class="fas fa-file-pdf"></i>
+                                <i class="fas fa-file-alt"></i>
                             </div>
-                            <h3>Guía del Usuario</h3>
-                            <p>Manual completo con instrucciones detalladas para usar todas las funciones del sistema.</p>
-                            <a href="guia_usuario.pdf" target="_blank">
+                            <h3>Manual Administrativo</h3>
+                            <p>Guía completa con todos los procesos y políticas internas de la empresa.</p>
+                            <a href="manual_administrativo.pdf" target="_blank">
                                 <i class="fas fa-download"></i> Descargar
                             </a>
                         </div>
                         
                         <div class="resource-card">
                             <div class="resource-icon">
-                                <i class="fas fa-shield-alt"></i>
+                                <i class="fas fa-chart-line"></i>
                             </div>
-                            <h3>Política de Privacidad</h3>
-                            <p>Información sobre cómo protegemos y manejamos tus datos personales.</p>
-                            <a href="politica_privacidad.pdf" target="_blank">
+                            <h3>Plantillas de Reportes</h3>
+                            <p>Colección de plantillas predefinidas para análisis de ventas e inventario.</p>
+                            <a href="plantillas_reportes.zip" target="_blank">
                                 <i class="fas fa-download"></i> Descargar
                             </a>
                         </div>
                         
                         <div class="resource-card">
                             <div class="resource-icon">
-                                <i class="fas fa-file-contract"></i>
+                                <i class="fas fa-database"></i>
                             </div>
-                            <h3>Términos de Servicio</h3>
-                            <p>Condiciones y términos que rigen el uso de nuestro sistema y servicios.</p>
-                            <a href="terminos_servicio.pdf" target="_blank">
+                            <h3>Protocolo de Respaldo</h3>
+                            <p>Instrucciones para realizar copias de seguridad de la información crítica.</p>
+                            <a href="protocolo_respaldo.pdf" target="_blank">
                                 <i class="fas fa-download"></i> Descargar
                             </a>
                         </div>
                         
                         <div class="resource-card">
                             <div class="resource-icon">
-                                <i class="fas fa-video"></i>
+                                <i class="fas fa-lock"></i>
                             </div>
-                            <h3>Video Tutoriales</h3>
-                            <p>Guías en video para aprender a usar las principales funciones del sistema.</p>
-                            <a href="tutoriales.html" target="_blank">
-                                <i class="fas fa-external-link-alt"></i> Ver
+                            <h3>Seguridad de Datos</h3>
+                            <p>Políticas y mejores prácticas para proteger la información sensible.</p>
+                            <a href="seguridad_datos.pdf" target="_blank">
+                                <i class="fas fa-download"></i> Descargar
                             </a>
                         </div>
+                        
+                        <div class="resource-card">
+                            <div class="resource-icon">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <h3>Flujos de Trabajo</h3>
+                            <p>Diagramas de los procesos clave de aprobación y autorizaciones.</p>
+                            <a href="flujos_trabajo.pdf" target="_blank">
+                                <i class="fas fa-download"></i> Descargar
+                            </a>
+                        </div>
+                        
+                        <div class="resource-card">
+                            <div class="resource-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <h3>Calendario Fiscal</h3>
+                            <p>Fechas importantes y vencimientos para el año en curso.</p>
+                            <a href="calendario_fiscal.ics" target="_blank">
+                                <i class="fas fa-download"></i> Descargar
+                            </a>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Procedimientos -->
+                <section class="help-section">
+                    <h2>
+                        <i class="fas fa-list-check"></i> Procedimientos Clave
+                    </h2>
+                    <div class="faq-container">
+                        <article class="faq-item">
+                            <h3><i class="fas fa-user-plus"></i> Alta de Nuevo Empleado</h3>
+                            <p>1. Recopilar documentación requerida<br>2. Registrar en sistema de RRHH<br>3. Asignar equipos y accesos<br>4. Programar inducción</p>
+                        </article>
+                        
+                        <article class="faq-item">
+                            <h3><i class="fas fa-file-invoice-dollar"></i> Cierre Mensual</h3>
+                            <p>1. Verificar conciliaciones bancarias<br>2. Revisar cuentas por cobrar/pagar<br>3. Generar reportes financieros<br>4. Realizar respaldo completo</p>
+                        </article>
+                        
+                        <article class="faq-item">
+                            <h3><i class="fas fa-box-open"></i> Recepción de Mercancía</h3>
+                            <p>1. Verificar factura vs pedido<br>2. Inspeccionar estado de productos<br>3. Registrar en sistema<br>4. Almacenar con código QR</p>
+                        </article>
                     </div>
                 </section>
             </div>
@@ -429,7 +472,6 @@ require_once __DIR__ . '/includes/head.php';
     </div>
 
     <script>
-        // Funcionalidad adicional si es necesaria
         document.addEventListener('DOMContentLoaded', function() {
             // Puedes añadir aquí interacciones como acordeones para las FAQs
             const faqItems = document.querySelectorAll('.faq-item');
