@@ -83,7 +83,7 @@ if (isset($_GET['ajax'])) {
         }
         
         body {
-            background-image: url('https://pfst.cf2.poecdn.net/base/image/fe72e5f0bf336b4faca086bc6a42c20a45e904d165e796b52eca655a143283b8?w=1024&h=768&pmaid=426747789');
+            background-image: url('https://pfst.cf2.poecdn.net/base/image/60ab54eef562f30f85a67bde31f924f078199dae0b7bc6c333dfb467a2c13471?w=1024&h=768&pmaid=442168253');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -634,7 +634,7 @@ if (isset($_GET['ajax'])) {
                 <a href="crear.php" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Nuevo Cliente
                 </a>
-                <a href="../dashboard.php" class="btn btn-secondary">
+                <a href="../../dashboard.php" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Volver
                 </a>
             </div>
@@ -672,10 +672,6 @@ if (isset($_GET['ajax'])) {
             <div class="summary-card">
                 <h3>Registros Hoy</h3>
                 <p><?= $stats['registros_hoy'] ?></p>
-            </div>
-            <div class="summary-card">
-                <h3>Acciones</h3>
-                <p><i class="fas fa-cog"></i></p>
             </div>
         </div>
 
@@ -758,24 +754,7 @@ if (isset($_GET['ajax'])) {
                                     <i class="fas fa-phone"></i>
                                     <span><?= htmlspecialchars($cliente['telefono_cliente']) ?></span>
                                 </div>
-                                <div class="client-card-detail">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    <span>Registrado el <?= date('d/m/Y', strtotime($cliente['fecha_registro'])) ?></span>
-                                </div>
-                                <?php if (!empty($cliente['direccion_cliente'])): ?>
-                                <div class="client-card-detail">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <span><?= htmlspecialchars($cliente['direccion_cliente']) ?></span>
-                                </div>
-                                <?php endif; ?>
-                            </div>
-                            <div class="client-card-footer">
-                                <a href="ver.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-info" title="Ver detalles">
-                                    <i class="fas fa-eye"></i> Ver
-                                </a>
-                                <a href="editar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-secondary" title="Editar">
-                                    <i class="fas fa-edit"></i> Editar
-                                </a>
+
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -812,9 +791,6 @@ if (isset($_GET['ajax'])) {
                                     <td data-label="Acciones" class="text-nowrap">
                                         <a href="editar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-secondary btn-sm">
                                             <i class="fas fa-edit"></i> Editar
-                                        </a>
-                                        <a href="ver.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-info btn-sm">
-                                            <i class="fas fa-eye"></i> Ver
                                         </a>
                                     </td>
                                 </tr>

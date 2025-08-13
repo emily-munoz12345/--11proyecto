@@ -76,8 +76,6 @@ foreach ($allowedCards[$userRole] as $card) {
                             <a href="perfil/perfil.php" class="dropdown-item">Mi perfil</a>
                             <a href="mis_pedidos.php" class="dropdown-item">Mis pedidos</a>
                             <a href="lista_deseos.php" class="dropdown-item">Lista de deseos</a>
-                            <a href="perfil/configuracion.php" class="dropdown-item">Configuración</a>
-                            <div class="dropdown-divider"></div>
                             <a href="../php/logout.php" class="dropdown-item logout">Cerrar sesión</a>
                         </div>
                     </div>

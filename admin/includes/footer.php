@@ -15,10 +15,6 @@
                     <i class="fas fa-question-circle"></i>
                     <span>Ayuda</span>
                 </a>
-                <a href="/--11proyecto/admin/ajustes.php" class="footer-link">
-                    <i class="fas fa-cog"></i>
-                    <span>Ajustes</span>
-                </a>
             </nav>
         </div>
     </div>

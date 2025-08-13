@@ -8,10 +8,10 @@
   <style>
     /* ESTILOS GENERALES */
     :root {
-      --dorado-oscuro: #996515;
-      --dorado: #B8860B;
-      --dorado-claro: #d4af37;
-      --dorado-hover: #FFD700;
+      --dorado-oscuro: #8C4A3F;
+      --dorado:  #D4A373;
+      --dorado-claro: #C7B8A1;
+      --dorado-hover: #B57157;
       --vinotinto: #a83a3a;       /* Color principal más claro */
       --vinotinto-claro: #c45e5e; /* Versión más clara */
       --vinotinto-suave: #d88a8a; /* Para textos secundarios */
