@@ -55,90 +55,11 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Perfil</title>
-    <link rel="stylesheet" href="../css/estilos.css">
-    <link rel="stylesheet" href="../css/perfil.css">
-    <style>
-        .edit-form-container {
-            max-width: 600px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background-color: var(--neutral-light);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-sm);
-            border: var(--border-soft);
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--primary-dark);
-            font-weight: 500;
-        }
-        
-        input[type="text"],
-        input[type="email"],
-        input[type="tel"] {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--neutral-medium);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: var(--transition-fast);
-        }
-        
-        input[type="text"]:focus,
-        input[type="email"]:focus,
-        input[type="tel"]:focus {
-            border-color: var(--accent-color);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(94, 48, 35, 0.1);
-        }
-        
-        .btn-submit {
-            background: var(--gradient-gold);
-            color: var(--primary-dark);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition-normal);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .btn-submit:hover {
-            background: linear-gradient(135deg, var(--gold-pastel), var(--gold-cream));
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .alert {
-            padding: 1rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 1.5rem;
-        }
-        
-        .alert-error {
-            background-color: rgba(196, 90, 77, 0.2);
-            border: 1px solid var(--error-color);
-            color: var(--error-color);
-        }
-        
-        .alert-success {
-            background-color: rgba(138, 155, 110, 0.2);
-            border: 1px solid var(--success-color);
-            color: var(--success-color);
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body class="admin-body">
     <?php include '../includes/head.php'; ?>
+            <?php include __DIR__ . '../../includes/sidebar.php'; ?>
 
     <div class="content-wrapper">
         <main class="profile-container">

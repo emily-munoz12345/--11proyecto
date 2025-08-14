@@ -52,92 +52,11 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Cotizaciones</title>
-    <link rel="stylesheet" href="../css/estilos.css">
-    <link rel="stylesheet" href="../css/perfil.css">
-    <style>
-        .cotizaciones-container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background-color: var(--neutral-light);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-sm);
-            border: var(--border-soft);
-        }
-        
-        .page-title {
-            color: var(--primary-dark);
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid var(--gold-cream);
-        }
-        
-        .filters {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-        
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        select, input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--neutral-medium);
-            border-radius: var(--border-radius);
-        }
-        
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 2rem;
-            gap: 0.5rem;
-        }
-        
-        .page-link {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--neutral-medium);
-            border-radius: var(--border-radius);
-            text-decoration: none;
-            color: var(--primary-dark);
-            transition: var(--transition-fast);
-        }
-        
-        .page-link:hover, .page-link.active {
-            background: var(--gradient-gold);
-            color: var(--primary-dark);
-            border-color: var(--gold-dark);
-        }
-        
-        .export-btn {
-            background: var(--gradient-gold);
-            color: var(--primary-dark);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition-normal);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .export-btn:hover {
-            background: linear-gradient(135deg, var(--gold-pastel), var(--gold-cream));
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-sm);
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body class="admin-body">
     <?php include '../includes/head.php'; ?>
-
+            <?php include __DIR__ . '../../includes/sidebar.php'; ?>
     <div class="content-wrapper">
         <main class="cotizaciones-container">
             <h1 class="page-title">

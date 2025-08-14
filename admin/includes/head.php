@@ -22,17 +22,6 @@
     <!-- Favicon -->
     <link rel="icon" href="/--11proyecto/public/assets/favicon.ico" type="image/x-icon">
 
-    <meta name="description" content="Sistema administrativo de Nacional Tapizados">
-
-
-
-
-
-
-
-
-
-
     <script>
     // Aplicar configuración al cargar cada página
     document.addEventListener('DOMContentLoaded', function() {
