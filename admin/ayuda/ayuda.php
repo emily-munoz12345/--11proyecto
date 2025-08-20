@@ -27,7 +27,8 @@ require_once __DIR__ . '../../includes/head.php';
         }
         
         body {
-            background-image: url('https://pfst.cf2.poecdn.net/base/image/fe72e5f0bf336b4faca086bc6a42c20a45e904d165e796b52eca655a143283b8?w=1024&h=768&pmaid=426747789');
+                        background-image: url('https://pfst.cf2.poecdn.net/base/image/60ab54eef562f30f85a67bde31f924f078199dae0b7bc6c333dfb467a2c13471?w=1024&h=768&pmaid=442168253');
+
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -308,27 +309,17 @@ require_once __DIR__ . '../../includes/head.php';
                         </article>
                         
                         <article class="faq-item">
-                            <h3><span>2</span> ¿Cómo generar reportes personalizados?</h3>
-                            <p>En la sección de Reportes, selecciona el tipo de informe, ajusta los filtros y fechas según necesites. Puedes exportar a PDF, Excel o programar envíos automáticos.</p>
-                        </article>
-                        
-                        <article class="faq-item">
-                            <h3><span>3</span> ¿Qué hacer si el sistema muestra errores?</h3>
+                            <h3><span>2</span> ¿Qué hacer si el sistema muestra errores?</h3>
                             <p>Primero verifica tu conexión a internet. Si el problema persiste, registra el código de error y contacta a soporte técnico. No intentes soluciones que puedan afectar la integridad de los datos.</p>
                         </article>
                         
                         <article class="faq-item">
-                            <h3><span>4</span> ¿Cómo actualizar inventario?</h3>
+                            <h3><span>3</span> ¿Cómo actualizar inventario?</h3>
                             <p>Dirígete al módulo de Inventario, selecciona "Actualizar existencias". Puedes hacer ajustes manuales o cargar un archivo CSV con las nuevas cantidades.</p>
                         </article>
                         
                         <article class="faq-item">
-                            <h3><span>5</span> ¿Cómo procesar devoluciones?</h3>
-                            <p>En el módulo de Ventas, busca la transacción original, selecciona "Procesar devolución" y sigue el asistente. El sistema ajustará automáticamente el inventario y los registros contables.</p>
-                        </article>
-                        
-                        <article class="faq-item">
-                            <h3><span>6</span> ¿Cómo configurar alertas del sistema?</h3>
+                            <h3><span>4</span> ¿Cómo configurar alertas del sistema?</h3>
                             <p>En Configuración > Notificaciones puedes activar alertas para niveles bajos de inventario, pagos pendientes, citas próximas y otros eventos importantes.</p>
                         </article>
                     </div>
@@ -341,15 +332,6 @@ require_once __DIR__ . '../../includes/head.php';
                     </h2>
                     <div class="contact-card">
                         <p>Para problemas técnicos urgentes o consultas sobre el sistema administrativo, contacta a nuestro equipo de soporte interno.</p>
-                        
-                        <div class="contact-method">
-                            <i class="fas fa-ticket-alt"></i>
-                            <div>
-                                <h4>Sistema de Tickets</h4>
-                                <p><a href="https://soporte.nacionaltapizados.com" target="_blank">Abrir un ticket de soporte</a></p>
-                                <p>Seguimiento prioritario para problemas del sistema</p>
-                            </div>
-                        </div>
                         
                         <div class="contact-method">
                             <i class="fas fa-phone"></i>
@@ -387,18 +369,7 @@ require_once __DIR__ . '../../includes/head.php';
                                 <i class="fas fa-download"></i> Descargar
                             </a>
                         </div>
-                        
-                        <div class="resource-card">
-                            <div class="resource-icon">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <h3>Plantillas de Reportes</h3>
-                            <p>Colección de plantillas predefinidas para análisis de ventas e inventario.</p>
-                            <a href="plantillas_reportes.zip" target="_blank">
-                                <i class="fas fa-download"></i> Descargar
-                            </a>
-                        </div>
-                        
+                                                
                         <div class="resource-card">
                             <div class="resource-icon">
                                 <i class="fas fa-database"></i>
@@ -432,16 +403,6 @@ require_once __DIR__ . '../../includes/head.php';
                             </a>
                         </div>
                         
-                        <div class="resource-card">
-                            <div class="resource-icon">
-                                <i class="fas fa-calendar-check"></i>
-                            </div>
-                            <h3>Calendario Fiscal</h3>
-                            <p>Fechas importantes y vencimientos para el año en curso.</p>
-                            <a href="calendario_fiscal.ics" target="_blank">
-                                <i class="fas fa-download"></i> Descargar
-                            </a>
-                        </div>
                     </div>
                 </section>
                 
@@ -457,13 +418,8 @@ require_once __DIR__ . '../../includes/head.php';
                         </article>
                         
                         <article class="faq-item">
-                            <h3><i class="fas fa-file-invoice-dollar"></i> Cierre Mensual</h3>
-                            <p>1. Verificar conciliaciones bancarias<br>2. Revisar cuentas por cobrar/pagar<br>3. Generar reportes financieros<br>4. Realizar respaldo completo</p>
-                        </article>
-                        
-                        <article class="faq-item">
                             <h3><i class="fas fa-box-open"></i> Recepción de Mercancía</h3>
-                            <p>1. Verificar factura vs pedido<br>2. Inspeccionar estado de productos<br>3. Registrar en sistema<br>4. Almacenar con código QR</p>
+                            <p>1. Verificar factura vs pedido<br>2. Inspeccionar estado de productos<br>3. Registrar en sistema</p>
                         </article>
                     </div>
                 </section>

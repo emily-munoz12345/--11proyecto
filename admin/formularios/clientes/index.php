@@ -348,14 +348,14 @@ if (isset($_GET['ajax'])) {
         }
 
         /* Estilos para la lista de clientes */
-        .client-list {
+        /*.client-list {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
             overflow: hidden;
-        }
+        }*/
 
         .client-item {
             padding: 1.2rem;
@@ -394,14 +394,14 @@ if (isset($_GET['ajax'])) {
         }
 
         /* Estilos para tablas */
-        .table-container {
+        /*.table-container {
             overflow-x: auto;
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
-        }
+        }*/
 
         table {
             width: 100%;
@@ -959,9 +959,6 @@ if (isset($_GET['ajax'])) {
                                             <button class="btn btn-info btn-sm view-history-btn" data-client-id="<?= $cliente['id_cliente'] ?>" data-client-name="<?= htmlspecialchars($cliente['nombre_cliente']) ?>">
                                                 <i class="fas fa-history"></i> Ver Historial
                                             </button>
-                                            <a href="editar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-secondary btn-sm">
-                                                <i class="fas fa-edit"></i> Editar
-                                            </a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -1012,7 +1009,6 @@ if (isset($_GET['ajax'])) {
                                         <td data-label="ID"><?= $cliente['id_cliente'] ?></td>
                                         <td data-label="Cliente">
                                             <?= htmlspecialchars($cliente['nombre_cliente']) ?>
-                                            <span class="deleted-badge">Eliminado</span>
                                         </td>
                                         <td data-label="Teléfono"><?= htmlspecialchars($cliente['telefono_cliente']) ?></td>
                                         <td data-label="Eliminado el">
@@ -1043,6 +1039,7 @@ if (isset($_GET['ajax'])) {
     </div>
 
     <!-- Modal para historial de ediciones -->
+
     <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -1051,10 +1048,15 @@ if (isset($_GET['ajax'])) {
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="historyModalBody">
-                    <!-- El contenido se cargará dinámicamente -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <div class="detail-item">
+                <div class="detail-label">Teléfono</div>
+                <div class="detail-value" id="detailClientPhone"></div>
+            </div>
+
+            <div class="detail-item">
+                <div class="detail-label">Dirección</div>
+                <div class="detail-value" id="detailClientAddress"></div>
+            </div>
                 </div>
             </div>
         </div>

@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once '../php/conexion.php';
-require_once '../php/auth.php';
+require_once '../../../php/conexion.php';
+require_once '../../../php/auth.php';
 
 // Solo administradores pueden restaurar clientes
 if (!isAdmin()) {

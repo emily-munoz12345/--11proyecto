@@ -1,17 +1,17 @@
 <aside class="admin-sidebar">
-<div class="sidebar-header">
-    <h4 class="sidebar-title">
-        <button class="collapse-btn" title="Colapsar menú" style="background: none; border: none; padding: 0; cursor: pointer; color: #FFF8E1;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFF8E1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-2">
-                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path>
-                <circle cx="7" cy="17" r="2"></circle>
-                <path d="M9 17h6"></path>
-                <circle cx="17" cy="17" r="2"></circle>
-            </svg>
-            <span>Nacional Tapizados</span>
-        </button>
-    </h4>
-</div>
+    <div class="sidebar-header">
+        <h4 class="sidebar-title">
+            <button class="collapse-btn" title="Colapsar menú" style="background: none; border: none; padding: 0; cursor: pointer; color: #FFF8E1;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFF8E1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="me-2">
+                    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path>
+                    <circle cx="7" cy="17" r="2"></circle>
+                    <path d="M9 17h6"></path>
+                    <circle cx="17" cy="17" r="2"></circle>
+                </svg>
+                <span>Nacional Tapizados</span>
+            </button>
+        </h4>
+    </div>
 
     <nav class="sidebar-nav">
         <ul class="nav flex-column">
@@ -104,6 +104,18 @@
                 </a>
             </li>
 
+                        <li class="nav-item">
+                <a class="nav-link" href="/--11proyecto/admin/formularios/papelera/papelera.php">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
+                         <!-- <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>-->
+                    </svg>
+                    <span>Papelera</span>
+                </a>
+            </li>
+
             <li class="nav-item mt-auto">
                 <a class="nav-link logout-link" href="/--11proyecto/php/logout.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
@@ -137,13 +149,3 @@
         }
     });
 </script>
-
-
-
-
-
-
-
-
-
-
