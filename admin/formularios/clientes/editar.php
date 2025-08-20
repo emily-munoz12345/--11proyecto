@@ -54,8 +54,7 @@ $title = 'Editar Cliente | Nacional Tapizados';
         }
 
         .main-content {
-            background-color: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.95);
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             margin: 1rem;
@@ -64,96 +63,46 @@ $title = 'Editar Cliente | Nacional Tapizados';
         }
 
         .card {
-            background-color: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(8px);
+            background-color: white;
+            border: 1px solid rgba(0, 0, 0, 0.125);
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .card-header {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
             padding: 1.25rem 1.5rem;
             border-radius: 12px 12px 0 0 !important;
         }
 
         .btn-primary {
-            background-color: rgba(140, 74, 63, 0.8);
-            border-color: rgba(140, 74, 63, 0.9);
+            background-color: #8c4a3f;
+            border-color: #8c4a3f;
         }
 
         .btn-primary:hover {
-            background-color: rgba(140, 74, 63, 1);
-            border-color: rgba(140, 74, 63, 1);
-        }
-
-        .btn-outline-secondary {
-            color: rgba(255, 255, 255, 0.8);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-outline-secondary:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-
-        .form-control {
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-
-        .form-control:focus {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-color: rgba(140, 74, 63, 0.5);
-            color: white;
-            box-shadow: 0 0 0 0.25rem rgba(140, 74, 63, 0.25);
+            background-color: #7a4036;
+            border-color: #7a4036;
         }
 
         h1, h2, h3, h4, h5, h6 {
-            color: white;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        }
-
-        .text-muted {
-            color: rgba(255, 255, 255, 0.6) !important;
-        }
-
-        .border-bottom {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #8c4a3f;
         }
 
         .user-role-badge {
             display: inline-block;
             padding: 0.25rem 0.75rem;
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: #e9ecef;
             border-radius: 20px;
-            color: white;
+            color: #495057;
             font-weight: 500;
             font-size: 0.9rem;
-        }
-
-        label {
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 0.5rem;
-        }
-
-        .form-label {
-            font-weight: 500;
-        }
-
-        .card-body {
-            padding: 2rem;
-        }
-
-        .btn i {
-            margin-right: 5px;
         }
     </style>
 </head>
 
-<body class="bg-transparent">
+<body>
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
@@ -181,6 +130,9 @@ $title = 'Editar Cliente | Nacional Tapizados';
 
                     <!-- Formulario -->
                     <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Información del Cliente</h5>
+                        </div>
                         <div class="card-body">
                             <form action="procesar.php" method="POST">
                                 <input type="hidden" name="accion" value="editar">
@@ -238,16 +190,5 @@ $title = 'Editar Cliente | Nacional Tapizados';
     <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Toggle sidebar para móviles
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarToggle = document.querySelector('[data-bs-toggle="collapse"]');
-            if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', function() {
-                    document.querySelector('#sidebarMenu').classList.toggle('show');
-                });
-            }
-        });
-    </script>
 </body>
 </html>
