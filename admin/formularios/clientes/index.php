@@ -238,6 +238,7 @@ if (isset($_GET['ajax'])) {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
         }
 
         .search-result-item:hover {
@@ -257,6 +258,72 @@ if (isset($_GET['ajax'])) {
         .search-client-date {
             font-size: 0.8rem;
             color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Mini menú de opciones en resultados de búsqueda */
+        .search-result-menu {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            z-index: 10;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-toggle:hover {
+            color: var(--text-color);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .options-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: rgba(50, 50, 50, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            z-index: 20;
+            min-width: 150px;
+        }
+
+        .options-menu.show {
+            display: block;
+        }
+
+        .menu-option {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            color: var(--text-color);
+            text-decoration: none;
+        }
+
+        .menu-option:hover {
+            background-color: var(--primary-color);
+        }
+
+        .menu-option:first-child {
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+        }
+
+        .menu-option:last-child {
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
         }
 
         .search-loading {
@@ -294,6 +361,7 @@ if (isset($_GET['ajax'])) {
             padding: 1.5rem;
             border: 1px solid var(--border-color);
             transition: all 0.3s ease;
+            position: relative;
         }
 
         .client-card:hover {
@@ -306,6 +374,7 @@ if (isset($_GET['ajax'])) {
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 1rem;
+            cursor: pointer;
         }
 
         .client-card-title {
@@ -347,15 +416,39 @@ if (isset($_GET['ajax'])) {
             gap: 0.75rem;
         }
 
+        /* Flecha para tarjetas de editados */
+        .edit-arrow {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .edit-arrow:hover {
+            transform: translateX(3px);
+            color: var(--text-color);
+        }
+
+        /* Menú de opciones para tarjetas recientes */
+        .card-menu {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            z-index: 10;
+        }
+
         /* Estilos para la lista de clientes */
-        /*.client-list {
+        .client-list {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
             overflow: hidden;
-        }*/
+        }
 
         .client-item {
             padding: 1.2rem;
@@ -365,6 +458,7 @@ if (isset($_GET['ajax'])) {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
         }
 
         .client-item:hover {
@@ -394,14 +488,14 @@ if (isset($_GET['ajax'])) {
         }
 
         /* Estilos para tablas */
-        /*.table-container {
+        .table-container {
             overflow-x: auto;
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
-        }*/
+        }
 
         table {
             width: 100%;
@@ -667,6 +761,116 @@ if (isset($_GET['ajax'])) {
             margin-left: 0.5rem;
         }
 
+        /* Estilos para tarjetas flotantes */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .floating-card {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            background-color: rgba(50, 50, 50, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            animation: fadeInUp 0.4s ease;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 1.8rem;
+            color: #fff;
+        }
+
+        .close-card {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: all 0.3s ease;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-card:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .card-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .detail-item {
+            margin-bottom: 1rem;
+        }
+
+        .detail-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-value {
+            font-size: 1.1rem;
+            word-break: break-word;
+            color: #fff;
+        }
+
+        .notes-section {
+            grid-column: 1 / -1;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
         /* Responsive */
         @media (max-width: 992px) {
             .summary-cards {
@@ -747,6 +951,15 @@ if (isset($_GET['ajax'])) {
                 align-items: flex-start;
                 gap: 0.5rem;
             }
+
+            .options-menu {
+                min-width: 120px;
+            }
+
+            .menu-option {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+            }
         }
 
         @media (max-width: 576px) {
@@ -758,6 +971,15 @@ if (isset($_GET['ajax'])) {
             .btn {
                 width: 100%;
                 justify-content: center;
+            }
+
+            .floating-card {
+                width: 95%;
+                padding: 1.5rem;
+            }
+
+            .card-content {
+                grid-template-columns: 1fr;
             }
         }
     </style>   
@@ -852,17 +1074,29 @@ if (isset($_GET['ajax'])) {
                 <!-- Resultados iniciales (todos los clientes activos) -->
                 <div class="client-list" id="allClientsList">
                     <?php foreach ($todosClientes as $cliente): ?>
-                        <div class="client-item" data-client-id="<?= $cliente['id_cliente'] ?>"
-                            onclick="window.location.href='ver.php?id=<?= $cliente['id_cliente'] ?>'">
-                            <div class="client-info">
+                        <div class="client-item" data-client-id="<?= $cliente['id_cliente'] ?>">
+                            <div class="client-info" onclick="window.location.href='ver.php?id=<?= $cliente['id_cliente'] ?>'">
                                 <div class="client-name"><?= htmlspecialchars($cliente['nombre_cliente']) ?></div>
                                 <div class="client-description">
                                     <?= htmlspecialchars($cliente['telefono_cliente']) ?> ·
                                     <?= htmlspecialchars($cliente['correo_cliente']) ?>
                                 </div>
                             </div>
-                            <div class="client-arrow">
-                                <i class="fas fa-chevron-right"></i>
+                            <div class="search-result-menu">
+                                <button class="menu-toggle" onclick="event.stopPropagation(); toggleOptionsMenu(this)">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="options-menu">
+                                    <a class="menu-option" href="ver.php?id=<?= $cliente['id_cliente'] ?>">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </a>
+                                    <a class="menu-option" href="editar.php?id=<?= $cliente['id_cliente'] ?>">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                    <a class="menu-option" href="eliminar.php?id=<?= $cliente['id_cliente'] ?>" onclick="return confirm('¿Estás seguro de eliminar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -874,7 +1108,25 @@ if (isset($_GET['ajax'])) {
                 <div class="client-cards">
                     <?php foreach ($clientesRecientes as $cliente): ?>
                         <div class="client-card">
-                            <div class="client-card-header">
+                            <!-- Menú de opciones en esquina superior derecha -->
+                            <div class="card-menu">
+                                <button class="menu-toggle" onclick="event.stopPropagation(); toggleOptionsMenu(this)">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="options-menu">
+                                    <a class="menu-option" href="ver.php?id=<?= $cliente['id_cliente'] ?>">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </a>
+                                    <a class="menu-option" href="editar.php?id=<?= $cliente['id_cliente'] ?>">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                    <a class="menu-option" href="eliminar.php?id=<?= $cliente['id_cliente'] ?>" onclick="return confirm('¿Estás seguro de eliminar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div class="client-card-header" onclick="window.location.href='ver.php?id=<?= $cliente['id_cliente'] ?>'">
                                 <h3 class="client-card-title"><?= htmlspecialchars($cliente['nombre_cliente']) ?></h3>
                                 <span class="client-card-badge">ID: <?= $cliente['id_cliente'] ?></span>
                             </div>
@@ -892,14 +1144,6 @@ if (isset($_GET['ajax'])) {
                                     <span>Registrado: <?= date('d/m/Y', strtotime($cliente['fecha_registro'])) ?></span>
                                 </div>
                             </div>
-                            <div class="client-card-footer">
-                                <a href="ver.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-info btn-sm">
-                                    <i class="fas fa-eye"></i> Ver
-                                </a>
-                                <a href="editar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-secondary btn-sm">
-                                    <i class="fas fa-edit"></i> Editar
-                                </a>
-                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -908,62 +1152,52 @@ if (isset($_GET['ajax'])) {
             <!-- Pestaña de edición -->
             <div class="tab-pane fade" id="edit" role="tabpanel">
                 <?php if (!empty($clientesEditados)): ?>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Cliente</th>
-                                    <th>Contacto</th>
-                                    <th>Ediciones</th>
-                                    <th>Última Edición</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($clientesEditados as $cliente): ?>
-                                    <?php 
-                                    // Obtener información de la última edición
-                                    $stmt = $conex->prepare("
-                                        SELECT ce.fecha_edicion, u.nombre_completo as editor 
-                                        FROM clientes_ediciones ce 
-                                        LEFT JOIN usuarios u ON ce.editado_por = u.id_usuario 
-                                        WHERE ce.id_cliente = ? 
-                                        ORDER BY ce.fecha_edicion DESC 
-                                        LIMIT 1
-                                    ");
-                                    $stmt->execute([$cliente['id_cliente']]);
-                                    $ultimaEdicion = $stmt->fetch();
-                                    ?>
-                                    <tr>
-                                        <td data-label="ID"><?= $cliente['id_cliente'] ?></td>
-                                        <td data-label="Cliente">
-                                            <strong><?= htmlspecialchars($cliente['nombre_cliente']) ?></strong>
-                                        </td>
-                                        <td data-label="Contacto">
-                                            <i class="fas fa-phone me-1"></i> <?= htmlspecialchars($cliente['telefono_cliente']) ?><br>
-                                            <i class="fas fa-envelope me-1"></i> <?= htmlspecialchars($cliente['correo_cliente']) ?>
-                                        </td>
-                                        <td data-label="Ediciones">
-                                            <span class="edit-count-badge"><?= $cliente['total_ediciones'] ?> ediciones</span>
-                                        </td>
-                                        <td data-label="Última Edición">
-                                            <?php if ($ultimaEdicion): ?>
-                                                <?= date('d/m/Y', strtotime($ultimaEdicion['fecha_edicion'])) ?><br>
-                                                <small class="text-muted">Por: <?= htmlspecialchars($ultimaEdicion['editor'] ?? 'Sistema') ?></small>
-                                            <?php else: ?>
-                                                N/A
-                                            <?php endif; ?>
-                                        </td>
-                                        <td data-label="Acciones" class="text-nowrap">
-                                            <button class="btn btn-info btn-sm view-history-btn" data-client-id="<?= $cliente['id_cliente'] ?>" data-client-name="<?= htmlspecialchars($cliente['nombre_cliente']) ?>">
-                                                <i class="fas fa-history"></i> Ver Historial
-                                            </button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                    <div class="client-cards">
+                        <?php foreach ($clientesEditados as $cliente): ?>
+                            <?php 
+                            // Obtener información de la última edición
+                            $stmt = $conex->prepare("
+                                SELECT ce.fecha_edicion, u.nombre_completo as editor 
+                                FROM clientes_ediciones ce 
+                                LEFT JOIN usuarios u ON ce.editado_por = u.id_usuario 
+                                WHERE ce.id_cliente = ? 
+                                ORDER BY ce.fecha_edicion DESC 
+                                LIMIT 1
+                            ");
+                            $stmt->execute([$cliente['id_cliente']]);
+                            $ultimaEdicion = $stmt->fetch();
+                            ?>
+                            <div class="client-card">
+                                <div class="client-card-header" onclick="showEditDetails(<?= $cliente['id_cliente'] ?>)">
+                                    <h3 class="client-card-title"><?= htmlspecialchars($cliente['nombre_cliente']) ?></h3>
+                                    <span class="client-card-badge"><?= $cliente['total_ediciones'] ?> ediciones</span>
+                                </div>
+                                <div class="client-card-body">
+                                    <div class="client-card-detail">
+                                        <i class="fas fa-envelope"></i>
+                                        <span><?= htmlspecialchars($cliente['correo_cliente']) ?></span>
+                                    </div>
+                                    <div class="client-card-detail">
+                                        <i class="fas fa-phone"></i>
+                                        <span><?= htmlspecialchars($cliente['telefono_cliente']) ?></span>
+                                    </div>
+                                    <div class="client-card-detail">
+                                        <i class="fas fa-user-edit"></i>
+                                        <span>Última edición: <?= $ultimaEdicion ? date('d/m/Y', strtotime($ultimaEdicion['fecha_edicion'])) : 'N/A' ?></span>
+                                    </div>
+                                    <?php if ($ultimaEdicion && !empty($ultimaEdicion['editor'])): ?>
+                                    <div class="client-card-detail">
+                                        <i class="fas fa-user"></i>
+                                        <span>Por: <?= htmlspecialchars($ultimaEdicion['editor']) ?></span>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                                <!-- Flecha en esquina inferior derecha -->
+                                <div class="edit-arrow" onclick="showEditDetails(<?= $cliente['id_cliente'] ?>)">
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 <?php else: ?>
                     <div class="alert alert-info">
@@ -1004,6 +1238,16 @@ if (isset($_GET['ajax'])) {
                                         $usuario = $stmt->fetch();
                                         $eliminadoPor = $usuario ? $usuario['nombre_completo'] : 'Usuario eliminado';
                                     }
+                                    
+                                    // Calcular días restantes para eliminación permanente (30 días después de eliminación)
+                                    $diasRestantes = 30;
+                                    if ($cliente['fecha_eliminacion']) {
+                                        $fechaEliminacion = new DateTime($cliente['fecha_eliminacion']);
+                                        $fechaActual = new DateTime();
+                                        $diferencia = $fechaActual->diff($fechaEliminacion);
+                                        $diasTranscurridos = $diferencia->days;
+                                        $diasRestantes = max(0, 30 - $diasTranscurridos);
+                                    }
                                     ?>
                                     <tr class="deleted-item">
                                         <td data-label="ID"><?= $cliente['id_cliente'] ?></td>
@@ -1024,6 +1268,16 @@ if (isset($_GET['ajax'])) {
                                             </a>
                                         </td>
                                     </tr>
+                                    <tr class="deleted-item">
+                                        <td colspan="6" class="days-left">
+                                            <i class="fas fa-clock me-1"></i> 
+                                            <?php if ($diasRestantes > 0): ?>
+                                                Eliminación permanente en <?= $diasRestantes ?> día<?= $diasRestantes != 1 ? 's' : '' ?>
+                                            <?php else: ?>
+                                                <strong>Listo para eliminación permanente</strong>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
@@ -1039,7 +1293,6 @@ if (isset($_GET['ajax'])) {
     </div>
 
     <!-- Modal para historial de ediciones -->
-
     <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -1048,17 +1301,23 @@ if (isset($_GET['ajax'])) {
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="historyModalBody">
-            <div class="detail-item">
-                <div class="detail-label">Teléfono</div>
-                <div class="detail-value" id="detailClientPhone"></div>
-            </div>
-
-            <div class="detail-item">
-                <div class="detail-label">Dirección</div>
-                <div class="detail-value" id="detailClientAddress"></div>
-            </div>
+                    <!-- El contenido se cargará dinámicamente -->
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta flotante para detalles de edición -->
+    <div class="overlay" id="editOverlay" onclick="hideEditDetails()"></div>
+    <div class="floating-card" id="editDetailCard">
+        <div class="card-header">
+            <h2 class="card-title" id="editClientName"></h2>
+            <button class="close-detail close-card" onclick="hideEditDetails()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="card-content" id="editDetailContent">
+            <!-- El contenido se cargará dinámicamente -->
         </div>
     </div>
 
@@ -1120,8 +1379,9 @@ if (isset($_GET['ajax'])) {
                             data.forEach(client => {
                                 const item = document.createElement('div');
                                 item.className = 'search-result-item';
+                                item.setAttribute('data-client-id', client.id_cliente);
                                 item.innerHTML = `
-                                    <div>
+                                    <div onclick="window.location.href='ver.php?id=${client.id_cliente}'">
                                         <div class="search-client-name">${client.nombre_cliente}</div>
                                         <div class="search-client-info">
                                             <i class="fas fa-phone"></i> ${client.telefono_cliente} · 
@@ -1131,10 +1391,23 @@ if (isset($_GET['ajax'])) {
                                     <div class="search-client-date">
                                         ${client.fecha_registro ? new Date(client.fecha_registro).toLocaleDateString('es-ES') : ''}
                                     </div>
+                                    <div class="search-result-menu">
+                                        <button class="menu-toggle" onclick="event.stopPropagation(); toggleOptionsMenu(this)">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="options-menu">
+                                            <a class="menu-option" href="ver.php?id=${client.id_cliente}">
+                                                <i class="fas fa-eye"></i> Ver
+                                            </a>
+                                            <a class="menu-option" href="editar.php?id=${client.id_cliente}">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </a>
+                                            <a class="menu-option" href="eliminar.php?id=${client.id_cliente}" onclick="return confirm('¿Estás seguro de eliminar a ${client.nombre_cliente}?')">
+                                                <i class="fas fa-trash"></i> Eliminar
+                                            </a>
+                                        </div>
+                                    </div>
                                 `;
-                                item.addEventListener('click', function() {
-                                    window.location.href = `ver.php?id=${client.id_cliente}`;
-                                });
                                 searchResults.appendChild(item);
                             });
                             searchResults.style.display = 'block';
@@ -1152,8 +1425,30 @@ if (isset($_GET['ajax'])) {
             }, 300);
         });
 
-        // Ocultar resultados al hacer clic fuera
+        // Alternar menú de opciones
+        function toggleOptionsMenu(button) {
+            const menu = button.nextElementSibling;
+            const isShowing = menu.classList.contains('show');
+            
+            // Cerrar todos los menús abiertos
+            document.querySelectorAll('.options-menu.show').forEach(openMenu => {
+                if (openMenu !== menu) {
+                    openMenu.classList.remove('show');
+                }
+            });
+            
+            // Alternar el menú actual
+            menu.classList.toggle('show', !isShowing);
+        }
+
+        // Cerrar menús al hacer clic fuera
         document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-result-menu') && !e.target.closest('.card-menu')) {
+                document.querySelectorAll('.options-menu.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+            
             if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
                 searchResults.style.display = 'none';
             }
@@ -1163,7 +1458,7 @@ if (isset($_GET['ajax'])) {
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && searchResults.style.display === 'block') {
                 const firstResult = searchResults.querySelector('.search-result-item');
-                if (firstResult) firstResult.click();
+                if (firstResult) window.location.href = `ver.php?id=${firstResult.getAttribute('data-client-id')}`;
             }
 
             if (e.key === 'Escape') {
@@ -1172,6 +1467,63 @@ if (isset($_GET['ajax'])) {
                 allClientsList.style.display = 'block';
                 const clientItems = allClientsList.querySelectorAll('.client-item');
                 clientItems.forEach(item => item.style.display = 'flex');
+                
+                // Cerrar menús abiertos
+                document.querySelectorAll('.options-menu.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+
+        // Mostrar detalles de edición
+        function showEditDetails(clientId) {
+            // Mostrar loading
+            document.getElementById('editClientName').textContent = 'Cargando...';
+            document.getElementById('editDetailContent').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando detalles de edición...</p>
+                </div>
+            `;
+            
+            // Mostrar overlay y tarjeta flotante
+            document.getElementById('editOverlay').style.display = 'block';
+            document.getElementById('editDetailCard').style.display = 'block';
+            
+            // Cargar detalles via AJAX
+            fetch(`cargar_detalles_edicion.php?id=${clientId}`)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('editDetailContent').innerHTML = data;
+                    
+                    // Obtener y establecer el nombre del cliente
+                    const clientNameElement = document.querySelector('#editDetailContent [data-client-name]');
+                    if (clientNameElement) {
+                        document.getElementById('editClientName').textContent = clientNameElement.getAttribute('data-client-name');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('editDetailContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error al cargar los detalles de edición.
+                        </div>
+                    `;
+                });
+        }
+
+        // Ocultar detalles de edición
+        function hideEditDetails() {
+            document.getElementById('editOverlay').style.display = 'none';
+            document.getElementById('editDetailCard').style.display = 'none';
+        }
+
+        // Cerrar con tecla ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                hideEditDetails();
             }
         });
 
@@ -1192,59 +1544,6 @@ if (isset($_GET['ajax'])) {
                     clientItems.forEach(item => item.style.display = 'flex');
                 }
             });
-        });
-
-        // Mostrar tooltips
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-
-        // Cargar historial de ediciones en modal
-        document.querySelectorAll('.view-history-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const clientId = this.getAttribute('data-client-id');
-                const clientName = this.getAttribute('data-client-name');
-                
-                // Mostrar loading en el modal
-                document.getElementById('historyModalBody').innerHTML = `
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
-                        <p class="mt-2">Cargando historial de ediciones...</p>
-                    </div>
-                `;
-                
-                // Mostrar el modal
-                const historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
-                historyModal.show();
-                
-                // Actualizar título del modal
-                document.querySelector('#historyModal .modal-title').innerHTML = 
-                    `<i class="fas fa-history me-2"></i>Historial de Ediciones: ${clientName}`;
-                
-                // Cargar el historial via AJAX
-                fetch(`cargar_historial.php?id=${clientId}`)
-                    .then(response => response.text())
-                    .then(data => {
-                        document.getElementById('historyModalBody').innerHTML = data;
-                    })
-                    .catch(error => {
-                        document.getElementById('historyModalBody').innerHTML = `
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                Error al cargar el historial de ediciones.
-                            </div>
-                        `;
-                    });
-            });
-        });
-
-        // Inicializar todos los tooltips
-        const bootstrapTooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        bootstrapTooltips.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     </script>
 </body>
