@@ -175,7 +175,7 @@ CREATE TABLE `mensajes_contacto` (
 
 INSERT INTO `mensajes_contacto` (`id_mensaje`, `nombre_completo`, `correo_electronico`, `telefono`, `asunto`, `mensaje`, `fecha_envio`, `leido`, `activo`) VALUES
 (1, 'Carlos Andrés Pérez', 'carlos.perez@example.com', '3201234567', 'cotizacion', 'Buen día, necesito una cotización para tapizar los asientos de mi Toyota Corolla 2020. ¿Podrían enviarme información sobre materiales y precios?', '2025-07-10 08:15:22', 1, 1),
-(2, 'María Fernanda Gómez', 'maria.gomez@example.com', '3159876543', 'consulta', 'Hola, quisiera saber si trabajan con materiales ecológicos para tapicería y cuál sería el tiempo estimado para un vehículo mediano.', '2025-07-11 14:30:45', 0, 1),
+(2, 'María Fernanda Gómez', 'maria.gomez@example.com', '3159876543', 'consulta', 'Hola, quisiera saber si trabajan con materiales ecológicos para tapicería and cuál sería el tiempo estimado para un vehículo mediano.', '2025-07-11 14:30:45', 0, 1),
 (3, 'Jorge Eduardo Rodríguez', 'jorge.rodriguez@example.com', '3104567890', 'garantia', 'El tapizado que me hicieron hace 3 meses presenta desgaste prematuro. Quisiera información sobre la garantía del trabajo realizado.', '2025-07-12 09:05:18', 1, 1);
 
 -- --------------------------------------------------------
@@ -188,9 +188,12 @@ CREATE TABLE `registro_eliminaciones` (
   `id` int(11) NOT NULL,
   `tabla` varchar(50) NOT NULL,
   `id_registro` int(11) NOT NULL,
-  `eliminado_por` int(11) NOT NULL,
+  `eliminado_por` int(11) DEFAULT NULL,
   `fecha_eliminacion` timestamp NOT NULL DEFAULT current_timestamp(),
-  `datos` text DEFAULT NULL
+  `datos` text DEFAULT NULL,
+  `accion` enum('ELIMINACION','MODIFICACION','RESTAURACION') NOT NULL DEFAULT 'ELIMINACION',
+  `datos_anteriores` text DEFAULT NULL,
+  `datos_nuevos` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -212,7 +215,7 @@ CREATE TABLE `roles` (
 INSERT INTO `roles` (`id_rol`, `nombre_rol`, `descripcion_rol`) VALUES
 (1, 'Administrador', 'Acceso completo al sistema'),
 (2, 'Técnico', 'Personal encargado de realizar los trabajos'),
-(3, 'Vendedor', 'Personal encargado de ventas y cotizaciones');
+(3, 'Vendedor', 'Personal encargado de ventas and cotizaciones');
 
 -- --------------------------------------------------------
 
@@ -520,14 +523,36 @@ ALTER TABLE `usuarios`
 
 DELIMITER $$
 
+-- Procedimientos auxiliares
+CREATE PROCEDURE `SetUsuarioActual`(IN usuario_id INT)
+BEGIN
+    SET @usuario_actual = usuario_id;
+END$$
+
+CREATE PROCEDURE `LimpiarUsuarioActual`()
+BEGIN
+    SET @usuario_actual = NULL;
+END$$
+
 -- Trigger para clientes
 CREATE TRIGGER `before_clientes_update` BEFORE UPDATE ON `clientes`
 FOR EACH ROW
 BEGIN
+    DECLARE user_id INT;
+    
+    -- Obtener el ID del usuario actual de la variable de sesión
+    SET user_id = NULLIF(@usuario_actual, '');
+    
     IF NEW.activo = 0 AND OLD.activo = 1 THEN
-        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, datos)
-        VALUES ('clientes', OLD.id_cliente, @usuario_actual, 
-                CONCAT('Cliente: ', OLD.nombre_cliente, ' - ', OLD.correo_cliente));
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores)
+        VALUES ('clientes', OLD.id_cliente, user_id, 'ELIMINACION',
+                CONCAT('Cliente: ', OLD.nombre_cliente, ' - ', OLD.correo_cliente),
+                CONCAT_WS('|', OLD.id_cliente, OLD.nombre_cliente, OLD.correo_cliente, 
+                         OLD.telefono_cliente, OLD.direccion_cliente, OLD.notas_cliente));
+    ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('clientes', OLD.id_cliente, user_id, 'RESTAURACION',
+                CONCAT('Cliente restaurado: ', OLD.nombre_cliente));
     END IF;
 END$$
 
@@ -535,10 +560,19 @@ END$$
 CREATE TRIGGER `before_vehiculos_update` BEFORE UPDATE ON `vehiculos`
 FOR EACH ROW
 BEGIN
+    DECLARE user_id INT;
+    SET user_id = NULLIF(@usuario_actual, '');
+    
     IF NEW.activo = 0 AND OLD.activo = 1 THEN
-        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, datos)
-        VALUES ('vehiculos', OLD.id_vehiculo, @usuario_actual, 
-                CONCAT('Vehículo: ', OLD.marca_vehiculo, ' ', OLD.modelo_vehiculo, ' - ', OLD.placa_vehiculo));
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores)
+        VALUES ('vehiculos', OLD.id_vehiculo, user_id, 'ELIMINACION',
+                CONCAT('Vehículo: ', OLD.marca_vehiculo, ' ', OLD.modelo_vehiculo, ' - ', OLD.placa_vehiculo),
+                CONCAT_WS('|', OLD.id_vehiculo, OLD.marca_vehiculo, OLD.modelo_vehiculo, 
+                         OLD.placa_vehiculo, OLD.notas_vehiculo));
+    ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('vehiculos', OLD.id_vehiculo, user_id, 'RESTAURACION',
+                CONCAT('Vehículo restaurado: ', OLD.marca_vehiculo, ' ', OLD.modelo_vehiculo));
     END IF;
 END$$
 
@@ -546,10 +580,20 @@ END$$
 CREATE TRIGGER `before_materiales_update` BEFORE UPDATE ON `materiales`
 FOR EACH ROW
 BEGIN
+    DECLARE user_id INT;
+    SET user_id = NULLIF(@usuario_actual, '');
+    
     IF NEW.activo = 0 AND OLD.activo = 1 THEN
-        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, datos)
-        VALUES ('materiales', OLD.id_material, @usuario_actual, 
-                CONCAT('Material: ', OLD.nombre_material, ' - ', OLD.categoria_material));
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores)
+        VALUES ('materiales', OLD.id_material, user_id, 'ELIMINACION',
+                CONCAT('Material: ', OLD.nombre_material, ' - ', OLD.categoria_material),
+                CONCAT_WS('|', OLD.id_material, OLD.nombre_material, OLD.descripcion_material,
+                         OLD.precio_metro, OLD.stock_material, OLD.categoria_material, 
+                         OLD.proveedor_material));
+    ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('materiales', OLD.id_material, user_id, 'RESTAURACION',
+                CONCAT('Material restaurado: ', OLD.nombre_material));
     END IF;
 END$$
 
@@ -557,10 +601,19 @@ END$$
 CREATE TRIGGER `before_servicios_update` BEFORE UPDATE ON `servicios`
 FOR EACH ROW
 BEGIN
+    DECLARE user_id INT;
+    SET user_id = NULLIF(@usuario_actual, '');
+    
     IF NEW.activo = 0 AND OLD.activo = 1 THEN
-        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, datos)
-        VALUES ('servicios', OLD.id_servicio, @usuario_actual, 
-                CONCAT('Servicio: ', OLD.nombre_servicio, ' - ', OLD.categoria_servicio));
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores)
+        VALUES ('servicios', OLD.id_servicio, user_id, 'ELIMINACION',
+                CONCAT('Servicio: ', OLD.nombre_servicio, ' - ', OLD.categoria_servicio),
+                CONCAT_WS('|', OLD.id_servicio, OLD.nombre_servicio, OLD.descripcion_servicio,
+                         OLD.precio_servicio, OLD.tiempo_estimado, OLD.categoria_servicio));
+    ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('servicios', OLD.id_servicio, user_id, 'RESTAURACION',
+                CONCAT('Servicio restaurado: ', OLD.nombre_servicio));
     END IF;
 END$$
 
@@ -568,10 +621,20 @@ END$$
 CREATE TRIGGER `before_usuarios_update` BEFORE UPDATE ON `usuarios`
 FOR EACH ROW
 BEGIN
+    DECLARE user_id INT;
+    SET user_id = NULLIF(@usuario_actual, '');
+    
     IF NEW.activo = 0 AND OLD.activo = 1 THEN
-        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, datos)
-        VALUES ('usuarios', OLD.id_usuario, @usuario_actual, 
-                CONCAT('Usuario: ', OLD.nombre_completo, ' - ', OLD.username_usuario));
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores)
+        VALUES ('usuarios', OLD.id_usuario, user_id, 'ELIMINACION',
+                CONCAT('Usuario: ', OLD.nombre_completo, ' - ', OLD.username_usuario),
+                CONCAT_WS('|', OLD.id_usuario, OLD.id_rol, OLD.username_usuario, 
+                         OLD.nombre_completo, OLD.correo_usuario, OLD.telefono_usuario,
+                         OLD.activo_usuario));
+    ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('usuarios', OLD.id_usuario, user_id, 'RESTAURACION',
+                CONCAT('Usuario restaurado: ', OLD.nombre_completo));
     END IF;
 END$$
 
@@ -579,10 +642,21 @@ END$$
 CREATE TRIGGER `before_cotizaciones_update` BEFORE UPDATE ON `cotizaciones`
 FOR EACH ROW
 BEGIN
+    DECLARE user_id INT;
+    SET user_id = NULLIF(@usuario_actual, '');
+    
     IF NEW.activo = 0 AND OLD.activo = 1 THEN
-        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, datos)
-        VALUES ('cotizaciones', OLD.id_cotizacion, @usuario_actual, 
-                CONCAT('Cotización #', OLD.id_cotizacion, ' - Total: $', OLD.total_cotizacion));
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores)
+        VALUES ('cotizaciones', OLD.id_cotizacion, user_id, 'ELIMINACION',
+                CONCAT('Cotización #', OLD.id_cotizacion, ' - Total: $', OLD.total_cotizacion),
+                CONCAT_WS('|', OLD.id_cotizacion, OLD.id_usuario, OLD.id_cliente, 
+                         OLD.id_vehiculo, OLD.subtotal_cotizacion, OLD.valor_adicional,
+                         OLD.iva, OLD.total_cotizacion, OLD.estado_cotizacion, 
+                         OLD.notas_cotizacion));
+    ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('cotizaciones', OLD.id_cotizacion, user_id, 'RESTAURACION',
+                CONCAT('Cotización restaurada #', OLD.id_cotizacion));
     END IF;
 END$$
 
@@ -590,10 +664,19 @@ END$$
 CREATE TRIGGER `before_trabajos_update` BEFORE UPDATE ON `trabajos`
 FOR EACH ROW
 BEGIN
+    DECLARE user_id INT;
+    SET user_id = NULLIF(@usuario_actual, '');
+    
     IF NEW.activo = 0 AND OLD.activo = 1 THEN
-        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, datos)
-        VALUES ('trabajos', OLD.id_trabajos, @usuario_actual, 
-                CONCAT('Trabajo #', OLD.id_trabajos, ' - Estado: ', OLD.estado));
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores)
+        VALUES ('trabajos', OLD.id_trabajos, user_id, 'ELIMINACION',
+                CONCAT('Trabajo #', OLD.id_trabajos, ' - Estado: ', OLD.estado),
+                CONCAT_WS('|', OLD.id_trabajos, OLD.id_cotizacion, OLD.fecha_inicio, 
+                         OLD.fecha_fin, OLD.estado, OLD.notas, OLD.fotos));
+    ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('trabajos', OLD.id_trabajos, user_id, 'RESTAURACION',
+                CONCAT('Trabajo restaurado #', OLD.id_trabajos));
     END IF;
 END$$
 
@@ -601,14 +684,52 @@ END$$
 CREATE TRIGGER `before_mensajes_contacto_update` BEFORE UPDATE ON `mensajes_contacto`
 FOR EACH ROW
 BEGIN
+    DECLARE user_id INT;
+    SET user_id = NULLIF(@usuario_actual, '');
+    
     IF NEW.activo = 0 AND OLD.activo = 1 THEN
-        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, datos)
-        VALUES ('mensajes_contacto', OLD.id_mensaje, @usuario_actual, 
-                CONCAT('Mensaje de: ', OLD.nombre_completo, ' - Asunto: ', OLD.asunto));
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores)
+        VALUES ('mensajes_contacto', OLD.id_mensaje, user_id, 'ELIMINACION',
+                CONCAT('Mensaje de: ', OLD.nombre_completo, ' - Asunto: ', OLD.asunto),
+                CONCAT_WS('|', OLD.id_mensaje, OLD.nombre_completo, OLD.correo_electronico,
+                         OLD.telefono, OLD.asunto, OLD.mensaje, OLD.leido));
+    ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('mensajes_contacto', OLD.id_mensaje, user_id, 'RESTAURACION',
+                CONCAT('Mensaje restaurado de: ', OLD.nombre_completo));
     END IF;
 END$$
 
 DELIMITER ;
+
+-- Vistas para consultar el registro de cambios
+CREATE VIEW `vista_registro_cambios` AS
+SELECT 
+    re.id,
+    re.tabla,
+    re.id_registro,
+    re.accion,
+    re.datos,
+    u.nombre_completo as usuario_responsable,
+    re.fecha_eliminacion
+FROM registro_eliminaciones re
+LEFT JOIN usuarios u ON re.eliminado_por = u.id_usuario
+ORDER BY re.fecha_eliminacion DESC;
+
+CREATE VIEW `vista_registro_completo` AS
+SELECT 
+    re.id,
+    re.tabla,
+    re.id_registro,
+    re.accion,
+    re.datos,
+    re.datos_anteriores,
+    re.datos_nuevos,
+    u.nombre_completo as usuario_responsable,
+    re.fecha_eliminacion
+FROM registro_eliminaciones re
+LEFT JOIN usuarios u ON re.eliminado_por = u.id_usuario
+ORDER BY re.fecha_eliminacion DESC;
 
 COMMIT;
 

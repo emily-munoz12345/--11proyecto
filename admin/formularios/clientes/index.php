@@ -20,33 +20,36 @@ if (!isset($_SESSION['mensaje'])) {
     $_SESSION['tipo_mensaje'] = '';
 }
 
-// Obtener estadísticas generales (excluyendo eliminados)
+// Obtener estadísticas generales (excluyendo eliminados - activos = 1)
 $stats = $conex->query("SELECT 
     COUNT(*) as total_clientes,
     MAX(fecha_registro) as ultimo_registro,
-    (SELECT COUNT(*) FROM clientes WHERE DATE(fecha_registro) = CURDATE() AND eliminado = 0) as registros_hoy
-FROM clientes WHERE eliminado = 0")->fetch(PDO::FETCH_ASSOC);
+    (SELECT COUNT(*) FROM clientes WHERE DATE(fecha_registro) = CURDATE() AND activo = 1) as registros_hoy
+FROM clientes WHERE activo = 1")->fetch(PDO::FETCH_ASSOC);
 
-// Obtener los 4 clientes más recientes (excluyendo eliminados)
-$clientesRecientes = $conex->query("SELECT * FROM clientes WHERE eliminado = 0 ORDER BY fecha_registro DESC LIMIT 4")->fetchAll();
+// Obtener los 4 clientes más recientes (excluyendo eliminados - activos = 1)
+$clientesRecientes = $conex->query("SELECT * FROM clientes WHERE activo = 1 ORDER BY fecha_registro DESC LIMIT 4")->fetchAll();
 
 // Obtener todos los clientes activos para las pestañas
-$clientesEditar = $conex->query("SELECT * FROM clientes WHERE eliminado = 0 ORDER BY nombre_cliente ASC")->fetchAll();
+$clientesEditar = $conex->query("SELECT * FROM clientes WHERE activo = 1 ORDER BY nombre_cliente ASC")->fetchAll();
 
-// Obtener clientes en la papelera (eliminados)
-$clientesEliminar = $conex->query("SELECT * FROM clientes WHERE eliminado = 1 ORDER BY fecha_eliminacion DESC")->fetchAll();
+// Obtener clientes en la papelera (eliminados - activos = 0)
+$clientesEliminar = $conex->query("SELECT * FROM clientes WHERE activo = 0 ORDER BY fecha_registro DESC")->fetchAll();
 
 // Obtener todos los clientes activos para vista general
-$todosClientes = $conex->query("SELECT * FROM clientes WHERE eliminado = 0 ORDER BY nombre_cliente ASC")->fetchAll();
+$todosClientes = $conex->query("SELECT * FROM clientes WHERE activo = 1 ORDER BY nombre_cliente ASC")->fetchAll();
 
 // Obtener clientes editados con información de edición (excluyendo eliminados)
+// Como no existe la tabla clientes_ediciones, usamos un enfoque alternativo
 $clientesEditados = $conex->query("
-    SELECT DISTINCT c.*, 
-           (SELECT COUNT(*) FROM clientes_ediciones ce WHERE ce.id_cliente = c.id_cliente) as total_ediciones
+    SELECT c.*, 
+           COUNT(re.id) as total_ediciones
     FROM clientes c
-    INNER JOIN clientes_ediciones ce ON c.id_cliente = ce.id_cliente
-    WHERE c.eliminado = 0
-    ORDER BY (SELECT MAX(fecha_edicion) FROM clientes_ediciones WHERE id_cliente = c.id_cliente) DESC
+    LEFT JOIN registro_eliminaciones re ON re.tabla = 'clientes' AND re.id_registro = c.id_cliente AND re.accion = 'MODIFICACION'
+    WHERE c.activo = 1
+    GROUP BY c.id_cliente
+    HAVING total_ediciones > 0
+    ORDER BY MAX(re.fecha_eliminacion) DESC
 ")->fetchAll();
 
 // Obtener historial de ediciones para un cliente específico si se solicita
@@ -54,11 +57,11 @@ $historialEdiciones = [];
 if (isset($_GET['ver_ediciones']) && is_numeric($_GET['ver_ediciones'])) {
     $idCliente = $_GET['ver_ediciones'];
     $stmt = $conex->prepare("
-        SELECT ce.*, u.nombre_completo as editor 
-        FROM clientes_ediciones ce 
-        LEFT JOIN usuarios u ON ce.editado_por = u.id_usuario 
-        WHERE ce.id_cliente = ? 
-        ORDER BY ce.fecha_edicion DESC
+        SELECT re.*, u.nombre_completo as editor 
+        FROM registro_eliminaciones re 
+        LEFT JOIN usuarios u ON re.eliminado_por = u.id_usuario 
+        WHERE re.tabla = 'clientes' AND re.id_registro = ? AND re.accion = 'MODIFICACION'
+        ORDER BY re.fecha_eliminacion DESC
     ");
     $stmt->execute([$idCliente]);
     $historialEdiciones = $stmt->fetchAll();
@@ -75,7 +78,7 @@ if (isset($_GET['ajax'])) {
 
     $searchTerm = '%' . $_GET['q'] . '%';
     $stmt = $conex->prepare("SELECT * FROM clientes 
-                            WHERE eliminado = 0 
+                            WHERE activo = 1 
                             AND (nombre_cliente LIKE :search 
                             OR telefono_cliente LIKE :search 
                             OR correo_cliente LIKE :search)
@@ -849,6 +852,9 @@ if (isset($_GET['ajax'])) {
 
         .detail-item {
             margin-bottom: 1rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
         }
 
         .detail-label {
@@ -1157,11 +1163,11 @@ if (isset($_GET['ajax'])) {
                             <?php 
                             // Obtener información de la última edición
                             $stmt = $conex->prepare("
-                                SELECT ce.fecha_edicion, u.nombre_completo as editor 
-                                FROM clientes_ediciones ce 
-                                LEFT JOIN usuarios u ON ce.editado_por = u.id_usuario 
-                                WHERE ce.id_cliente = ? 
-                                ORDER BY ce.fecha_edicion DESC 
+                                SELECT re.fecha_eliminacion, u.nombre_completo as editor 
+                                FROM registro_eliminaciones re 
+                                LEFT JOIN usuarios u ON re.eliminado_por = u.id_usuario 
+                                WHERE re.tabla = 'clientes' AND re.id_registro = ? AND re.accion = 'MODIFICACION'
+                                ORDER BY re.fecha_eliminacion DESC 
                                 LIMIT 1
                             ");
                             $stmt->execute([$cliente['id_cliente']]);
@@ -1183,7 +1189,7 @@ if (isset($_GET['ajax'])) {
                                     </div>
                                     <div class="client-card-detail">
                                         <i class="fas fa-user-edit"></i>
-                                        <span>Última edición: <?= $ultimaEdicion ? date('d/m/Y', strtotime($ultimaEdicion['fecha_edicion'])) : 'N/A' ?></span>
+                                        <span>Última edición: <?= $ultimaEdicion ? date('d/m/Y', strtotime($ultimaEdicion['fecha_eliminacion'])) : 'N/A' ?></span>
                                     </div>
                                     <?php if ($ultimaEdicion && !empty($ultimaEdicion['editor'])): ?>
                                     <div class="client-card-detail">
@@ -1211,7 +1217,7 @@ if (isset($_GET['ajax'])) {
             <div class="tab-pane fade" id="delete" role="tabpanel">
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    Clientes eliminados. Estos registros se pueden restaurar dentro de los próximos 30 días.
+                    Clientes eliminados. Estos registros se pueden restaurar.
                 </div>
                 
                 <?php if (!empty($clientesEliminar)): ?>
@@ -1222,60 +1228,23 @@ if (isset($_GET['ajax'])) {
                                     <th>ID</th>
                                     <th>Cliente</th>
                                     <th>Teléfono</th>
-                                    <th>Eliminado el</th>
-                                    <th>Eliminado por</th>
+                                    <th>Correo</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($clientesEliminar as $cliente): ?>
-                                    <?php
-                                    // Obtener información de quién eliminó el cliente
-                                    $eliminadoPor = 'Sistema';
-                                    if ($cliente['eliminado_por']) {
-                                        $stmt = $conex->prepare("SELECT nombre_completo FROM usuarios WHERE id_usuario = ?");
-                                        $stmt->execute([$cliente['eliminado_por']]);
-                                        $usuario = $stmt->fetch();
-                                        $eliminadoPor = $usuario ? $usuario['nombre_completo'] : 'Usuario eliminado';
-                                    }
-                                    
-                                    // Calcular días restantes para eliminación permanente (30 días después de eliminación)
-                                    $diasRestantes = 30;
-                                    if ($cliente['fecha_eliminacion']) {
-                                        $fechaEliminacion = new DateTime($cliente['fecha_eliminacion']);
-                                        $fechaActual = new DateTime();
-                                        $diferencia = $fechaActual->diff($fechaEliminacion);
-                                        $diasTranscurridos = $diferencia->days;
-                                        $diasRestantes = max(0, 30 - $diasTranscurridos);
-                                    }
-                                    ?>
                                     <tr class="deleted-item">
                                         <td data-label="ID"><?= $cliente['id_cliente'] ?></td>
                                         <td data-label="Cliente">
                                             <?= htmlspecialchars($cliente['nombre_cliente']) ?>
                                         </td>
                                         <td data-label="Teléfono"><?= htmlspecialchars($cliente['telefono_cliente']) ?></td>
-                                        <td data-label="Eliminado el">
-                                            <?= $cliente['fecha_eliminacion'] ? date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) : 'N/A' ?>
-                                        </td>
-                                        <td data-label="Eliminado por"><?= htmlspecialchars($eliminadoPor) ?></td>
+                                        <td data-label="Correo"><?= htmlspecialchars($cliente['correo_cliente']) ?></td>
                                         <td data-label="Acciones">
                                             <a href="restaurar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
                                                 <i class="fas fa-undo"></i> Restaurar
                                             </a>
-                                            <a href="eliminar_permanentemente.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar permanentemente a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>? Esta acción no se puede deshacer.')">
-                                                <i class="fas fa-trash"></i> Eliminar
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    <tr class="deleted-item">
-                                        <td colspan="6" class="days-left">
-                                            <i class="fas fa-clock me-1"></i> 
-                                            <?php if ($diasRestantes > 0): ?>
-                                                Eliminación permanente en <?= $diasRestantes ?> día<?= $diasRestantes != 1 ? 's' : '' ?>
-                                            <?php else: ?>
-                                                <strong>Listo para eliminación permanente</strong>
-                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
