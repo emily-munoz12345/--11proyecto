@@ -25,54 +25,58 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $id_cliente = $_GET['id'];
 $id_usuario = $_SESSION['usuario_id'];
 
-// Verificar que el cliente existe y está eliminado
+// Obtener datos del cliente antes de eliminar
 try {
-    $stmt = $conex->prepare("SELECT * FROM clientes WHERE id_cliente = ? AND activo = 0");
+    $stmt = $conex->prepare("SELECT * FROM clientes WHERE id_cliente = ? AND activo = 1");
     $stmt->execute([$id_cliente]);
     $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$cliente) {
-        $_SESSION['mensaje'] = 'Cliente no encontrado en la papelera o ya fue restaurado.';
+        $_SESSION['mensaje'] = 'Cliente no encontrado o ya eliminado.';
         $_SESSION['tipo_mensaje'] = 'danger';
         header('Location: index.php');
         exit;
     }
 } catch (PDOException $e) {
-    $_SESSION['mensaje'] = 'Error al verificar el cliente: ' . $e->getMessage();
+    $_SESSION['mensaje'] = 'Error al obtener datos del cliente: ' . $e->getMessage();
     $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: index.php');
     exit;
 }
 
-// Restaurar el cliente
+// Realizar eliminación lógica (soft delete)
 try {
     // Verificar si existe la columna fecha_eliminacion
     $column_check = $conex->query("SHOW COLUMNS FROM clientes LIKE 'fecha_eliminacion'");
     $has_fecha_eliminacion = $column_check->rowCount() > 0;
     
-    // Establecer el usuario actual para el trigger
-    $stmt = $conex->prepare("CALL SetUsuarioActual(?)");
-    $stmt->execute([$id_usuario]);
-    
     if ($has_fecha_eliminacion) {
-        // Reactivar el cliente con fecha_eliminacion
-        $stmt = $conex->prepare("UPDATE clientes SET activo = 1, fecha_eliminacion = NULL WHERE id_cliente = ?");
+        // Usar el trigger existente con fecha_eliminacion
+        $stmt = $conex->prepare("CALL SetUsuarioActual(?)");
+        $stmt->execute([$id_usuario]);
+        
+        $stmt = $conex->prepare("UPDATE clientes SET activo = 0, fecha_eliminacion = NOW() WHERE id_cliente = ?");
+        $stmt->execute([$id_cliente]);
+        
+        $stmt = $conex->prepare("CALL LimpiarUsuarioActual()");
+        $stmt->execute();
     } else {
-        // Reactivar el cliente sin fecha_eliminacion
-        $stmt = $conex->prepare("UPDATE clientes SET activo = 1 WHERE id_cliente = ?");
+        // Alternativa sin fecha_eliminacion
+        $stmt = $conex->prepare("CALL SetUsuarioActual(?)");
+        $stmt->execute([$id_usuario]);
+        
+        $stmt = $conex->prepare("UPDATE clientes SET activo = 0 WHERE id_cliente = ?");
+        $stmt->execute([$id_cliente]);
+        
+        $stmt = $conex->prepare("CALL LimpiarUsuarioActual()");
+        $stmt->execute();
     }
     
-    $stmt->execute([$id_cliente]);
-    
-    // Limpiar el usuario actual
-    $stmt = $conex->prepare("CALL LimpiarUsuarioActual()");
-    $stmt->execute();
-    
-    $_SESSION['mensaje'] = 'Cliente "' . $cliente['nombre_cliente'] . '" restaurado correctamente.';
+    $_SESSION['mensaje'] = 'Cliente "' . $cliente['nombre_cliente'] . '" movido a la papelera correctamente.';
     $_SESSION['tipo_mensaje'] = 'success';
     
 } catch (PDOException $e) {
-    $_SESSION['mensaje'] = 'Error al restaurar el cliente: ' . $e->getMessage();
+    $_SESSION['mensaje'] = 'Error al eliminar el cliente: ' . $e->getMessage();
     $_SESSION['tipo_mensaje'] = 'danger';
 }
 

@@ -332,7 +332,8 @@ INSERT INTO `vehiculos` (`id_vehiculo`, `marca_vehiculo`, `modelo_vehiculo`, `pl
 -- Indices de la tabla `clientes`
 --
 ALTER TABLE `clientes`
-  ADD PRIMARY KEY (`id_cliente`);
+  ADD PRIMARY KEY (`id_cliente`),
+  ADD COLUMN `fecha_eliminacion` TIMESTAMP NULL DEFAULT NULL AFTER `fecha_registro`;
 
 --
 -- Indices de la tabla `cliente_vehiculo`

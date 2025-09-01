@@ -1,71 +1,91 @@
 <?php
 session_start();
-require_once '../php/conexion.php';
-require_once '../php/auth.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// Solo administradores pueden eliminar permanentemente
+// Configuración de rutas
+define('ROOT_PATH', dirname(__DIR__, 3));
+require_once ROOT_PATH . '/php/conexion.php';
+require_once ROOT_PATH . '/php/auth.php';
+
+// Verificar permisos (solo Admin)
 if (!isAdmin()) {
-    $_SESSION['mensaje'] = 'No tiene permisos para realizar esta acción';
+    $_SESSION['mensaje'] = 'No tienes permisos para eliminar permanentemente clientes.';
     $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: index.php');
     exit;
 }
 
-if (!isset($_GET['id'])) {
-    $_SESSION['mensaje'] = 'ID de cliente no especificado';
+// Verificar si se proporcionó un ID válido
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    $_SESSION['mensaje'] = 'ID de cliente no válido.';
     $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: index.php');
     exit;
 }
 
 $id_cliente = $_GET['id'];
+$id_usuario = $_SESSION['usuario_id'];
 
+// Verificar que el cliente existe y está en la papelera
 try {
-    // Obtener datos del cliente antes de eliminarlo
-    $stmt_cliente = $conex->prepare("SELECT * FROM clientes WHERE id_cliente = :id");
-    $stmt_cliente->bindParam(':id', $id_cliente);
-    $stmt_cliente->execute();
-    $cliente = $stmt_cliente->fetch(PDO::FETCH_ASSOC);
+    $stmt = $conex->prepare("SELECT * FROM clientes WHERE id_cliente = ? AND activo = 0");
+    $stmt->execute([$id_cliente]);
+    $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if ($cliente) {
-        // Guardar en papelera_sistema antes de eliminar
-        $stmt_papelera = $conex->prepare("INSERT INTO papelera_sistema (tabla_origen, id_elemento, nombre_elemento, datos_originales, eliminado_por) 
-                                        VALUES ('clientes', :id, :nombre, :datos, :usuario)");
-        $stmt_papelera->bindParam(':id', $id_cliente);
-        $stmt_papelera->bindParam(':nombre', $cliente['nombre_cliente']);
-        $datos_json = json_encode([
-            'id_cliente' => $cliente['id_cliente'],
-            'nombre_cliente' => $cliente['nombre_cliente'],
-            'correo_cliente' => $cliente['correo_cliente'],
-            'telefono_cliente' => $cliente['telefono_cliente'],
-            'direccion_cliente' => $cliente['direccion_cliente'],
-            'notas_cliente' => $cliente['notas_cliente']
-        ]);
-        $stmt_papelera->bindParam(':datos', $datos_json);
-        $stmt_papelera->bindParam(':usuario', $_SESSION['id_usuario']);
-        $stmt_papelera->execute();
-        
-        // Eliminar el cliente permanentemente
-        $stmt_eliminar = $conex->prepare("DELETE FROM clientes WHERE id_cliente = :id");
-        $stmt_eliminar->bindParam(':id', $id_cliente);
-        $stmt_eliminar->execute();
-        
-        // Registrar en logs
-        $stmt_log = $conex->prepare("INSERT INTO logs_sistema (accion, tabla_afectada, id_elemento, realizado_por, detalles) 
-                                    VALUES ('ELIMINACION_PERMANENTE', 'clientes', :id, :usuario, 'Cliente eliminado permanentemente de la papelera')");
-        $stmt_log->bindParam(':id', $id_cliente);
-        $stmt_log->bindParam(':usuario', $_SESSION['id_usuario']);
-        $stmt_log->execute();
-        
-        $_SESSION['mensaje'] = 'Cliente eliminado permanentemente';
-        $_SESSION['tipo_mensaje'] = 'success';
-    } else {
-        $_SESSION['mensaje'] = 'Cliente no encontrado';
+    if (!$cliente) {
+        $_SESSION['mensaje'] = 'Cliente no encontrado en la papelera.';
         $_SESSION['tipo_mensaje'] = 'danger';
+        header('Location: index.php');
+        exit;
     }
+} catch (PDOException $e) {
+    $_SESSION['mensaje'] = 'Error al verificar el cliente: ' . $e->getMessage();
+    $_SESSION['tipo_mensaje'] = 'danger';
+    header('Location: index.php');
+    exit;
+}
+
+// Eliminar permanentemente el cliente
+try {
+    $conex->beginTransaction();
+    
+    // 1. Guardar registro manual de eliminación permanente
+    $stmt = $conex->prepare("
+        INSERT INTO registro_eliminaciones 
+        (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores) 
+        VALUES ('clientes', ?, ?, 'ELIMINACION_PERMANENTE', ?, ?)
+    ");
+    
+    $datos_eliminados = "Cliente eliminado permanentemente: " . $cliente['nombre_cliente'];
+    $datos_completos = json_encode([
+        'id_cliente' => $cliente['id_cliente'],
+        'nombre_cliente' => $cliente['nombre_cliente'],
+        'correo_cliente' => $cliente['correo_cliente'],
+        'telefono_cliente' => $cliente['telefono_cliente'],
+        'direccion_cliente' => $cliente['direccion_cliente'],
+        'notas_cliente' => $cliente['notas_cliente'],
+        'fecha_registro' => $cliente['fecha_registro']
+    ]);
+    
+    $stmt->execute([$id_cliente, $id_usuario, $datos_eliminados, $datos_completos]);
+    
+    // 2. Eliminar relaciones en cliente_vehiculo
+    $stmt = $conex->prepare("DELETE FROM cliente_vehiculo WHERE id_cliente = ?");
+    $stmt->execute([$id_cliente]);
+    
+    // 3. Eliminar físicamente el registro del cliente
+    $stmt = $conex->prepare("DELETE FROM clientes WHERE id_cliente = ?");
+    $stmt->execute([$id_cliente]);
+    
+    $conex->commit();
+    
+    $_SESSION['mensaje'] = 'Cliente "' . $cliente['nombre_cliente'] . '" eliminado permanentemente del sistema.';
+    $_SESSION['tipo_mensaje'] = 'success';
     
 } catch (PDOException $e) {
-    $_SESSION['mensaje'] = 'Error al eliminar el cliente: ' . $e->getMessage();
+    $conex->rollBack();
+    $_SESSION['mensaje'] = 'Error al eliminar permanentemente el cliente: ' . $e->getMessage();
     $_SESSION['tipo_mensaje'] = 'danger';
 }
 

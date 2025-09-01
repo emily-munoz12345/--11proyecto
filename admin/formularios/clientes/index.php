@@ -5,8 +5,8 @@ ini_set('display_errors', 1);
 
 // Configuración de rutas
 define('ROOT_PATH', dirname(__DIR__, 3));
-require_once ROOT_PATH . '/php/conexion.php';
-require_once ROOT_PATH . '/php/auth.php';
+require_once __DIR__ . '/../../../php/conexion.php';
+require_once __DIR__ . '/../../../php/auth.php';
 
 // Verificar permisos (solo Admin y Vendedor)
 if (!isAdmin() && !isSeller()) {
@@ -39,22 +39,40 @@ $clientesEliminar = $conex->query("SELECT * FROM clientes WHERE activo = 0 ORDER
 // Obtener todos los clientes activos para vista general
 $todosClientes = $conex->query("SELECT * FROM clientes WHERE activo = 1 ORDER BY nombre_cliente ASC")->fetchAll();
 
-// Obtener clientes editados con información de edición (excluyendo eliminados)
-// Como no existe la tabla clientes_ediciones, usamos un enfoque alternativo
-$clientesEditados = $conex->query("
-    SELECT c.*, 
-           COUNT(re.id) as total_ediciones
-    FROM clientes c
-    LEFT JOIN registro_eliminaciones re ON re.tabla = 'clientes' AND re.id_registro = c.id_cliente AND re.accion = 'MODIFICACION'
-    WHERE c.activo = 1
-    GROUP BY c.id_cliente
-    HAVING total_ediciones > 0
-    ORDER BY MAX(re.fecha_eliminacion) DESC
-")->fetchAll();
+// Verificar si existe la tabla registro_eliminaciones antes de usarla
+$tablaExiste = false;
+try {
+    $result = $conex->query("SELECT 1 FROM registro_eliminaciones LIMIT 1");
+    $tablaExiste = true;
+} catch (Exception $e) {
+    $tablaExiste = false;
+}
+
+// Obtener clientes editados con información de edición (solo si la tabla existe)
+$clientesEditados = [];
+if ($tablaExiste) {
+    $clientesEditados = $conex->query("
+        SELECT c.*, 
+               COUNT(re.id) as total_ediciones
+        FROM clientes c
+        LEFT JOIN registro_eliminaciones re ON re.tabla = 'clientes' AND re.id_registro = c.id_cliente AND re.accion = 'MODIFICACION'
+        WHERE c.activo = 1
+        GROUP BY c.id_cliente
+        HAVING total_ediciones > 0
+        ORDER BY MAX(re.fecha_eliminacion) DESC
+    ")->fetchAll();
+} else {
+    // Alternativa: obtener clientes modificados recientemente (últimos 30 días)
+    $clientesEditados = $conex->query("
+        SELECT * FROM clientes 
+        WHERE activo = 1 AND fecha_actualizacion >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        ORDER BY fecha_actualizacion DESC
+    ")->fetchAll();
+}
 
 // Obtener historial de ediciones para un cliente específico si se solicita
 $historialEdiciones = [];
-if (isset($_GET['ver_ediciones']) && is_numeric($_GET['ver_ediciones'])) {
+if (isset($_GET['ver_ediciones']) && is_numeric($_GET['ver_ediciones']) && $tablaExiste) {
     $idCliente = $_GET['ver_ediciones'];
     $stmt = $conex->prepare("
         SELECT re.*, u.nombre_completo as editor 
@@ -88,6 +106,55 @@ if (isset($_GET['ajax'])) {
     $stmt->execute();
 
     echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit;
+}
+
+// Procesar solicitud para cargar detalles de edición
+if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
+    $idCliente = $_GET['cargar_detalles'];
+    
+    // Obtener información del cliente
+    $stmt = $conex->prepare("SELECT * FROM clientes WHERE id_cliente = ?");
+    $stmt->execute([$idCliente]);
+    $cliente = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($cliente) {
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Nombre</div>';
+        echo '<div class="detail-value" data-client-name="' . htmlspecialchars($cliente['nombre_cliente']) . '">' . htmlspecialchars($cliente['nombre_cliente']) . '</div>';
+        echo '</div>';
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Teléfono</div>';
+        echo '<div class="detail-value">' . htmlspecialchars($cliente['telefono_cliente']) . '</div>';
+        echo '</div>';
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Correo</div>';
+        echo '<div class="detail-value">' . htmlspecialchars($cliente['correo_cliente']) . '</div>';
+        echo '</div>';
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Fecha de Registro</div>';
+        echo '<div class="detail-value">' . date('d/m/Y H:i', strtotime($cliente['fecha_registro'])) . '</div>';
+        echo '</div>';
+        
+        if (!empty($cliente['fecha_actualizacion']) && $cliente['fecha_actualizacion'] != $cliente['fecha_registro']) {
+            echo '<div class="detail-item">';
+            echo '<div class="detail-label">Última Actualización</div>';
+            echo '<div class="detail-value">' . date('d/m/Y H:i', strtotime($cliente['fecha_actualizacion'])) . '</div>';
+            echo '</div>';
+        }
+        
+        if (!empty($cliente['notas_cliente'])) {
+            echo '<div class="notes-section">';
+            echo '<div class="detail-label">Notas</div>';
+            echo '<div class="detail-value">' . nl2br(htmlspecialchars($cliente['notas_cliente'])) . '</div>';
+            echo '</div>';
+        }
+    } else {
+        echo '<div class="alert alert-danger">Cliente no encontrado</div>';
+    }
     exit;
 }
 ?>
@@ -988,7 +1055,7 @@ if (isset($_GET['ajax'])) {
                 grid-template-columns: 1fr;
             }
         }
-    </style>   
+</style>   
 </head>
 
 <body>
@@ -1160,23 +1227,10 @@ if (isset($_GET['ajax'])) {
                 <?php if (!empty($clientesEditados)): ?>
                     <div class="client-cards">
                         <?php foreach ($clientesEditados as $cliente): ?>
-                            <?php 
-                            // Obtener información de la última edición
-                            $stmt = $conex->prepare("
-                                SELECT re.fecha_eliminacion, u.nombre_completo as editor 
-                                FROM registro_eliminaciones re 
-                                LEFT JOIN usuarios u ON re.eliminado_por = u.id_usuario 
-                                WHERE re.tabla = 'clientes' AND re.id_registro = ? AND re.accion = 'MODIFICACION'
-                                ORDER BY re.fecha_eliminacion DESC 
-                                LIMIT 1
-                            ");
-                            $stmt->execute([$cliente['id_cliente']]);
-                            $ultimaEdicion = $stmt->fetch();
-                            ?>
                             <div class="client-card">
-                                <div class="client-card-header" onclick="showEditDetails(<?= $cliente['id_cliente'] ?>)">
+                                <div class="client-card-header" onclick="window.location.href='ver.php?id=<?= $cliente['id_cliente'] ?>'">
                                     <h3 class="client-card-title"><?= htmlspecialchars($cliente['nombre_cliente']) ?></h3>
-                                    <span class="client-card-badge"><?= $cliente['total_ediciones'] ?> ediciones</span>
+                                    <span class="client-card-badge">ID: <?= $cliente['id_cliente'] ?></span>
                                 </div>
                                 <div class="client-card-body">
                                     <div class="client-card-detail">
@@ -1188,19 +1242,28 @@ if (isset($_GET['ajax'])) {
                                         <span><?= htmlspecialchars($cliente['telefono_cliente']) ?></span>
                                     </div>
                                     <div class="client-card-detail">
-                                        <i class="fas fa-user-edit"></i>
-                                        <span>Última edición: <?= $ultimaEdicion ? date('d/m/Y', strtotime($ultimaEdicion['fecha_eliminacion'])) : 'N/A' ?></span>
+                                        <i class="fas fa-calendar"></i>
+                                        <span>Registrado: <?= date('d/m/Y', strtotime($cliente['fecha_registro'])) ?></span>
                                     </div>
-                                    <?php if ($ultimaEdicion && !empty($ultimaEdicion['editor'])): ?>
+                                    <?php if (!empty($cliente['fecha_actualizacion'])): ?>
                                     <div class="client-card-detail">
-                                        <i class="fas fa-user"></i>
-                                        <span>Por: <?= htmlspecialchars($ultimaEdicion['editor']) ?></span>
+                                        <i class="fas fa-edit"></i>
+                                        <span>Actualizado: <?= date('d/m/Y', strtotime($cliente['fecha_actualizacion'])) ?></span>
                                     </div>
                                     <?php endif; ?>
                                 </div>
-                                <!-- Flecha en esquina inferior derecha -->
-                                <div class="edit-arrow" onclick="showEditDetails(<?= $cliente['id_cliente'] ?>)">
-                                    <i class="fas fa-chevron-right"></i>
+                                <div class="client-card-footer">
+                                    <a href="ver.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-info btn-sm">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </a>
+                                    <a href="editar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                    <?php if ($tablaExiste && isset($cliente['total_ediciones']) && $cliente['total_ediciones'] > 0): ?>
+                                    <button class="btn btn-secondary btn-sm" onclick="showEditDetails(<?= $cliente['id_cliente'] ?>)">
+                                        <i class="fas fa-history"></i> Historial
+                                    </button>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -1208,70 +1271,66 @@ if (isset($_GET['ajax'])) {
                 <?php else: ?>
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        No hay clientes con historial de ediciones.
+                        No hay clientes con historial de ediciones recientes.
                     </div>
                 <?php endif; ?>
             </div>
 
             <!-- Pestaña de eliminación -->
+             
             <div class="tab-pane fade" id="delete" role="tabpanel">
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     Clientes eliminados. Estos registros se pueden restaurar.
                 </div>
                 
-                <?php if (!empty($clientesEliminar)): ?>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Cliente</th>
-                                    <th>Teléfono</th>
-                                    <th>Correo</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($clientesEliminar as $cliente): ?>
-                                    <tr class="deleted-item">
-                                        <td data-label="ID"><?= $cliente['id_cliente'] ?></td>
-                                        <td data-label="Cliente">
-                                            <?= htmlspecialchars($cliente['nombre_cliente']) ?>
-                                        </td>
-                                        <td data-label="Teléfono"><?= htmlspecialchars($cliente['telefono_cliente']) ?></td>
-                                        <td data-label="Correo"><?= htmlspecialchars($cliente['correo_cliente']) ?></td>
-                                        <td data-label="Acciones">
-                                            <a href="restaurar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
-                                                <i class="fas fa-undo"></i> Restaurar
-                                            </a>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php else: ?>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        No hay clientes en la papelera.
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+              <!-- ... dentro de la pestaña de eliminación (papelera) ... -->
+<?php if (!empty($clientesEliminar)): ?>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Teléfono</th>
+                    <th>Correo</th>
+                    <th>Fecha Eliminación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($clientesEliminar as $cliente): ?>
+                    <tr class="deleted-item">
+                        <td data-label="ID"><?= $cliente['id_cliente'] ?></td>
+                        <td data-label="Cliente">
+                            <?= htmlspecialchars($cliente['nombre_cliente']) ?>
+                        </td>
+                        <td data-label="Teléfono"><?= htmlspecialchars($cliente['telefono_cliente']) ?></td>
+                        <td data-label="Correo"><?= htmlspecialchars($cliente['correo_cliente']) ?></td>
+                        <td data-label="Fecha Eliminación">
+                            <?= !empty($cliente['fecha_eliminacion']) ? date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) : 'N/A' ?>
+                        </td>
+                        <td data-label="Acciones">
+                            <a href="restaurar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
+                                <i class="fas fa-undo"></i> Restaurar
+                            </a>
+                            <?php if (isAdmin()): ?>
+                            <a href="eliminar_permanentemente.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?> y no se podrá recuperar.')">
+                                <i class="fas fa-trash"></i> Eliminar Permanentemente
+                            </a>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
-
-    <!-- Modal para historial de ediciones -->
-    <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-history me-2"></i>Historial de Ediciones</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="historyModalBody">
-                    <!-- El contenido se cargará dinámicamente -->
-                </div>
+<?php else: ?>
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        No hay clientes en la papelera.
+    </div>
+<?php endif; ?>
             </div>
         </div>
     </div>
@@ -1280,7 +1339,7 @@ if (isset($_GET['ajax'])) {
     <div class="overlay" id="editOverlay" onclick="hideEditDetails()"></div>
     <div class="floating-card" id="editDetailCard">
         <div class="card-header">
-            <h2 class="card-title" id="editClientName"></h2>
+            <h2 class="card-title" id="editClientName">Detalles del Cliente</h2>
             <button class="close-detail close-card" onclick="hideEditDetails()">
                 <i class="fas fa-times"></i>
             </button>
@@ -1453,7 +1512,7 @@ if (isset($_GET['ajax'])) {
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando...</span>
                     </div>
-                    <p class="mt-2">Cargando detalles de edición...</p>
+                    <p class="mt-2">Cargando detalles del cliente...</p>
                 </div>
             `;
             
@@ -1462,7 +1521,7 @@ if (isset($_GET['ajax'])) {
             document.getElementById('editDetailCard').style.display = 'block';
             
             // Cargar detalles via AJAX
-            fetch(`cargar_detalles_edicion.php?id=${clientId}`)
+            fetch(`?cargar_detalles=${clientId}`)
                 .then(response => response.text())
                 .then(data => {
                     document.getElementById('editDetailContent').innerHTML = data;
@@ -1477,7 +1536,7 @@ if (isset($_GET['ajax'])) {
                     document.getElementById('editDetailContent').innerHTML = `
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error al cargar los detalles de edición.
+                            Error al cargar los detalles del cliente.
                         </div>
                     `;
                 });

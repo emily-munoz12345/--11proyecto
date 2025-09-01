@@ -1,4 +1,5 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -7,12 +8,16 @@ require_once __DIR__ . '/../../../php/auth.php';
 
 // Verificar permisos
 if (!isAdmin() && !isSeller()) {
+    $_SESSION['mensaje'] = 'No tiene permisos para realizar esta acción';
+    $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: ../dashboard.php');
     exit;
 }
 
 // Verificar método POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $_SESSION['mensaje'] = 'Método no permitido';
+    $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: index.php');
     exit;
 }
@@ -37,8 +42,9 @@ if (empty($telefono)) $errores[] = 'El teléfono es obligatorio';
 if (empty($direccion)) $errores[] = 'La dirección es obligatoria';
 
 if (!empty($errores)) {
-    header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id") . 
-          '?error=' . urlencode(implode(', ', $errores)));
+    $_SESSION['mensaje'] = implode(', ', $errores);
+    $_SESSION['tipo_mensaje'] = 'danger';
+    header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id"));
     exit;
 }
 
@@ -51,8 +57,14 @@ try {
         $stmt = $conex->prepare($sql);
         $stmt->execute([$nombre, $correo, $telefono, $direccion, $notas]);
         
-        $mensaje = 'Cliente creado exitosamente';
+        $_SESSION['mensaje'] = 'Cliente creado exitosamente';
+        $_SESSION['tipo_mensaje'] = 'success';
     } elseif ($accion === 'editar' && $id > 0) {
+        // Obtener datos anteriores para registro de edición
+        $stmt_old = $conex->prepare("SELECT * FROM clientes WHERE id_cliente = ?");
+        $stmt_old->execute([$id]);
+        $cliente_anterior = $stmt_old->fetch(PDO::FETCH_ASSOC);
+        
         // Actualizar cliente existente
         $sql = "UPDATE clientes SET 
                 nombre_cliente = ?, 
@@ -64,14 +76,47 @@ try {
         $stmt = $conex->prepare($sql);
         $stmt->execute([$nombre, $correo, $telefono, $direccion, $notas, $id]);
         
-        $mensaje = 'Cliente actualizado exitosamente';
+        // Registrar edición si existe la tabla
+        if ($cliente_anterior) {
+            try {
+                $datos_anteriores = json_encode([
+                    'nombre_cliente' => $cliente_anterior['nombre_cliente'],
+                    'correo_cliente' => $cliente_anterior['correo_cliente'],
+                    'telefono_cliente' => $cliente_anterior['telefono_cliente'],
+                    'direccion_cliente' => $cliente_anterior['direccion_cliente'],
+                    'notas_cliente' => $cliente_anterior['notas_cliente']
+                ]);
+                
+                $datos_nuevos = json_encode([
+                    'nombre_cliente' => $nombre,
+                    'correo_cliente' => $correo,
+                    'telefono_cliente' => $telefono,
+                    'direccion_cliente' => $direccion,
+                    'notas_cliente' => $notas
+                ]);
+                
+                $stmt_log = $conex->prepare("INSERT INTO registro_ediciones 
+                                          (tabla, id_registro, datos_anteriores, datos_nuevos, editado_por, fecha_edicion) 
+                                          VALUES ('clientes', ?, ?, ?, ?, NOW())");
+                $stmt_log->execute([$id, $datos_anteriores, $datos_nuevos, $_SESSION['id_usuario']]);
+            } catch (Exception $e) {
+                // No critical if logging fails
+                error_log("Error al registrar edición: " . $e->getMessage());
+            }
+        }
+        
+        $_SESSION['mensaje'] = 'Cliente actualizado exitosamente';
+        $_SESSION['tipo_mensaje'] = 'success';
     } else {
         throw new Exception('Acción inválida');
     }
     
-    header("Location: index.php?success=" . urlencode($mensaje));
+    header("Location: index.php");
+    exit;
+    
 } catch (PDOException $e) {
-    $error = 'Error en la base de datos: ' . $e->getMessage();
-    header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id") . 
-          '?error=' . urlencode($error));
+    $_SESSION['mensaje'] = 'Error en la base de datos: ' . $e->getMessage();
+    $_SESSION['tipo_mensaje'] = 'danger';
+    header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id"));
+    exit;
 }
