@@ -61,175 +61,422 @@ require_once __DIR__ . '/../../includes/head.php';
 $title = 'Nueva Cotización | Nacional Tapizados';
 ?>
 
-<body class="bg-light">
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <?php include __DIR__ . '/../../includes/sidebar.php'; ?>
+<!DOCTYPE html>
+<html lang="es">
 
-            <!-- Contenido principal -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-                <!-- Barra superior -->
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">
-                        <i class="fas fa-file-invoice-dollar me-2"></i>Nueva Cotización
-                    </h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <div class="btn-group me-2">
-                            <a href="index.php" class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-1"></i> Volver
-                            </a>
-                        </div>
-                        <div class="text-muted small">
-                            Rol actual: <strong><?= isAdmin() ? 'Administrador' : 'Vendedor' ?></strong>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $title ?></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: rgba(140, 74, 63, 0.8);
+            --primary-hover: rgba(140, 74, 63, 1);
+            --secondary-color: rgba(108, 117, 125, 0.8);
+            --text-color: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --bg-transparent: rgba(255, 255, 255, 0.1);
+            --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --border-color: rgba(255, 255, 255, 0.2);
+            --success-color: rgba(25, 135, 84, 0.8);
+            --danger-color: rgba(220, 53, 69, 0.8);
+            --warning-color: rgba(255, 193, 7, 0.8);
+            --info-color: rgba(13, 202, 240, 0.8);
+            --dark-bg: #1a1a1a;
+            --darker-bg: #121212;
+        }
+
+        body {
+            background-image: url('https://pfst.cf2.poecdn.net/base/image/60ab54eef562f30f85a67bde31f924f078199dae0b7bc6c333dfb467a2c13471?w=1024&h=768&pmaid=442168253');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: var(--bg-transparent);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-title {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .page-title i {
+            margin-right: 12px;
+            color: var(--primary-color);
+        }
+
+        /* Estilos para formulario */
+        .form-container {
+            background-color: var(--bg-transparent-light);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        .form-control, .form-select {
+            background-color: var(--dark-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            backdrop-filter: blur(5px);
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: var(--darker-bg);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
+            color: var(--text-color);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-group-text {
+            background-color: var(--dark-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        /* Estilos específicos para los menús desplegables */
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 16px 12px;
+        }
+
+        /* Estilo para las opciones del menú desplegable */
+        .form-select option {
+            background-color: var(--darker-bg);
+            color: var(--text-color);
+            padding: 10px;
+        }
+
+        /* Estilo cuando se pasa el mouse sobre las opciones */
+        .form-select option:hover {
+            background-color: var(--primary-color) !important;
+            color: white;
+        }
+
+        /* Estilo para las opciones cuando están seleccionadas */
+        .form-select option:checked {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--text-color);
+            --bs-table-border-color: var(--border-color);
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .table-light {
+            --bs-table-bg: rgba(255, 255, 255, 0.1);
+            --bs-table-color: var(--text-color);
+        }
+
+        /* Estilos para botones */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            gap: 0.5rem;
+        }
+
+        .btn i {
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(108, 117, 125, 1);
+        }
+
+        .btn-outline-secondary {
+            background-color: transparent;
+            border: 1px solid var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-outline-danger {
+            background-color: transparent;
+            border: 1px solid var(--danger-color);
+            color: var(--text-color);
+        }
+
+        .btn-outline-danger:hover {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        /* Estilos para alertas */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .alert-success {
+            background-color: rgba(25, 135, 84, 0.2);
+            border-left: 4px solid var(--success-color);
+        }
+
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .alert-warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .alert-info {
+            background-color: rgba(13, 202, 240, 0.2);
+            border-left: 4px solid var(--info-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+
+            .header-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>   
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Encabezado -->
+        <div class="header-section">
+            <h1 class="page-title">
+                <i class="fas fa-file-invoice-dollar"></i> Nueva Cotización
+            </h1>
+            <div class="d-flex gap-2">
+                <a href="index.php" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        <!-- Mensajes -->
+        <?php if (isset($_SESSION['mensaje'])): ?>
+            <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
+                <div>
+                    <i class="fas fa-<?=
+                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : ($_SESSION['tipo_mensaje'] === 'danger' ? 'times-circle' : ($_SESSION['tipo_mensaje'] === 'warning' ? 'exclamation-triangle' : 'info-circle'))
+                                        ?> me-2"></i>
+                    <?= $_SESSION['mensaje'] ?>
+                </div>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+            </div>
+            <?php 
+            unset($_SESSION['mensaje']);
+            unset($_SESSION['tipo_mensaje']);
+            ?>
+        <?php endif; ?>
+
+        <!-- Formulario -->
+        <div class="form-container">
+            <form action="procesar.php" method="POST" id="formCotizacion">
+                <input type="hidden" name="accion" value="crear">
+                <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="cliente" class="form-label">Cliente *</label>
+                        <select class="form-select" id="cliente" name="cliente" required>
+                            <option value="">Seleccione un cliente...</option>
+                            <?php foreach ($clientes as $cliente): ?>
+                            <option value="<?= $cliente['id_cliente'] ?>"><?= htmlspecialchars($cliente['nombre_cliente']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="vehiculo" class="form-label">Vehículo *</label>
+                        <div class="input-group">
+                            <select class="form-select" id="vehiculo" name="vehiculo" required disabled>
+                                <option value="">Primero seleccione un cliente</option>
+                            </select>
+                            <span class="input-group-text" id="loadingVehiculos">
+                                <div class="spinner-border spinner-border-sm text-primary d-none" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </span>
                         </div>
                     </div>
                 </div>
-
-                <!-- Mensajes -->
-                <?php if (isset($_SESSION['mensaje'])): ?>
-                    <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?> alert-dismissible fade show">
-                        <?= $_SESSION['mensaje'] ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    <?php 
-                    unset($_SESSION['mensaje']);
-                    unset($_SESSION['tipo_mensaje']);
-                    ?>
-                <?php endif; ?>
-
-                <!-- Formulario -->
-                <div class="card shadow">
-                    <div class="card-body">
-                        <form action="procesar.php" method="POST" id="formCotizacion">
-                            <input type="hidden" name="accion" value="crear">
-                            <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
-                            
-                            <div class="row mb-4">
-                                <div class="col-md-6">
-                                    <label for="cliente" class="form-label">Cliente *</label>
-                                    <select class="form-select" id="cliente" name="cliente" required>
-                                        <option value="">Seleccione un cliente...</option>
-                                        <?php foreach ($clientes as $cliente): ?>
-                                        <option value="<?= $cliente['id_cliente'] ?>"><?= htmlspecialchars($cliente['nombre_cliente']) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="vehiculo" class="form-label">Vehículo *</label>
-                                    <div class="input-group">
-                                        <select class="form-select" id="vehiculo" name="vehiculo" required disabled>
-                                            <option value="">Primero seleccione un cliente</option>
+                
+                <div class="mb-4">
+                    <h5 class="mb-3 border-bottom pb-2">
+                        <i class="fas fa-list me-2"></i>Servicios
+                    </h5>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="tablaServicios">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Servicio</th>
+                                    <th width="150">Precio</th>
+                                    <th width="100">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="serviciosAgregados">
+                                <!-- Servicios se agregarán aquí dinámicamente -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td>
+                                        <select class="form-select" id="selectServicio">
+                                            <option value="">Seleccione un servicio...</option>
+                                            <?php foreach ($servicios as $servicio): ?>
+                                            <option value="<?= $servicio['id_servicio'] ?>" data-precio="<?= $servicio['precio_servicio'] ?>">
+                                                <?= htmlspecialchars($servicio['nombre_servicio']) ?> ($<?= number_format($servicio['precio_servicio'], 2, ',', '.') ?>)
+                                            </option>
+                                            <?php endforeach; ?>
                                         </select>
-                                        <span class="input-group-text" id="loadingVehiculos">
-                                            <div class="spinner-border spinner-border-sm text-primary d-none" role="status">
-                                                <span class="visually-hidden">Cargando...</span>
-                                            </div>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <h5 class="mb-3 border-bottom pb-2">
-                                    <i class="fas fa-list me-2"></i>Servicios
-                                </h5>
-                                
-                                <div class="table-responsive">
-                                    <table class="table table-hover" id="tablaServicios">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Servicio</th>
-                                                <th width="150">Precio</th>
-                                                <th width="100">Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="serviciosAgregados">
-                                            <!-- Servicios se agregarán aquí dinámicamente -->
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <td>
-                                                    <select class="form-select" id="selectServicio">
-                                                        <option value="">Seleccione un servicio...</option>
-                                                        <?php foreach ($servicios as $servicio): ?>
-                                                        <option value="<?= $servicio['id_servicio'] ?>" data-precio="<?= $servicio['precio_servicio'] ?>">
-                                                            <?= htmlspecialchars($servicio['nombre_servicio']) ?> ($<?= number_format($servicio['precio_servicio'], 2, ',', '.') ?>)
-                                                        </option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </td>
-                                                <td>
-                                                    <input type="text" class="form-control" id="precioServicio" readonly>
-                                                </td>
-                                                <td>
-                                                    <button type="button" class="btn btn-sm btn-primary w-100" id="btnAgregarServicio">
-                                                        <i class="fas fa-plus me-1"></i> Agregar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-4">
-                                <div class="col-md-4">
-                                    <label for="subtotal" class="form-label">Subtotal</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="text" class="form-control" id="subtotal" name="subtotal" value="0.00" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="iva" class="form-label">IVA (19%)</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="text" class="form-control" id="iva" name="iva" value="0.00" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="valor_adicional" class="form-label">Valor Adicional</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control" id="valor_adicional" name="valor_adicional" value="0.00" min="0" step="0.01">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-4">
-                                <div class="col-md-4 offset-md-8">
-                                    <label for="total" class="form-label">Total</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="text" class="form-control fw-bold" id="total" name="total" value="0.00" readonly>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="notas" class="form-label">Notas Adicionales</label>
-                                <textarea class="form-control" id="notas" name="notas" rows="3"></textarea>
-                            </div>
-                            
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end border-top pt-3">
-                                <button type="reset" class="btn btn-outline-secondary me-md-2" onclick="resetForm()">
-                                    <i class="fas fa-undo me-1"></i> Limpiar
-                                </button>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save me-1"></i> Guardar Cotización
-                                </button>
-                            </div>
-                            
-                            <input type="hidden" name="servicios_json" id="servicios_json">
-                        </form>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control" id="precioServicio" readonly>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-primary w-100" id="btnAgregarServicio">
+                                            <i class="fas fa-plus me-1"></i> Agregar
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
                 </div>
-            </main>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label for="subtotal" class="form-label">Subtotal</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="text" class="form-control" id="subtotal" name="subtotal" value="0.00" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="iva" class="form-label">IVA (19%)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="text" class="form-control" id="iva" name="iva" value="0.00" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="valor_adicional" class="form-label">Valor Adicional</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="valor_adicional" name="valor_adicional" value="0.00" min="0" step="0.01">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4 offset-md-8">
+                        <label for="total" class="form-label">Total</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="text" class="form-control fw-bold" id="total" name="total" value="0.00" readonly>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="notas" class="form-label">Notas Adicionales</label>
+                    <textarea class="form-control" id="notas" name="notas" rows="3"></textarea>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end border-top pt-3">
+                    <button type="reset" class="btn btn-outline-secondary me-md-2" onclick="resetForm()">
+                        <i class="fas fa-undo me-1"></i> Limpiar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Guardar Cotización
+                    </button>
+                </div>
+                
+                <input type="hidden" name="servicios_json" id="servicios_json">
+            </form>
         </div>
     </div>
-
-    <?php include __DIR__ . '/../../includes/footer.php'; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>

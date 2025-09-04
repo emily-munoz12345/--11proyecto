@@ -53,13 +53,14 @@ $clientesEditados = [];
 if ($tablaExiste) {
     $clientesEditados = $conex->query("
         SELECT c.*, 
-               COUNT(re.id) as total_ediciones
+               COUNT(re.id) as total_ediciones,
+               MAX(re.fecha_eliminacion) as ultima_edicion
         FROM clientes c
         LEFT JOIN registro_eliminaciones re ON re.tabla = 'clientes' AND re.id_registro = c.id_cliente AND re.accion = 'MODIFICACION'
         WHERE c.activo = 1
         GROUP BY c.id_cliente
         HAVING total_ediciones > 0
-        ORDER BY MAX(re.fecha_eliminacion) DESC
+        ORDER BY ultima_edicion DESC
     ")->fetchAll();
 } else {
     // Alternativa: obtener clientes modificados recientemente (últimos 30 días)
@@ -330,186 +331,6 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             color: rgba(255, 255, 255, 0.5);
         }
 
-        /* Mini menú de opciones en resultados de búsqueda */
-        .search-result-menu {
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            z-index: 10;
-        }
-
-        .menu-toggle {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-        }
-
-        .menu-toggle:hover {
-            color: var(--text-color);
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .options-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background-color: rgba(50, 50, 50, 0.95);
-            backdrop-filter: blur(15px);
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            z-index: 20;
-            min-width: 150px;
-        }
-
-        .options-menu.show {
-            display: block;
-        }
-
-        .menu-option {
-            padding: 0.75rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            color: var(--text-color);
-            text-decoration: none;
-        }
-
-        .menu-option:hover {
-            background-color: var(--primary-color);
-        }
-
-        .menu-option:first-child {
-            border-top-left-radius: 6px;
-            border-top-right-radius: 6px;
-        }
-
-        .menu-option:last-child {
-            border-bottom-left-radius: 6px;
-            border-bottom-right-radius: 6px;
-        }
-
-        .search-loading {
-            padding: 1rem;
-            text-align: center;
-            color: var(--text-muted);
-            display: none;
-        }
-
-        .search-loading i {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Estilos para tarjetas de clientes */
-        .client-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .client-card {
-            background-color: var(--bg-transparent-light);
-            backdrop-filter: blur(8px);
-            border-radius: 12px;
-            padding: 1.5rem;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .client-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .client-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-            cursor: pointer;
-        }
-
-        .client-card-title {
-            margin: 0;
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        .client-card-badge {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .client-card-body {
-            margin-bottom: 1.5rem;
-        }
-
-        .client-card-detail {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-            font-size: 0.95rem;
-        }
-
-        .client-card-detail i {
-            color: var(--primary-color);
-            width: 20px;
-            text-align: center;
-        }
-
-        .client-card-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-        }
-
-        /* Flecha para tarjetas de editados */
-        .edit-arrow {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            color: var(--primary-color);
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .edit-arrow:hover {
-            transform: translateX(3px);
-            color: var(--text-color);
-        }
-
-        /* Menú de opciones para tarjetas recientes */
-        .card-menu {
-            position: absolute;
-            right: 15px;
-            top: 15px;
-            z-index: 10;
-        }
-
         /* Estilos para la lista de clientes */
         .client-list {
             background-color: var(--bg-transparent-light);
@@ -694,6 +515,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
 
         .summary-card:hover {
             transform: translateY(-5px);
+            background-color: rgba(140, 74, 63, 0.6);
         }
 
         .summary-card h3 {
@@ -944,6 +766,174 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             margin-top: 1rem;
         }
 
+        /* Estilos para tarjetas de clientes */
+        .client-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .client-card {
+            background-color: var(--bg-transparent-light);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .client-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .client-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .client-card-title {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .client-card-badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .client-card-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .client-card-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .client-card-detail i {
+            color: var(--primary-color);
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Flecha para tarjetas de editados */
+        .edit-arrow {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .edit-arrow:hover {
+            transform: translateX(3px);
+            color: var(--text-color);
+        }
+
+        /* Nueva tarjeta flotante para opciones */
+        .options-floating-card {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background-color: rgba(50, 50, 50, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            animation: fadeInUp 0.4s ease;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .options-card-header {
+            background-color: var(--primary-color);
+            padding: 1.2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .options-card-title {
+            margin: 0;
+            font-size: 1.2rem;
+            color: white;
+            font-weight: 500;
+        }
+
+        .options-card-body {
+            padding: 1.5rem;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.8rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            color: var(--text-color);
+            text-decoration: none;
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .option-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .option-item:hover {
+            background-color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .option-item i {
+            margin-right: 0.8rem;
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .option-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-close:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
         /* Responsive */
         @media (max-width: 992px) {
             .summary-cards {
@@ -1025,13 +1015,9 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                 gap: 0.5rem;
             }
 
-            .options-menu {
-                min-width: 120px;
-            }
-
-            .menu-option {
-                padding: 0.5rem 0.75rem;
-                font-size: 0.9rem;
+            .options-floating-card {
+                width: 90%;
+                max-width: 300px;
             }
         }
 
@@ -1055,7 +1041,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                 grid-template-columns: 1fr;
             }
         }
-</style>   
+    </style>   
 </head>
 
 <body>
@@ -1121,11 +1107,6 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit" type="button" role="tab">
-                    <i class="fas fa-edit"></i> Editados
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="delete-tab" data-bs-toggle="tab" data-bs-target="#delete" type="button" role="tab">
                     <i class="fas fa-trash-alt"></i> Papelera
                 </button>
@@ -1147,29 +1128,16 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                 <!-- Resultados iniciales (todos los clientes activos) -->
                 <div class="client-list" id="allClientsList">
                     <?php foreach ($todosClientes as $cliente): ?>
-                        <div class="client-item" data-client-id="<?= $cliente['id_cliente'] ?>">
-                            <div class="client-info" onclick="window.location.href='ver.php?id=<?= $cliente['id_cliente'] ?>'">
+                        <div class="client-item" data-client-id="<?= $cliente['id_cliente'] ?>" onclick="showOptionsCard(<?= $cliente['id_cliente'] ?>, '<?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>')">
+                            <div class="client-info">
                                 <div class="client-name"><?= htmlspecialchars($cliente['nombre_cliente']) ?></div>
                                 <div class="client-description">
                                     <?= htmlspecialchars($cliente['telefono_cliente']) ?> ·
                                     <?= htmlspecialchars($cliente['correo_cliente']) ?>
                                 </div>
                             </div>
-                            <div class="search-result-menu">
-                                <button class="menu-toggle" onclick="event.stopPropagation(); toggleOptionsMenu(this)">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <div class="options-menu">
-                                    <a class="menu-option" href="ver.php?id=<?= $cliente['id_cliente'] ?>">
-                                        <i class="fas fa-eye"></i> Ver
-                                    </a>
-                                    <a class="menu-option" href="editar.php?id=<?= $cliente['id_cliente'] ?>">
-                                        <i class="fas fa-edit"></i> Editar
-                                    </a>
-                                    <a class="menu-option" href="eliminar.php?id=<?= $cliente['id_cliente'] ?>" onclick="return confirm('¿Estás seguro de eliminar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
-                                        <i class="fas fa-trash"></i> Eliminar
-                                    </a>
-                                </div>
+                            <div class="client-arrow">
+                                <i class="fas fa-chevron-right"></i>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -1180,26 +1148,8 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             <div class="tab-pane fade" id="recent" role="tabpanel">
                 <div class="client-cards">
                     <?php foreach ($clientesRecientes as $cliente): ?>
-                        <div class="client-card">
-                            <!-- Menú de opciones en esquina superior derecha -->
-                            <div class="card-menu">
-                                <button class="menu-toggle" onclick="event.stopPropagation(); toggleOptionsMenu(this)">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <div class="options-menu">
-                                    <a class="menu-option" href="ver.php?id=<?= $cliente['id_cliente'] ?>">
-                                        <i class="fas fa-eye"></i> Ver
-                                    </a>
-                                    <a class="menu-option" href="editar.php?id=<?= $cliente['id_cliente'] ?>">
-                                        <i class="fas fa-edit"></i> Editar
-                                    </a>
-                                    <a class="menu-option" href="eliminar.php?id=<?= $cliente['id_cliente'] ?>" onclick="return confirm('¿Estás seguro de eliminar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
-                                        <i class="fas fa-trash"></i> Eliminar
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            <div class="client-card-header" onclick="window.location.href='ver.php?id=<?= $cliente['id_cliente'] ?>'">
+                        <div class="client-card" onclick="showOptionsCard(<?= $cliente['id_cliente'] ?>, '<?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>')">
+                            <div class="client-card-header">
                                 <h3 class="client-card-title"><?= htmlspecialchars($cliente['nombre_cliente']) ?></h3>
                                 <span class="client-card-badge">ID: <?= $cliente['id_cliente'] ?></span>
                             </div>
@@ -1217,120 +1167,67 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                                     <span>Registrado: <?= date('d/m/Y', strtotime($cliente['fecha_registro'])) ?></span>
                                 </div>
                             </div>
+                            <div class="edit-arrow">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </div>
 
-            <!-- Pestaña de edición -->
-            <div class="tab-pane fade" id="edit" role="tabpanel">
-                <?php if (!empty($clientesEditados)): ?>
-                    <div class="client-cards">
-                        <?php foreach ($clientesEditados as $cliente): ?>
-                            <div class="client-card">
-                                <div class="client-card-header" onclick="window.location.href='ver.php?id=<?= $cliente['id_cliente'] ?>'">
-                                    <h3 class="client-card-title"><?= htmlspecialchars($cliente['nombre_cliente']) ?></h3>
-                                    <span class="client-card-badge">ID: <?= $cliente['id_cliente'] ?></span>
-                                </div>
-                                <div class="client-card-body">
-                                    <div class="client-card-detail">
-                                        <i class="fas fa-envelope"></i>
-                                        <span><?= htmlspecialchars($cliente['correo_cliente']) ?></span>
-                                    </div>
-                                    <div class="client-card-detail">
-                                        <i class="fas fa-phone"></i>
-                                        <span><?= htmlspecialchars($cliente['telefono_cliente']) ?></span>
-                                    </div>
-                                    <div class="client-card-detail">
-                                        <i class="fas fa-calendar"></i>
-                                        <span>Registrado: <?= date('d/m/Y', strtotime($cliente['fecha_registro'])) ?></span>
-                                    </div>
-                                    <?php if (!empty($cliente['fecha_actualizacion'])): ?>
-                                    <div class="client-card-detail">
-                                        <i class="fas fa-edit"></i>
-                                        <span>Actualizado: <?= date('d/m/Y', strtotime($cliente['fecha_actualizacion'])) ?></span>
-                                    </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="client-card-footer">
-                                    <a href="ver.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-info btn-sm">
-                                        <i class="fas fa-eye"></i> Ver
-                                    </a>
-                                    <a href="editar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-edit"></i> Editar
-                                    </a>
-                                    <?php if ($tablaExiste && isset($cliente['total_ediciones']) && $cliente['total_ediciones'] > 0): ?>
-                                    <button class="btn btn-secondary btn-sm" onclick="showEditDetails(<?= $cliente['id_cliente'] ?>)">
-                                        <i class="fas fa-history"></i> Historial
-                                    </button>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php else: ?>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        No hay clientes con historial de ediciones recientes.
-                    </div>
-                <?php endif; ?>
-            </div>
-
             <!-- Pestaña de eliminación -->
-             
             <div class="tab-pane fade" id="delete" role="tabpanel">
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     Clientes eliminados. Estos registros se pueden restaurar.
                 </div>
                 
-              <!-- ... dentro de la pestaña de eliminación (papelera) ... -->
-<?php if (!empty($clientesEliminar)): ?>
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Cliente</th>
-                    <th>Teléfono</th>
-                    <th>Correo</th>
-                    <th>Fecha Eliminación</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($clientesEliminar as $cliente): ?>
-                    <tr class="deleted-item">
-                        <td data-label="ID"><?= $cliente['id_cliente'] ?></td>
-                        <td data-label="Cliente">
-                            <?= htmlspecialchars($cliente['nombre_cliente']) ?>
-                        </td>
-                        <td data-label="Teléfono"><?= htmlspecialchars($cliente['telefono_cliente']) ?></td>
-                        <td data-label="Correo"><?= htmlspecialchars($cliente['correo_cliente']) ?></td>
-                        <td data-label="Fecha Eliminación">
-                            <?= !empty($cliente['fecha_eliminacion']) ? date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) : 'N/A' ?>
-                        </td>
-                        <td data-label="Acciones">
-                            <a href="restaurar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
-                                <i class="fas fa-undo"></i> Restaurar
-                            </a>
-                            <?php if (isAdmin()): ?>
-                            <a href="eliminar_permanentemente.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?> y no se podrá recuperar.')">
-                                <i class="fas fa-trash"></i> Eliminar Permanentemente
-                            </a>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-<?php else: ?>
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle me-2"></i>
-        No hay clientes en la papelera.
-    </div>
-<?php endif; ?>
+                <?php if (!empty($clientesEliminar)): ?>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cliente</th>
+                                    <th>Teléfono</th>
+                                    <th>Correo</th>
+                                    <th>Fecha Eliminación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($clientesEliminar as $cliente): ?>
+                                    <tr class="deleted-item">
+                                        <td data-label="ID"><?= $cliente['id_cliente'] ?></td>
+                                        <td data-label="Cliente">
+                                            <?= htmlspecialchars($cliente['nombre_cliente']) ?>
+                                        </td>
+                                        <td data-label="Teléfono"><?= htmlspecialchars($cliente['telefono_cliente']) ?></td>
+                                        <td data-label="Correo"><?= htmlspecialchars($cliente['correo_cliente']) ?></td>
+                                        <td data-label="Fecha Eliminación">
+                                            <?= !empty($cliente['fecha_eliminacion']) ? date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) : 'N/A' ?>
+                                        </td>
+                                        <td data-label="Acciones">
+                                            <a href="restaurar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
+                                                <i class="fas fa-undo"></i> Restaurar
+                                            </a>
+                                            <?php if (isAdmin()): ?>
+                                            <a href="eliminar_permanentemente.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?> y no se podrá recuperar.')">
+                                                <i class="fas fa-trash"></i> Eliminar Permanentemente
+                                            </a>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No hay clientes en la papelera.
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -1345,6 +1242,20 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             </button>
         </div>
         <div class="card-content" id="editDetailContent">
+            <!-- El contenido se cargará dinámicamente -->
+        </div>
+    </div>
+
+    <!-- Nueva tarjeta flotante para opciones -->
+    <div class="overlay" id="optionsOverlay" onclick="hideOptionsCard()"></div>
+    <div class="options-floating-card" id="optionsCard">
+        <div class="options-card-header">
+            <h2 class="options-card-title" id="optionsClientName">Opciones del Cliente</h2>
+            <button class="option-close" onclick="hideOptionsCard()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="options-card-body" id="optionsCardContent">
             <!-- El contenido se cargará dinámicamente -->
         </div>
     </div>
@@ -1409,7 +1320,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                                 item.className = 'search-result-item';
                                 item.setAttribute('data-client-id', client.id_cliente);
                                 item.innerHTML = `
-                                    <div onclick="window.location.href='ver.php?id=${client.id_cliente}'">
+                                    <div onclick="showOptionsCard(${client.id_cliente}, '${client.nombre_cliente.replace(/'/g, "\\'")}')">
                                         <div class="search-client-name">${client.nombre_cliente}</div>
                                         <div class="search-client-info">
                                             <i class="fas fa-phone"></i> ${client.telefono_cliente} · 
@@ -1418,22 +1329,6 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                                     </div>
                                     <div class="search-client-date">
                                         ${client.fecha_registro ? new Date(client.fecha_registro).toLocaleDateString('es-ES') : ''}
-                                    </div>
-                                    <div class="search-result-menu">
-                                        <button class="menu-toggle" onclick="event.stopPropagation(); toggleOptionsMenu(this)">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <div class="options-menu">
-                                            <a class="menu-option" href="ver.php?id=${client.id_cliente}">
-                                                <i class="fas fa-eye"></i> Ver
-                                            </a>
-                                            <a class="menu-option" href="editar.php?id=${client.id_cliente}">
-                                                <i class="fas fa-edit"></i> Editar
-                                            </a>
-                                            <a class="menu-option" href="eliminar.php?id=${client.id_cliente}" onclick="return confirm('¿Estás seguro de eliminar a ${client.nombre_cliente}?')">
-                                                <i class="fas fa-trash"></i> Eliminar
-                                            </a>
-                                        </div>
                                     </div>
                                 `;
                                 searchResults.appendChild(item);
@@ -1453,66 +1348,50 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             }, 300);
         });
 
-        // Alternar menú de opciones
-        function toggleOptionsMenu(button) {
-            const menu = button.nextElementSibling;
-            const isShowing = menu.classList.contains('show');
+        // Mostrar tarjeta de opciones
+        function showOptionsCard(clientId, clientName) {
+            // Actualizar el nombre del cliente en la cabecera
+            document.getElementById('optionsClientName').textContent = clientName;
             
-            // Cerrar todos los menús abiertos
-            document.querySelectorAll('.options-menu.show').forEach(openMenu => {
-                if (openMenu !== menu) {
-                    openMenu.classList.remove('show');
-                }
-            });
+            // Crear el contenido de las opciones
+            const optionsContent = `
+                <div class="option-item" onclick="window.location.href='ver.php?id=${clientId}'">
+                    <i class="fas fa-eye"></i>
+                    <span>Ver detalles</span>
+                </div>
+                <div class="option-item" onclick="window.location.href='editar.php?id=${clientId}'">
+                    <i class="fas fa-edit"></i>
+                    <span>Editar cliente</span>
+                </div>
+                <div class="option-item" onclick="if(confirm('¿Estás seguro de eliminar a ${clientName}?')) window.location.href='eliminar.php?id=${clientId}'">
+                    <i class="fas fa-trash"></i>
+                    <span>Eliminar cliente</span>
+                </div>
+            `;
             
-            // Alternar el menú actual
-            menu.classList.toggle('show', !isShowing);
+            document.getElementById('optionsCardContent').innerHTML = optionsContent;
+            
+            // Mostrar overlay y tarjeta de opciones
+            document.getElementById('optionsOverlay').style.display = 'block';
+            document.getElementById('optionsCard').style.display = 'block';
         }
 
-        // Cerrar menús al hacer clic fuera
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.search-result-menu') && !e.target.closest('.card-menu')) {
-                document.querySelectorAll('.options-menu.show').forEach(menu => {
-                    menu.classList.remove('show');
-                });
-            }
-            
-            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                searchResults.style.display = 'none';
-            }
-        });
-
-        // Manejo de teclado
-        searchInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && searchResults.style.display === 'block') {
-                const firstResult = searchResults.querySelector('.search-result-item');
-                if (firstResult) window.location.href = `ver.php?id=${firstResult.getAttribute('data-client-id')}`;
-            }
-
-            if (e.key === 'Escape') {
-                searchResults.style.display = 'none';
-                searchInput.value = '';
-                allClientsList.style.display = 'block';
-                const clientItems = allClientsList.querySelectorAll('.client-item');
-                clientItems.forEach(item => item.style.display = 'flex');
-                
-                // Cerrar menús abiertos
-                document.querySelectorAll('.options-menu.show').forEach(menu => {
-                    menu.classList.remove('show');
-                });
-            }
-        });
+        // Ocultar tarjeta de opciones
+        function hideOptionsCard() {
+            document.getElementById('optionsOverlay').style.display = 'none';
+            document.getElementById('optionsCard').style.display = 'none';
+        }
 
         // Mostrar detalles de edición
-        function showEditDetails(clientId) {
+        function showEditDetails(clientId, clientName) {
             // Mostrar loading
-            document.getElementById('editClientName').textContent = 'Cargando...';
+            document.getElementById('editClientName').textContent = 'Historial de ' + clientName;
             document.getElementById('editDetailContent').innerHTML = `
                 <div class="text-center py-4">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando...</span>
                     </div>
-                    <p class="mt-2">Cargando detalles del cliente...</p>
+                    <p class="mt-2">Cargando historial de ediciones...</p>
                 </div>
             `;
             
@@ -1520,23 +1399,17 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             document.getElementById('editOverlay').style.display = 'block';
             document.getElementById('editDetailCard').style.display = 'block';
             
-            // Cargar detalles via AJAX
-            fetch(`?cargar_detalles=${clientId}`)
+            // Cargar historial via AJAX
+            fetch(`cargar_historial.php?id=${clientId}`)
                 .then(response => response.text())
                 .then(data => {
                     document.getElementById('editDetailContent').innerHTML = data;
-                    
-                    // Obtener y establecer el nombre del cliente
-                    const clientNameElement = document.querySelector('#editDetailContent [data-client-name]');
-                    if (clientNameElement) {
-                        document.getElementById('editClientName').textContent = clientNameElement.getAttribute('data-client-name');
-                    }
                 })
                 .catch(error => {
                     document.getElementById('editDetailContent').innerHTML = `
-                        <div class="alert alert-danger">
+                        <div class="alert alert-danger"> 
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error al cargar los detalles del cliente.
+                            Error al cargar el historial de ediciones.
                         </div>
                     `;
                 });
@@ -1551,6 +1424,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
         // Cerrar con tecla ESC
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
+                hideOptionsCard();
                 hideEditDetails();
             }
         });

@@ -34,6 +34,85 @@ try {
     exit;
 }
 
+// Procesar el formulario de edición
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'editar') {
+    $nombre = trim($_POST['nombre']);
+    $correo = trim($_POST['correo']);
+    $telefono = trim($_POST['telefono']);
+    $direccion = trim($_POST['direccion']);
+    $notas = trim($_POST['notas']);
+    
+    // Validar campos obligatorios
+    if (empty($nombre) || empty($correo) || empty($telefono) || empty($direccion)) {
+        $error = "Todos los campos marcados con * son obligatorios";
+    } else {
+        try {
+            // Iniciar transacción
+            $conex->beginTransaction();
+            
+            // Obtener datos actuales para comparar
+            $stmt = $conex->prepare("SELECT * FROM clientes WHERE id_cliente = ?");
+            $stmt->execute([$id]);
+            $cliente_actual = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Actualizar el cliente
+            $stmt = $conex->prepare("UPDATE clientes SET nombre_cliente = ?, correo_cliente = ?, telefono_cliente = ?, direccion_cliente = ?, notas_cliente = ?, fecha_actualizacion = NOW() WHERE id_cliente = ?");
+            $stmt->execute([$nombre, $correo, $telefono, $direccion, $notas, $id]);
+            
+            // Registrar cambios en registro_eliminaciones
+            $cambios = [];
+            
+            if ($cliente_actual['nombre_cliente'] !== $nombre) {
+                $cambios[] = "nombre: " . $cliente_actual['nombre_cliente'] . " → " . $nombre;
+            }
+            if ($cliente_actual['correo_cliente'] !== $correo) {
+                $cambios[] = "correo: " . $cliente_actual['correo_cliente'] . " → " . $correo;
+            }
+            if ($cliente_actual['telefono_cliente'] !== $telefono) {
+                $cambios[] = "teléfono: " . $cliente_actual['telefono_cliente'] . " → " . $telefono;
+            }
+            if ($cliente_actual['direccion_cliente'] !== $direccion) {
+                $cambios[] = "dirección: " . $cliente_actual['direccion_cliente'] . " → " . $direccion;
+            }
+            if ($cliente_actual['notas_cliente'] !== $notas) {
+                $cambios[] = "notas: " . $cliente_actual['notas_cliente'] . " → " . $notas;
+            }
+            
+            if (!empty($cambios)) {
+                $id_usuario = $_SESSION['user_id'] ?? null;
+                $datos_cambios = implode("; ", $cambios);
+                
+                $stmt = $conex->prepare("INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores, datos_nuevos) 
+                                        VALUES ('clientes', ?, ?, 'MODIFICACION', ?, ?, ?)");
+                $stmt->execute([
+                    $id, 
+                    $id_usuario, 
+                    "Cliente modificado: " . $nombre,
+                    json_encode($cliente_actual, JSON_UNESCAPED_UNICODE),
+                    json_encode([
+                        'nombre_cliente' => $nombre,
+                        'correo_cliente' => $correo,
+                        'telefono_cliente' => $telefono,
+                        'direccion_cliente' => $direccion,
+                        'notas_cliente' => $notas
+                    ], JSON_UNESCAPED_UNICODE)
+                ]);
+            }
+            
+            $conex->commit();
+            
+            $_SESSION['mensaje'] = "Cliente actualizado correctamente";
+            $_SESSION['tipo_mensaje'] = "success";
+            header('Location: index.php');
+            exit;
+            
+        } catch (PDOException $e) {
+            $conex->rollBack();
+            $error = "Error al actualizar el cliente: " . $e->getMessage();
+        }
+    }
+}
+
 require_once __DIR__ . '/../../includes/head.php';
 $title = 'Editar Cliente | Nacional Tapizados';
 ?>
@@ -138,11 +217,6 @@ $title = 'Editar Cliente | Nacional Tapizados';
             color: var(--text-muted);
         }
 
-        .form-control:read-only {
-            background-color: rgba(255, 255, 255, 0.05);
-            cursor: not-allowed;
-        }
-
         .btn {
             display: inline-flex;
             align-items: center;
@@ -185,16 +259,8 @@ $title = 'Editar Cliente | Nacional Tapizados';
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
-        }
-
-        .alert-danger {
             border-left: 4px solid var(--danger-color);
             background-color: rgba(220, 53, 69, 0.2);
-        }
-
-        .alert-success {
-            border-left: 4px solid var(--success-color);
-            background-color: rgba(25, 135, 84, 0.2);
         }
 
         /* Responsive */
@@ -232,87 +298,70 @@ $title = 'Editar Cliente | Nacional Tapizados';
 </head>
 
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <?php include __DIR__ . '/../../includes/sidebar.php'; ?>
-
-            <!-- Contenido principal -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="main-content">
-                    <!-- Barra superior -->
-                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2">
-                            <i class="fas fa-user-edit me-2"></i>Editar Cliente
-                        </h1>
-                        <div class="btn-toolbar mb-2 mb-md-0">
-                            <div class="btn-group me-2">
-                                <a href="index.php" class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-arrow-left me-1"></i> Volver
-                                </a>
-                            </div>
-                            <div class="text-muted small">
-                                Rol actual: <span class="user-role-badge"><?= isAdmin() ? 'Administrador' : 'Vendedor' ?></span>
-                            </div>
+    <div class="main-container">
+        <div class="header-section">
+            <h1 class="page-title"><i class="fas fa-user-edit"></i>Editar Cliente</h1>
+            <a href="index.php" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+        
+        <?php if (isset($error)): ?>
+            <div class="alert alert-danger alert-dismissible fade show">
+                <?= htmlspecialchars($error) ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+        
+        <div class="card shadow">
+            <div class="card-body">
+                <form action="editar.php?id=<?= $id ?>" method="POST">
+                    <input type="hidden" name="accion" value="editar">
+                    <input type="hidden" name="id" value="<?= $cliente['id_cliente'] ?>">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="nombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" 
+                                   value="<?= htmlspecialchars($cliente['nombre_cliente']) ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="correo" class="form-label">Correo Electrónico *</label>
+                            <input type="email" class="form-control" id="correo" name="correo" 
+                                   value="<?= htmlspecialchars($cliente['correo_cliente']) ?>" required>
                         </div>
                     </div>
-
-                    <!-- Formulario -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Información del Cliente</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="telefono" class="form-label">Teléfono *</label>
+                            <input type="tel" class="form-control" id="telefono" name="telefono" 
+                                   value="<?= htmlspecialchars($cliente['telefono_cliente']) ?>" required>
                         </div>
-                        <div class="card-body">
-                            <form action="procesar.php" method="POST">
-                                <input type="hidden" name="accion" value="editar">
-                                <input type="hidden" name="id" value="<?= $cliente['id_cliente'] ?>">
-                                
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="nombre" class="form-label">Nombre Completo *</label>
-                                        <input type="text" class="form-control" id="nombre" name="nombre" 
-                                               value="<?= htmlspecialchars($cliente['nombre_cliente']) ?>" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="correo" class="form-label">Correo Electrónico *</label>
-                                        <input type="email" class="form-control" id="correo" name="correo" 
-                                               value="<?= htmlspecialchars($cliente['correo_cliente']) ?>" required>
-                                    </div>
-                                </div>
-                                
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="telefono" class="form-label">Teléfono *</label>
-                                        <input type="tel" class="form-control" id="telefono" name="telefono" 
-                                               value="<?= htmlspecialchars($cliente['telefono_cliente']) ?>" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="direccion" class="form-label">Dirección *</label>
-                                        <input type="text" class="form-control" id="direccion" name="direccion" 
-                                               value="<?= htmlspecialchars($cliente['direccion_cliente']) ?>" required>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <label for="notas" class="form-label">Notas Adicionales</label>
-                                    <textarea class="form-control" id="notas" name="notas" rows="3"><?= 
-                                        htmlspecialchars($cliente['notas_cliente']) 
-                                    ?></textarea>
-                                </div>
-                                
-                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                    <a href="index.php" class="btn btn-outline-secondary me-md-2">
-                                        <i class="fas fa-times me-1"></i> Cancelar
-                                    </a>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save me-1"></i> Actualizar Cliente
-                                    </button>
-                                </div>
-                            </form>
+                        <div class="col-md-6">
+                            <label for="direccion" class="form-label">Dirección *</label>
+                            <input type="text" class="form-control" id="direccion" name="direccion" 
+                                   value="<?= htmlspecialchars($cliente['direccion_cliente']) ?>" required>
                         </div>
                     </div>
-                </div>
-            </main>
+                    
+                    <div class="mb-3">
+                        <label for="notas" class="form-label">Notas Adicionales</label>
+                        <textarea class="form-control" id="notas" name="notas" rows="4"><?= 
+                            htmlspecialchars($cliente['notas_cliente']) 
+                        ?></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="index.php" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Actualizar Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
