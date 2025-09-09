@@ -14,13 +14,12 @@ if (!isAdmin() && !isSeller()) {
 require_once __DIR__ . '/../../includes/head.php';
 $title = 'Crear Cliente | Nacional Tapizados';
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <?php require_once __DIR__ . '/../../includes/head.php'; ?>
     <title>Crear Cliente | Nacional Tapizados</title>
-        <style>
+    <style>
         :root {
             --primary-color: rgba(140, 74, 63, 0.8);
             --primary-hover: rgba(140, 74, 63, 1);
@@ -29,6 +28,7 @@ $title = 'Crear Cliente | Nacional Tapizados';
             --text-muted: rgba(255, 255, 255, 0.7);
             --bg-transparent: rgba(255, 255, 255, 0.1);
             --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-input: rgba(0, 0, 0, 0.4); /* Fondo más oscuro para inputs */
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -98,14 +98,15 @@ $title = 'Crear Cliente | Nacional Tapizados';
         }
 
         .form-control {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: var(--bg-input); /* Fondo más oscuro para mejor contraste */
             border: 1px solid var(--border-color);
             color: var(--text-color);
             backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
         }
 
         .form-control:focus {
-            background-color: rgba(255, 255, 255, 0.15);
+            background-color: rgba(0, 0, 0, 0.5); /* Fondo aún más oscuro al enfocar */
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
             color: var(--text-color);
@@ -193,22 +194,24 @@ $title = 'Crear Cliente | Nacional Tapizados';
             }
         }
     </style>
-    <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1><i class="fas fa-user-plus me-2"></i>Nuevo Cliente</h1>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header-section">
+            <h1 class="page-title"><i class="fas fa-user-plus"></i>Nuevo Cliente</h1>
             <a href="index.php" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-1"></i>Volver
             </a>
         </div>
         
         <?php if (isset($_GET['error'])): ?>
-            <div class="alert alert-danger alert-dismissible fade show">
+            <div class="alert">
                 <?= htmlspecialchars($_GET['error']) ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
         
-        <div class="card shadow">
+        <div class="card">
             <div class="card-body">
                 <form action="procesar.php" method="POST">
                     <input type="hidden" name="accion" value="crear">

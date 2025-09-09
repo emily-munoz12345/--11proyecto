@@ -84,6 +84,7 @@ if (!isset($_SESSION['mensaje'])) {
             --text-muted: rgba(255, 255, 255, 0.7);
             --bg-transparent: rgba(255, 255, 255, 0.1);
             --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-input: rgba(0, 0, 0, 0.4); /* Fondo más oscuro para inputs */
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -140,24 +141,14 @@ if (!isset($_SESSION['mensaje'])) {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
             font-weight: 500;
             text-decoration: none;
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
-            font-size: 0.85rem;
             gap: 0.5rem;
-        }
-
-        .btn i {
-            font-size: 0.9rem;
-        }
-
-        .btn-sm {
-            padding: 0.35rem 0.5rem;
-            font-size: 0.8rem;
         }
 
         .btn-primary {
@@ -169,13 +160,15 @@ if (!isset($_SESSION['mensaje'])) {
             background-color: var(--primary-hover);
         }
 
-        .btn-secondary {
-            background-color: var(--secondary-color);
-            color: white;
+        .btn-outline-secondary {
+            background-color: transparent;
+            border: 1px solid var(--secondary-color);
+            color: var(--text-color);
         }
 
-        .btn-secondary:hover {
-            background-color: rgba(108, 117, 125, 1);
+        .btn-outline-secondary:hover {
+            background-color: var(--secondary-color);
+            color: white;
         }
 
         .btn-danger {
@@ -223,6 +216,8 @@ if (!isset($_SESSION['mensaje'])) {
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
+            border-left: 4px solid var(--danger-color);
+            background-color: rgba(220, 53, 69, 0.2);
         }
 
         .alert-success {
@@ -250,7 +245,7 @@ if (!isset($_SESSION['mensaje'])) {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 2rem;
             margin-bottom: 2rem;
             border: 1px solid var(--border-color);
         }
@@ -266,8 +261,9 @@ if (!isset($_SESSION['mensaje'])) {
 
         .info-card-title {
             margin: 0;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: 600;
+            color: var(--text-color);
         }
 
         .info-grid {
@@ -277,20 +273,27 @@ if (!isset($_SESSION['mensaje'])) {
         }
 
         .detail-item {
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
 
         .detail-label {
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 0.25rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
             font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .detail-value {
             font-size: 1.1rem;
             word-break: break-word;
-            color: #fff;
+            color: var(--text-color);
+            font-weight: 500;
         }
 
         .notes-section {
@@ -299,6 +302,7 @@ if (!isset($_SESSION['mensaje'])) {
             border-radius: 8px;
             margin-top: 1rem;
             grid-column: 1 / -1;
+            border: 1px solid var(--border-color);
         }
 
         /* Estilos para historial de ediciones */
@@ -312,6 +316,7 @@ if (!isset($_SESSION['mensaje'])) {
             padding: 1rem;
             margin-bottom: 1rem;
             border-left: 4px solid var(--info-color);
+            border: 1px solid var(--border-color);
         }
         
         .edit-field {
@@ -349,6 +354,25 @@ if (!isset($_SESSION['mensaje'])) {
             padding: 2rem;
             color: var(--text-muted);
             font-style: italic;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Badge styles */
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .bg-success {
+            background-color: var(--success-color) !important;
+        }
+
+        .bg-danger {
+            background-color: var(--danger-color) !important;
         }
 
         /* Responsive */
@@ -372,6 +396,10 @@ if (!isset($_SESSION['mensaje'])) {
                 align-items: flex-start;
                 gap: 0.5rem;
             }
+
+            .info-card {
+                padding: 1.5rem;
+            }
         }
 
         @media (max-width: 576px) {
@@ -386,6 +414,14 @@ if (!isset($_SESSION['mensaje'])) {
                 flex-direction: column;
                 width: 100%;
             }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .info-card-title {
+                font-size: 1.5rem;
+            }
         }
     </style>   
 </head>
@@ -398,10 +434,12 @@ if (!isset($_SESSION['mensaje'])) {
                 <i class="fas fa-user"></i> Detalles del Cliente
             </h1>
             <div class="d-flex gap-2 flex-wrap button-group">
-                <a href="index.php" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver
+                <a href="index.php" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Volver
                 </a>
-               
+                <a href="editar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-primary">
+                    <i class="fas fa-edit me-1"></i> Editar
+                </a>
             </div>
         </div>
 
@@ -466,14 +504,73 @@ if (!isset($_SESSION['mensaje'])) {
                 </div>
                 <?php endif; ?>
                 
+                <?php if (!empty($cliente['direccion_cliente'])): ?>
+                <div class="detail-item">
+                    <div class="detail-label">Dirección</div>
+                    <div class="detail-value"><?= htmlspecialchars($cliente['direccion_cliente']) ?></div>
+                </div>
+                <?php endif; ?>
+                
                 <?php if (!empty($cliente['notas_cliente'])): ?>
                 <div class="notes-section">
-                    <div class="detail-label">Notas</div>
+                    <div class="detail-label">Notas Adicionales</div>
                     <div class="detail-value"><?= nl2br(htmlspecialchars($cliente['notas_cliente'])) ?></div>
                 </div>
                 <?php endif; ?>
             </div>
         </div>
+
+        <!-- Historial de ediciones -->
+        <?php if (!empty($historialEdiciones)): ?>
+        <div class="info-card">
+            <div class="info-card-header">
+                <h2 class="info-card-title">
+                    <i class="fas fa-history me-2"></i> Historial de Ediciones
+                </h2>
+            </div>
+            
+            <div class="history-section">
+                <?php foreach ($historialEdiciones as $edicion): ?>
+                <div class="history-item">
+                    <div class="edit-meta">
+                        <span>
+                            <i class="fas fa-user-edit me-1"></i>
+                            Editado por: <?= $edicion['editor'] ?? 'Sistema' ?>
+                        </span>
+                        <span>
+                            <i class="fas fa-clock me-1"></i>
+                            <?= date('d/m/Y H:i', strtotime($edicion['fecha_eliminacion'])) ?>
+                        </span>
+                    </div>
+                    
+                    <?php 
+                    // Parsear datos de la edición si están disponibles
+                    if (!empty($edicion['datos_anteriores']) && !empty($edicion['datos_nuevos'])) {
+                        $datosAntiguos = explode('|', $edicion['datos_anteriores']);
+                        $datosNuevos = explode('|', $edicion['datos_nuevos']);
+                        
+                        $campos = ['ID', 'Nombre', 'Correo', 'Teléfono', 'Dirección', 'Notas'];
+                        
+                        for ($i = 0; $i < count($campos); $i++) {
+                            if (isset($datosAntiguos[$i]) && isset($datosNuevos[$i]) && $datosAntiguos[$i] !== $datosNuevos[$i]) {
+                                echo '<div class="mb-2">';
+                                echo '<span class="edit-field">' . $campos[$i] . ':</span><br>';
+                                echo '<span class="edit-old-value">' . htmlspecialchars($datosAntiguos[$i]) . '</span> → ';
+                                echo '<span class="edit-new-value">' . htmlspecialchars($datosNuevos[$i]) . '</span>';
+                                echo '</div>';
+                            }
+                        }
+                    } else {
+                        echo '<div class="detail-value">' . htmlspecialchars($edicion['datos'] ?? 'Información de modificación') . '</div>';
+                    }
+                    ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

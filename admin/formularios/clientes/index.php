@@ -1120,7 +1120,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                 <div class="search-container">
                     <input type="text" class="search-input" id="searchInput" placeholder="Buscar cliente por nombre, teléfono o correo..." autocomplete="off">
                     <div class="search-loading" id="searchLoading">
-                        <i class="fas fa-spinner"></i> Buscando...
+                        
                     </div>
                     <div class="search-results" id="searchResults"></div>
                 </div>

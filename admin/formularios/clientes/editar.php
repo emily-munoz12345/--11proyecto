@@ -34,85 +34,6 @@ try {
     exit;
 }
 
-// Procesar el formulario de edición
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'editar') {
-    $nombre = trim($_POST['nombre']);
-    $correo = trim($_POST['correo']);
-    $telefono = trim($_POST['telefono']);
-    $direccion = trim($_POST['direccion']);
-    $notas = trim($_POST['notas']);
-    
-    // Validar campos obligatorios
-    if (empty($nombre) || empty($correo) || empty($telefono) || empty($direccion)) {
-        $error = "Todos los campos marcados con * son obligatorios";
-    } else {
-        try {
-            // Iniciar transacción
-            $conex->beginTransaction();
-            
-            // Obtener datos actuales para comparar
-            $stmt = $conex->prepare("SELECT * FROM clientes WHERE id_cliente = ?");
-            $stmt->execute([$id]);
-            $cliente_actual = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            // Actualizar el cliente
-            $stmt = $conex->prepare("UPDATE clientes SET nombre_cliente = ?, correo_cliente = ?, telefono_cliente = ?, direccion_cliente = ?, notas_cliente = ?, fecha_actualizacion = NOW() WHERE id_cliente = ?");
-            $stmt->execute([$nombre, $correo, $telefono, $direccion, $notas, $id]);
-            
-            // Registrar cambios en registro_eliminaciones
-            $cambios = [];
-            
-            if ($cliente_actual['nombre_cliente'] !== $nombre) {
-                $cambios[] = "nombre: " . $cliente_actual['nombre_cliente'] . " → " . $nombre;
-            }
-            if ($cliente_actual['correo_cliente'] !== $correo) {
-                $cambios[] = "correo: " . $cliente_actual['correo_cliente'] . " → " . $correo;
-            }
-            if ($cliente_actual['telefono_cliente'] !== $telefono) {
-                $cambios[] = "teléfono: " . $cliente_actual['telefono_cliente'] . " → " . $telefono;
-            }
-            if ($cliente_actual['direccion_cliente'] !== $direccion) {
-                $cambios[] = "dirección: " . $cliente_actual['direccion_cliente'] . " → " . $direccion;
-            }
-            if ($cliente_actual['notas_cliente'] !== $notas) {
-                $cambios[] = "notas: " . $cliente_actual['notas_cliente'] . " → " . $notas;
-            }
-            
-            if (!empty($cambios)) {
-                $id_usuario = $_SESSION['user_id'] ?? null;
-                $datos_cambios = implode("; ", $cambios);
-                
-                $stmt = $conex->prepare("INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores, datos_nuevos) 
-                                        VALUES ('clientes', ?, ?, 'MODIFICACION', ?, ?, ?)");
-                $stmt->execute([
-                    $id, 
-                    $id_usuario, 
-                    "Cliente modificado: " . $nombre,
-                    json_encode($cliente_actual, JSON_UNESCAPED_UNICODE),
-                    json_encode([
-                        'nombre_cliente' => $nombre,
-                        'correo_cliente' => $correo,
-                        'telefono_cliente' => $telefono,
-                        'direccion_cliente' => $direccion,
-                        'notas_cliente' => $notas
-                    ], JSON_UNESCAPED_UNICODE)
-                ]);
-            }
-            
-            $conex->commit();
-            
-            $_SESSION['mensaje'] = "Cliente actualizado correctamente";
-            $_SESSION['tipo_mensaje'] = "success";
-            header('Location: index.php');
-            exit;
-            
-        } catch (PDOException $e) {
-            $conex->rollBack();
-            $error = "Error al actualizar el cliente: " . $e->getMessage();
-        }
-    }
-}
-
 require_once __DIR__ . '/../../includes/head.php';
 $title = 'Editar Cliente | Nacional Tapizados';
 ?>
@@ -131,6 +52,7 @@ $title = 'Editar Cliente | Nacional Tapizados';
             --text-muted: rgba(255, 255, 255, 0.7);
             --bg-transparent: rgba(255, 255, 255, 0.1);
             --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-input: rgba(0, 0, 0, 0.4); /* Fondo más oscuro para inputs */
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -200,14 +122,15 @@ $title = 'Editar Cliente | Nacional Tapizados';
         }
 
         .form-control {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: var(--bg-input); /* Fondo más oscuro para mejor contraste */
             border: 1px solid var(--border-color);
             color: var(--text-color);
             backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
         }
 
         .form-control:focus {
-            background-color: rgba(255, 255, 255, 0.15);
+            background-color: rgba(0, 0, 0, 0.5); /* Fondo aún más oscuro al enfocar */
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
             color: var(--text-color);
@@ -296,7 +219,6 @@ $title = 'Editar Cliente | Nacional Tapizados';
         }
     </style>
 </head>
-
 <body>
     <div class="main-container">
         <div class="header-section">
@@ -306,16 +228,16 @@ $title = 'Editar Cliente | Nacional Tapizados';
             </a>
         </div>
         
-        <?php if (isset($error)): ?>
-            <div class="alert alert-danger alert-dismissible fade show">
-                <?= htmlspecialchars($error) ?>
+        <?php if (isset($_GET['error'])): ?>
+            <div class="alert">
+                <?= htmlspecialchars($_GET['error']) ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
         
-        <div class="card shadow">
+        <div class="card">
             <div class="card-body">
-                <form action="editar.php?id=<?= $id ?>" method="POST">
+                <form action="procesar.php" method="POST">
                     <input type="hidden" name="accion" value="editar">
                     <input type="hidden" name="id" value="<?= $cliente['id_cliente'] ?>">
                     
@@ -354,10 +276,10 @@ $title = 'Editar Cliente | Nacional Tapizados';
                     
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <a href="index.php" class="btn btn-outline-secondary me-md-2">
-                            <i class="fas fa-times me-1"></i>Cancelar
+                            <i class="fas fa-times me-1"></i> Cancelar
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i>Actualizar Cliente
+                            <i class="fas fa-save me-1"></i> Actualizar Cliente
                         </button>
                     </div>
                 </form>
@@ -365,7 +287,7 @@ $title = 'Editar Cliente | Nacional Tapizados';
         </div>
     </div>
 
-    <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
+    <?php include '../../includes/footer.php'; ?>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
