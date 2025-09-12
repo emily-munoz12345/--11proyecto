@@ -294,10 +294,10 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id_usuario`, `id_rol`, `username_usuario`, `contrasena_usuario`, `nombre_completo`, `correo_usuario`, `telefono_usuario`, `fecha_creacion`, `activo_usuario`, `ultima_actividad`, `activo`) VALUES
-(1, 1, 'admin1', 'erosramazoti', 'Jose Alonso', 'alonso@tallertapiceria.com', '3204569555', '2025-07-08 01:51:51', 'Activo', '2025-07-07 20:51:51', 1),
-(2, 2, 'tecnico1', 'argos1.3', 'Johan Sebastian', 'johan@tallertapiceria.com', '3625489561', '2025-06-30 02:14:54', 'Activo', '2025-06-26 19:51:53', 1),
-(3, 3, 'vendedor1', 'eros ramazoti', 'Yamm Alonso', 'yamm@tallertapiceria.com', '3125468579', '2025-06-29 02:10:56', 'Activo', '2025-06-28 21:10:56', 1),
-(4, 1, 'admin2', 'argos 1.3', 'Edith Diasmin', 'edit@gmail.com', '3122654845', '2025-06-28 22:02:00', 'Activo', '2025-06-28 17:02:00', 1);
+(1, 1, 'admin1', '12345', 'Jose Alonso', 'alonso@tallertapiceria.com', '3204569555', '2025-07-08 01:51:51', 'Activo', '2025-07-07 20:51:51', 1),
+(2, 2, 'tecnico1', '12345', 'Johan Sebastian', 'johan@tallertapiceria.com', '3625489561', '2025-06-30 02:14:54', 'Activo', '2025-06-26 19:51:53', 1),
+(3, 3, 'vendedor1', '12345', 'Yamm Alonso', 'yamm@tallertapiceria.com', '3125468579', '2025-06-29 02:10:56', 'Activo', '2025-06-28 21:10:56', 1),
+(4, 1, 'admin2', '12345', 'Edith Diasmin', 'edit@gmail.com', '3122654845', '2025-06-28 22:02:00', 'Activo', '2025-06-28 17:02:00', 1);
 
 -- --------------------------------------------------------
 

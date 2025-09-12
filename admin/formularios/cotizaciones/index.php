@@ -1,157 +1,63 @@
 <?php
+session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Configuración de rutas
+define('ROOT_PATH', dirname(__DIR__, 3));
 require_once __DIR__ . '/../../../php/conexion.php';
 require_once __DIR__ . '/../../../php/auth.php';
 
+// Verificar permisos (solo Admin y Vendedor)
 if (!isAdmin() && !isSeller()) {
     header('Location: ../dashboard.php');
     exit;
 }
 
-// Inicializar variables de sesión para mensajes si no existen
+// Inicializar variables de sesión para mensajes
 if (!isset($_SESSION['mensaje'])) {
     $_SESSION['mensaje'] = '';
     $_SESSION['tipo_mensaje'] = '';
 }
 
-// Verificar si la tabla cotizaciones tiene la columna activo
-$tablaInfo = $conex->query("SHOW COLUMNS FROM cotizaciones LIKE 'activo'")->fetch();
-$tieneColumnaActivo = !empty($tablaInfo);
-
-// Verificar si la tabla cotizaciones tiene la columna fecha_eliminacion
-$tablaInfoEliminacion = $conex->query("SHOW COLUMNS FROM cotizaciones LIKE 'fecha_eliminacion'")->fetch();
-$tieneColumnaFechaEliminacion = !empty($tablaInfoEliminacion);
-
-// Procesar cambio de estado
-if (isset($_GET['cambiar_estado'])) {
-    $id = intval($_GET['id']);
-    $nuevo_estado = $_GET['estado'];
-
-    try {
-        $stmt = $conex->prepare("UPDATE cotizaciones SET estado_cotizacion = ? WHERE id_cotizacion = ?");
-        if ($stmt->execute([$nuevo_estado, $id])) {
-            $_SESSION['mensaje'] = 'Estado de cotización actualizado';
-            $_SESSION['tipo_mensaje'] = 'success';
-        }
-    } catch (PDOException $e) {
-        $_SESSION['mensaje'] = 'Error al actualizar: ' . $e->getMessage();
-        $_SESSION['tipo_mensaje'] = 'danger';
-    }
-}
-
-// Procesar eliminación (mover a papelera)
-if (isset($_GET['eliminar'])) {
-    $id = intval($_GET['eliminar']);
-    
-    try {
-        if ($tieneColumnaActivo) {
-            // Si tiene columna activo, marcamos como inactivo
-            $stmt = $conex->prepare("UPDATE cotizaciones SET activo = 0" . 
-                                   ($tieneColumnaFechaEliminacion ? ", fecha_eliminacion = NOW()" : "") . 
-                                   " WHERE id_cotizacion = ?");
-        } else {
-            // Si no tiene columna activo, eliminamos permanentemente
-            $stmt = $conex->prepare("DELETE FROM cotizaciones WHERE id_cotizacion = ?");
-        }
-        
-        if ($stmt->execute([$id])) {
-            $_SESSION['mensaje'] = $tieneColumnaActivo ? 
-                'Cotización movida a la papelera' : 'Cotización eliminada permanentemente';
-            $_SESSION['tipo_mensaje'] = 'success';
-        }
-    } catch (PDOException $e) {
-        $_SESSION['mensaje'] = 'Error al eliminar: ' . $e->getMessage();
-        $_SESSION['tipo_mensaje'] = 'danger';
-    }
-    header('Location: index.php');
-    exit;
-}
-
-// Procesar restauración desde papelera
-if (isset($_GET['restaurar'])) {
-    $id = intval($_GET['restaurar']);
-    
-    try {
-        if ($tieneColumnaActivo) {
-            $stmt = $conex->prepare("UPDATE cotizaciones SET activo = 1" . 
-                                   ($tieneColumnaFechaEliminacion ? ", fecha_eliminacion = NULL" : "") . 
-                                   " WHERE id_cotizacion = ?");
-            if ($stmt->execute([$id])) {
-                $_SESSION['mensaje'] = 'Cotización restaurada correctamente';
-                $_SESSION['tipo_mensaje'] = 'success';
-            }
-        }
-    } catch (PDOException $e) {
-        $_SESSION['mensaje'] = 'Error al restaurar: ' . $e->getMessage();
-        $_SESSION['tipo_mensaje'] = 'danger';
-    }
-    header('Location: index.php');
-    exit;
-}
-
-// Procesar eliminación permanente
-if (isset($_GET['eliminar_permanentemente'])) {
-    $id = intval($_GET['eliminar_permanentemente']);
-    
-    try {
-        $stmt = $conex->prepare("DELETE FROM cotizaciones WHERE id_cotizacion = ?");
-        if ($stmt->execute([$id])) {
-            $_SESSION['mensaje'] = 'Cotización eliminada permanentemente';
-            $_SESSION['tipo_mensaje'] = 'success';
-        }
-    } catch (PDOException $e) {
-        $_SESSION['mensaje'] = 'Error al eliminar: ' . $e->getMessage();
-        $_SESSION['tipo_mensaje'] = 'danger';
-    }
-    header('Location: index.php');
-    exit;
-}
-
-// Obtener estadísticas generales
-$whereActivo = $tieneColumnaActivo ? " WHERE c.activo = 1" : "";
+// Obtener estadísticas generales (excluyendo eliminados - activos = 1)
 $stats = $conex->query("SELECT 
     COUNT(*) as total_cotizaciones,
-    SUM(CASE WHEN c.estado_cotizacion = 'Aprobado' THEN 1 ELSE 0 END) as aprobadas,
-    SUM(CASE WHEN c.estado_cotizacion = 'Rechazada' THEN 1 ELSE 0 END) as rechazadas,
-    SUM(CASE WHEN c.estado_cotizacion = 'Completada' THEN 1 ELSE 0 END) as completadas,
-    MAX(c.fecha_cotizacion) as ultima_cotizacion,
-    (SELECT COUNT(*) FROM cotizaciones WHERE DATE(fecha_cotizacion) = CURDATE()" . 
-    ($tieneColumnaActivo ? " AND activo = 1" : "") . ") as cotizaciones_hoy
-FROM cotizaciones c" . $whereActivo)->fetch(PDO::FETCH_ASSOC);
+    MAX(fecha_cotizacion) as ultima_cotizacion,
+    (SELECT COUNT(*) FROM cotizaciones WHERE DATE(fecha_cotizacion) = CURDATE() AND activo = 1) as cotizaciones_hoy,
+    SUM(total_cotizacion) as valor_total
+FROM cotizaciones WHERE activo = 1")->fetch(PDO::FETCH_ASSOC);
 
-// Obtener las 4 cotizaciones más recientes
-$whereActivoRecent = $tieneColumnaActivo ? " WHERE c.activo = 1" : "";
-$orderByRecent = $tieneColumnaActivo ? "c.fecha_cotizacion" : "c.fecha_cotizacion";
-$cotizacionesRecientes = $conex->query("SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo,
-        u.nombre_completo as nombre_usuario
-        FROM cotizaciones c
-        JOIN clientes cl ON c.id_cliente = cl.id_cliente
-        JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
-        JOIN usuarios u ON c.id_usuario = u.id_usuario
-        " . $whereActivoRecent . " ORDER BY " . $orderByRecent . " DESC LIMIT 4")->fetchAll();
+// Obtener las 4 cotizaciones más recientes (excluyendo eliminados - activos = 1)
+$cotizacionesRecientes = $conex->query("
+    SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo 
+    FROM cotizaciones c
+    LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+    LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+    WHERE c.activo = 1 
+    ORDER BY c.fecha_cotizacion DESC 
+    LIMIT 4
+")->fetchAll();
 
-// Obtener todas las cotizaciones activas para la pestaña de búsqueda
-$whereActivoAll = $tieneColumnaActivo ? " WHERE c.activo = 1" : "";
-$todasCotizaciones = $conex->query("SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo,
-        u.nombre_completo as nombre_usuario
-        FROM cotizaciones c
-        JOIN clientes cl ON c.id_cliente = cl.id_cliente
-        JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
-        JOIN usuarios u ON c.id_usuario = u.id_usuario
-        " . $whereActivoAll . " ORDER BY cl.nombre_cliente ASC")->fetchAll();
+// Obtener todas las cotizaciones activas para las pestañas
+$todasCotizaciones = $conex->query("
+    SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo 
+    FROM cotizaciones c
+    LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+    LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+    WHERE c.activo = 1 
+    ORDER BY c.fecha_cotizacion DESC
+")->fetchAll();
 
-// Obtener cotizaciones en la papelera (solo si existe la columna activo)
-if ($tieneColumnaActivo) {
-    $orderByPapelera = $tieneColumnaFechaEliminacion ? "c.fecha_eliminacion" : "c.fecha_cotizacion";
-    $cotizacionesPapelera = $conex->query("SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo,
-            u.nombre_completo as nombre_usuario
-            FROM cotizaciones c
-            JOIN clientes cl ON c.id_cliente = cl.id_cliente
-            JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
-            JOIN usuarios u ON c.id_usuario = u.id_usuario
-            WHERE c.activo = 0 ORDER BY " . $orderByPapelera . " DESC")->fetchAll();
-} else {
-    $cotizacionesPapelera = [];
-}
+// Obtener cotizaciones en la papelera (eliminados - activos = 0)
+$cotizacionesEliminadas = $conex->query("
+    SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo 
+    FROM cotizaciones c
+    LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+    LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+    WHERE c.activo = 0 
+    ORDER BY c.fecha_cotizacion DESC
+")->fetchAll();
 
 // Procesar búsqueda si es una solicitud AJAX
 if (isset($_GET['ajax'])) {
@@ -163,17 +69,19 @@ if (isset($_GET['ajax'])) {
     }
 
     $searchTerm = '%' . $_GET['q'] . '%';
-    $whereActivoSearch = $tieneColumnaActivo ? " AND c.activo = 1" : "";
-    $stmt = $conex->prepare("SELECT c.*, cl.nombre_cliente, v.placa_vehiculo 
-                            FROM cotizaciones c
-                            JOIN clientes cl ON c.id_cliente = cl.id_cliente
-                            JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
-                            WHERE (cl.nombre_cliente LIKE :search 
-                            OR v.placa_vehiculo LIKE :search 
-                            OR c.estado_cotizacion LIKE :search)
-                            " . $whereActivoSearch . "
-                            ORDER BY cl.nombre_cliente ASC 
-                            LIMIT 10");
+    $stmt = $conex->prepare("
+        SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo 
+        FROM cotizaciones c
+        LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+        LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+        WHERE c.activo = 1 
+        AND (cl.nombre_cliente LIKE :search 
+        OR v.marca_vehiculo LIKE :search 
+        OR v.modelo_vehiculo LIKE :search
+        OR c.id_cotizacion LIKE :search)
+        ORDER BY c.fecha_cotizacion DESC 
+        LIMIT 10
+    ");
     $stmt->bindParam(':search', $searchTerm);
     $stmt->execute();
 
@@ -181,17 +89,138 @@ if (isset($_GET['ajax'])) {
     exit;
 }
 
-require_once __DIR__ . '/../../includes/head.php';
-$title = 'Gestión de Cotizaciones | Nacional Tapizados';
+// Procesar solicitud para cargar detalles
+if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
+    $idCotizacion = $_GET['cargar_detalles'];
+    
+    // Obtener información de la cotización
+    $stmt = $conex->prepare("
+        SELECT c.*, cl.nombre_cliente, cl.telefono_cliente, cl.correo_cliente,
+               v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo,
+               u.nombre_completo as vendedor
+        FROM cotizaciones c
+        LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+        LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+        LEFT JOIN usuarios u ON c.id_usuario = u.id_usuario
+        WHERE c.id_cotizacion = ?
+    ");
+    $stmt->execute([$idCotizacion]);
+    $cotizacion = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($cotizacion) {
+        // Obtener servicios de la cotización
+        $stmtServicios = $conex->prepare("
+            SELECT s.nombre_servicio, cs.precio
+            FROM cotizacion_servicios cs
+            LEFT JOIN servicios s ON cs.id_servicio = s.id_servicio
+            WHERE cs.id_cotizacion = ?
+        ");
+        $stmtServicios->execute([$idCotizacion]);
+        $servicios = $stmtServicios->fetchAll();
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Número de Cotización</div>';
+        echo '<div class="detail-value">#' . $cotizacion['id_cotizacion'] . '</div>';
+        echo '</div>';
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Cliente</div>';
+        echo '<div class="detail-value">' . htmlspecialchars($cotizacion['nombre_cliente']) . '</div>';
+        echo '</div>';
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Vehículo</div>';
+        echo '<div class="detail-value">' . htmlspecialchars($cotizacion['marca_vehiculo'] . ' ' . $cotizacion['modelo_vehiculo']) . ' (' . htmlspecialchars($cotizacion['placa_vehiculo']) . ')</div>';
+        echo '</div>';
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Vendedor</div>';
+        echo '<div class="detail-value">' . htmlspecialchars($cotizacion['vendedor']) . '</div>';
+        echo '</div>';
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Estado</div>';
+        echo '<div class="detail-value">';
+        switch ($cotizacion['estado_cotizacion']) {
+            case 'Pendiente':
+                echo '<span class="badge bg-warning">Pendiente</span>';
+                break;
+            case 'Aprobado':
+                echo '<span class="badge bg-success">Aprobado</span>';
+                break;
+            case 'Rechazada':
+                echo '<span class="badge bg-danger">Rechazada</span>';
+                break;
+            case 'Completada':
+                echo '<span class="badge bg-info">Completada</span>';
+                break;
+            default:
+                echo htmlspecialchars($cotizacion['estado_cotizacion']);
+        }
+        echo '</div>';
+        echo '</div>';
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Fecha</div>';
+        echo '<div class="detail-value">' . date('d/m/Y H:i', strtotime($cotizacion['fecha_cotizacion'])) . '</div>';
+        echo '</div>';
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Servicios</div>';
+        echo '<div class="detail-value">';
+        if (!empty($servicios)) {
+            echo '<ul class="list-unstyled">';
+            foreach ($servicios as $servicio) {
+                echo '<li>' . htmlspecialchars($servicio['nombre_servicio']) . ' - $' . number_format($servicio['precio'], 2) . '</li>';
+            }
+            echo '</ul>';
+        } else {
+            echo 'No hay servicios registrados';
+        }
+        echo '</div>';
+        echo '</div>';
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Subtotal</div>';
+        echo '<div class="detail-value">$' . number_format($cotizacion['subtotal_cotizacion'], 2) . '</div>';
+        echo '</div>';
+        
+        if ($cotizacion['valor_adicional'] > 0) {
+            echo '<div class="detail-item">';
+            echo '<div class="detail-label">Valor Adicional</div>';
+            echo '<div class="detail-value">$' . number_format($cotizacion['valor_adicional'], 2) . '</div>';
+            echo '</div>';
+        }
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">IVA (' . $cotizacion['iva'] . '%)</div>';
+        echo '<div class="detail-value">$' . number_format(($cotizacion['subtotal_cotizacion'] + $cotizacion['valor_adicional']) * ($cotizacion['iva'] / 100), 2) . '</div>';
+        echo '</div>';
+        
+        echo '<div class="detail-item">';
+        echo '<div class="detail-label">Total</div>';
+        echo '<div class="detail-value"><strong>$' . number_format($cotizacion['total_cotizacion'], 2) . '</strong></div>';
+        echo '</div>';
+        
+        if (!empty($cotizacion['notas_cotizacion'])) {
+            echo '<div class="notes-section">';
+            echo '<div class="detail-label">Notas</div>';
+            echo '<div class="detail-value">' . nl2br(htmlspecialchars($cotizacion['notas_cotizacion'])) . '</div>';
+            echo '</div>';
+        }
+    } else {
+        echo '<div class="alert alert-danger">Cotización no encontrada</div>';
+    }
+    exit;
+}
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?></title>
+    <title>Gestión de Cotizaciones | Nacional Tapizados</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -362,7 +391,7 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
-            box-shadow: 极速4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
             overflow: hidden;
         }
@@ -452,7 +481,7 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
             border-radius: 6px;
             font-weight: 500;
             text-decoration: none;
-            transition: all 极速.3s ease;
+            transition: all 0.3s ease;
             border: none;
             cursor: pointer;
             font-size: 0.85rem;
@@ -463,7 +492,7 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
             font-size: 0.9rem;
         }
 
-       .btn-sm {
+        .btn-sm {
             padding: 0.35rem 0.5rem;
             font-size: 0.8rem;
         }
@@ -495,7 +524,7 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
             background-color: rgba(220, 53, 69, 1);
         }
 
-        .极速btn-info {
+        .btn-info {
             background-color: var(--info-color);
             color: white;
         }
@@ -535,7 +564,7 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
             border-radius: 10px;
             padding: 1.5rem;
             text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 极速.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease;
         }
 
@@ -608,6 +637,125 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
             border-radius: 4px;
             font-size: 0.75rem;
             margin-left: 0.5rem;
+        }
+        
+        .days-left {
+            font-size: 0.8rem;
+            color: var(--warning-color);
+            margin-top: 0.25rem;
+        }
+
+        /* Estilos para tarjetas flotantes */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .floating-card {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            background-color: rgba(50, 50, 50, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            animation: fadeInUp 0.4s ease;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 1.8rem;
+            color: #fff;
+        }
+
+        .close-card {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: all 0.3s ease;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-card:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .card-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .detail-item {
+            margin-bottom: 1rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .detail-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-value {
+            font-size: 1.1rem;
+            word-break: break-word;
+            color: #fff;
+        }
+
+        .notes-section {
+            grid-column: 1 / -1;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1rem;
         }
 
         /* Estilos para tarjetas de cotizaciones */
@@ -689,19 +837,7 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
             color: var(--text-color);
         }
 
-        /* Estilos para overlay y tarjeta flotante de opciones */
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-        }
-
+        /* Nueva tarjeta flotante para opciones */
         .options-floating-card {
             display: none;
             position: fixed;
@@ -718,17 +854,6 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
             animation: fadeInUp 0.4s ease;
             overflow: hidden;
             border: 1px solid var(--border-color);
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translate(-50%, -40%);
-            }
-            to {
-                opacity: 1;
-                transform: translate(-50%, -50%);
-            }
         }
 
         .options-card-header {
@@ -801,6 +926,18 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
             background-color: rgba(255, 255, 255, 0.1);
         }
 
+        /* Badges para estados */
+        .badge {
+            padding: 0.35em 0.65em;
+            font-size: 0.75em;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 0.375rem;
+        }
+
         /* Responsive */
         @media (max-width: 992px) {
             .summary-cards {
@@ -833,7 +970,7 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
             }
 
             .summary-cards {
-                grid-template-columns: 1极速fr;
+                grid-template-columns: 1fr;
             }
 
             table,
@@ -875,7 +1012,7 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
                 font-weight: 600;
                 color: var(--text-muted);
             }
-            
+
             .options-floating-card {
                 width: 90%;
                 max-width: 300px;
@@ -891,6 +1028,15 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
             .btn {
                 width: 100%;
                 justify-content: center;
+            }
+
+            .floating-card {
+                width: 95%;
+                padding: 1.5rem;
+            }
+
+            .card-content {
+                grid-template-columns: 1fr;
             }
         }
     </style>   
@@ -915,173 +1061,226 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
 
         <!-- Mensajes -->
         <?php if (!empty($_SESSION['mensaje'])): ?>
-            <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
-                <div>
-                    <i class="fas fa-<?=
-                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : ($_SESSION['tipo_mensaje'] === 'danger' ? 'times-circle' : ($_SESSION['tipo_mensaje'] === 'warning' ? 'exclamation-triangle' : 'info-circle'))
-                                        ?> me-2"></i>
-                    <?= $_SESSION['mensaje'] ?>
-                </div>
+            <div class="alert alert-<?php echo $_SESSION['tipo_mensaje']; ?>">
+                <span><?php echo $_SESSION['mensaje']; ?></span>
                 <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
             </div>
-            <?php
+            <?php 
+            // Limpiar mensaje después de mostrarlo
             $_SESSION['mensaje'] = '';
             $_SESSION['tipo_mensaje'] = '';
             ?>
         <?php endif; ?>
 
-        <!-- Estadísticas rápidas -->
+        <!-- Tarjetas de resumen -->
         <div class="summary-cards">
             <div class="summary-card">
-                <h3>Total de Cotizaciones</h3>
-                <p><?= $stats['total_cotizaciones'] ?></p>
-            </div>
-            <div class="summary-card">
-                <h3>Aprobadas</h3>
-                <p><?= $stats['aprobadas'] ?></p>
-            </div>
-            <div class="summary-card">
-                <h3>Rechazadas</h3>
-                <p><?= $stats['rechazadas'] ?></p>
-            </div>
-            <div class="summary-card">
-                <h3>Completadas</h3>
-                <p><?= $stats['completadas'] ?></p>
+                <h3>Total Cotizaciones</h3>
+                <p><?php echo $stats['total_cotizaciones']; ?></p>
             </div>
             <div class="summary-card">
                 <h3>Cotizaciones Hoy</h3>
-                <p><?= $stats['cotizaciones_hoy'] ?></p>
+                <p><?php echo $stats['cotizaciones_hoy']; ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Última Cotización</h3>
+                <p><?php echo $stats['ultima_cotizacion'] ? date('d/m/Y', strtotime($stats['ultima_cotizacion'])) : 'N/A'; ?></p>
             </div>
         </div>
 
-        <!-- Pestañas de navegación -->
-        <ul class="nav nav-tabs" id="clientTabs" role="tablist">
+        <!-- Pestañas -->
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab">
-                    <i class="fas fa-search"></i> Buscar
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link"极速 id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab">
+                <button class="nav-link active" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab" aria-controls="recent" aria-selected="true">
                     <i class="fas fa-clock"></i> Recientes
                 </button>
             </li>
-            <?php if ($tieneColumnaActivo): ?>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="delete-tab" data-bs-toggle="tab" data-bs-target="#delete" type="button" role="tab">
-                    <i class="fas fa-trash-alt"></i> Papelera
+                <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="false">
+                    <i class="fas fa-list"></i> Todas
                 </button>
             </li>
-            <?php endif; ?>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="trash-tab" data-bs-toggle="tab" data-bs-target="#trash" type="button" role="tab" aria-controls="trash" aria-selected="false">
+                    <i class="fas fa-trash"></i> Papelera
+                </button>
+            </li>
         </ul>
 
-        <!-- Contenido de las pestañas -->
-        <div class="tab-content" id="clientTabsContent">
-            <!-- Pestaña de búsqueda -->
-            <div class="tab-pane fade show active" id="search" role="tabpanel">
+        <!-- Contenido de pestañas -->
+        <div class="tab-content" id="myTabContent">
+            <!-- Pestaña Recientes -->
+            <div class="tab-pane fade show active" id="recent" role="tabpanel" aria-labelledby="recent-tab">
                 <div class="search-container">
-                    <input type="text" class="search-input" id="searchInput" placeholder="Buscar cotización por cliente, placa o estado..." autocomplete="off">
-                    <div class="search-loading" id="searchLoading" style="display: none;">
-                        <i class="fas fa-spinner fa-spin"></i> Buscando...
+                    <input type="text" id="searchInput" class="search-input" placeholder="Buscar cotización por cliente, vehículo o ID...">
+                    <div id="searchResults" class="search-results"></div>
+                </div>
+
+                <?php if (count($cotizacionesRecientes) > 0): ?>
+                    <div class="client-cards">
+                        <?php foreach ($cotizacionesRecientes as $cotizacion): ?>
+                            <div class="client-card" onclick="showDetails(<?php echo $cotizacion['id_cotizacion']; ?>)">
+                                <div class="client-card-header">
+                                    <h3 class="client-card-title">Cotización #<?php echo $cotizacion['id_cotizacion']; ?></h3>
+                                    <span class="client-card-badge">
+                                        <?php 
+                                        switch ($cotizacion['estado_cotizacion']) {
+                                            case 'Pendiente': echo 'Pendiente'; break;
+                                            case 'Aprobado': echo 'Aprobado'; break;
+                                            case 'Rechazada': echo 'Rechazada'; break;
+                                            case 'Completada': echo 'Completada'; break;
+                                            default: echo $cotizacion['estado_cotizacion'];
+                                        }
+                                        ?>
+                                    </span>
+                                </div>
+                                <div class="client-card-body">
+                                    <div class="client-card-detail">
+                                        <i class="fas fa-user"></i>
+                                        <span><?php echo htmlspecialchars($cotizacion['nombre_cliente']); ?></span>
+                                    </div>
+                                    <div class="client-card-detail">
+                                        <i class="fas fa-car"></i>
+                                        <span><?php echo htmlspecialchars($cotizacion['marca_vehiculo'] . ' ' . $cotizacion['modelo_vehiculo']); ?></span>
+                                    </div>
+                                    <div class="client-card-detail">
+                                        <i class="fas fa-calendar"></i>
+                                        <span><?php echo date('d/m/Y', strtotime($cotizacion['fecha_cotizacion'])); ?></span>
+                                    </div>
+                                    <div class="client-card-detail">
+                                        <i class="fas fa-dollar-sign"></i>
+                                        <span>$<?php echo number_format($cotizacion['total_cotizacion'], 2); ?></span>
+                                    </div>
+                                </div>
+                                <div class="edit-arrow">
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
-                    <div class="search-results" id="searchResults"></div>
-                </div>
+                <?php else: ?>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> No hay cotizaciones recientes.
+                    </div>
+                <?php endif; ?>
+            </div>
 
-                <!-- Resultados iniciales (todas las cotizaciones activas) -->
-                <div class="client-list" id="allClientsList">
-                    <?php foreach ($todasCotizaciones as $cotizacion): ?>
-                        <div class="client-item" data-client-id="<?= $cotizacion['id_cotizacion'] ?>" onclick="showOptionsCard(<?= $cotizacion['id_cotizacion'] ?>, '<?= htmlspecialchars($cotizacion['nombre_cliente']) ?>', '<?= htmlspecialchars($cotizacion['placa_vehiculo']) ?>', '<?= htmlspecialchars($cotizacion['estado_cotizacion']) ?>')">
-                            <div>
-                                <div class="client-name"><?= htmlspecialchars($cotizacion['nombre_cliente']) ?></div>
-                                <div class="client-description">
-                                    <span class="badge bg-<?= 
-                                        $cotizacion['estado_cotizacion'] === 'Aprobado' ? 'success' : 
-                                        ($cotizacion['estado_cotizacion'] === 'Rechazada' ? 'danger' : 
-                                        ($cotizacion['estado_cotizacion'] === 'Completada' ? 'primary' : 'warning')) 
-                                    ?>"><?= $cotizacion['estado_cotizacion'] ?></span>
-                                    | <?= htmlspecialchars($cotizacion['marca_vehiculo']) ?> <?= htmlspecialchars($cotizacion['modelo_vehiculo']) ?> | <?= htmlspecialchars($cotizacion['placa_vehiculo']) ?>
-                                </div>
-                            </div>
-                            <div class="client-arrow">
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
+            <!-- Pestaña Todas -->
+            <div class="tab-pane fade" id="all" role="tabpanel" aria-labelledby="all-tab">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Vehículo</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Total</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (count($todasCotizaciones) > 0): ?>
+                                <?php foreach ($todasCotizaciones as $cotizacion): ?>
+                                    <tr>
+                                        <td data-label="ID"><?php echo $cotizacion['id_cotizacion']; ?></td>
+                                        <td data-label="Cliente"><?php echo htmlspecialchars($cotizacion['nombre_cliente']); ?></td>
+                                        <td data-label="Vehículo"><?php echo htmlspecialchars($cotizacion['marca_vehiculo'] . ' ' . $cotizacion['modelo_vehiculo']); ?></td>
+                                        <td data-label="Fecha"><?php echo date('d/m/Y', strtotime($cotizacion['fecha_cotizacion'])); ?></td>
+                                        <td data-label="Estado">
+                                            <?php 
+                                            switch ($cotizacion['estado_cotizacion']) {
+                                                case 'Pendiente':
+                                                    echo '<span class="badge bg-warning">Pendiente</span>';
+                                                    break;
+                                                case 'Aprobado':
+                                                    echo '<span class="badge bg-success">Aprobado</span>';
+                                                    break;
+                                                case 'Rechazada':
+                                                    echo '<span class="badge bg-danger">Rechazada</span>';
+                                                    break;
+                                                case 'Completada':
+                                                    echo '<span class="badge bg-info">Completada</span>';
+                                                    break;
+                                                default:
+                                                    echo htmlspecialchars($cotizacion['estado_cotizacion']);
+                                            }
+                                            ?>
+                                        </td>
+                                        <td data-label="Total">$<?php echo number_format($cotizacion['total_cotizacion'], 2); ?></td>
+                                        <td data-label="Acciones">
+                                            <button class="btn btn-sm btn-info" onclick="showDetails(<?php echo $cotizacion['id_cotizacion']; ?>)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <a href="editar.php?id=<?php echo $cotizacion['id_cotizacion']; ?>" class="btn btn-sm btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-danger" onclick="confirmDelete(<?php echo $cotizacion['id_cotizacion']; ?>)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="7" class="text-center">No hay cotizaciones registradas.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- Pestaña de recientes -->
-            <div class="tab-pane fade" id="recent" role="tabpanel">
-                <div class="client-cards">
-                    <?php foreach ($cotizacionesRecientes as $cotizacion): ?>
-                        <div class="client-card" onclick="showOptionsCard(<?= $cotizacion['id_cotizacion'] ?>, '<?= htmlspecialchars($cotizacion['nombre_cliente']) ?>', '<?= htmlspecialchars($cotizacion['placa_vehiculo']) ?>', '<?= htmlspecialchars($cotizacion['estado_cotizacion']) ?>')">
-                            <div class="client-card-header">
-                                <h3 class="client-card-title"><?= htmlspecialchars($cotizacion['nombre_cliente']) ?></h3>
-                                <span class="client-card-badge"><?= $cotizacion['estado_cotizacion'] ?></span>
-                            </div>
-                            <div class="client-card-body">
-                                <div class="client-card-detail">
-                                    <i class="fas fa-car"></i>
-                                    <span><?= htmlspecialchars($cotizacion['marca_vehiculo']) ?> <?= htmlspecialchars($cotizacion['modelo_vehiculo']) ?></span>
-                                </div>
-                                <div class="client-card-detail">
-                                    <i class="fas fa-tag"></i>
-                                    <span><?= htmlspecialchars($cotizacion['placa_vehiculo']) ?></span>
-                                </div>
-                                <div class="client-card-detail">
-                                    <i class="fas fa-user"></i>
-                                    <span><?= htmlspecialchars($cotizacion['nombre_usuario']) ?></span>
-                                </div>
-                                <div class="client-card-detail">
-                                    <i class="fas fa-calendar"></i>
-                                    <span><?= date('d/m/Y', strtotime($cotizacion['fecha_cotizacion'])) ?></span>
-                                </div>
-                            </div>
-                            <div class="edit-arrow">
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <!-- Pestaña de papelera -->
-            <?php if ($tieneColumnaActivo): ?>
-            <div class="tab-pane fade" id="delete" role="tabpanel">
-                <?php if (count($cotizacionesPapelera) > 0): ?>
+            <!-- Pestaña Papelera -->
+            <div class="tab-pane fade" id="trash" role="tabpanel" aria-labelledby="trash-tab">
+                <?php if (count($cotizacionesEliminadas) > 0): ?>
                     <div class="table-container">
                         <table>
                             <thead>
                                 <tr>
+                                    <th>ID</th>
                                     <th>Cliente</th>
                                     <th>Vehículo</th>
-                                    <th>Placa</th>
+                                    <th>Fecha</th>
                                     <th>Estado</th>
-                                    <th>Fecha Eliminación</th>
+                                    <th>Total</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($cotizacionesPapelera as $cotizacion): ?>
+                                <?php foreach ($cotizacionesEliminadas as $cotizacion): ?>
                                     <tr class="deleted-item">
-                                        <td data-label="Cliente"><?= htmlspecialchars($cotizacion['nombre_cliente']) ?></td>
-                                        <td data-label="Vehículo"><?= htmlspecialchars($cotizacion['marca_vehiculo']) ?> <?= htmlspecialchars($cotizacion['modelo_vehiculo']) ?></td>
-                                        <td data-label="Placa"><?= htmlspecialchars($cotizacion['placa_vehiculo']) ?></td>
+                                        <td data-label="ID"><?php echo $cotizacion['id_cotizacion']; ?></td>
+                                        <td data-label="Cliente"><?php echo htmlspecialchars($cotizacion['nombre_cliente']); ?></td>
+                                        <td data-label="Vehículo"><?php echo htmlspecialchars($cotizacion['marca_vehiculo'] . ' ' . $cotizacion['modelo_vehiculo']); ?></td>
+                                        <td data-label="Fecha"><?php echo date('d/m/Y', strtotime($cotizacion['fecha_cotizacion'])); ?></td>
                                         <td data-label="Estado">
-                                            <?= $cotizacion['estado_cotizacion'] ?>
+                                            <?php 
+                                            switch ($cotizacion['estado_cotizacion']) {
+                                                case 'Pendiente':
+                                                    echo '<span class="badge bg-warning">Pendiente</span>';
+                                                    break;
+                                                case 'Aprobado':
+                                                    echo '<span class="badge bg-success">Aprobado</span>';
+                                                    break;
+                                                case 'Rechazada':
+                                                    echo '<span class="badge bg-danger">Rechazada</span>';
+                                                    break;
+                                                case 'Completada':
+                                                    echo '<span class="badge bg-info">Completada</span>';
+                                                    break;
+                                                default:
+                                                    echo htmlspecialchars($cotizacion['estado_cotizacion']);
+                                            }
+                                            ?>
                                             <span class="deleted-badge">Eliminado</span>
                                         </td>
-                                        <td data-label="Fecha Eliminación">
-                                            <?= $tieneColumnaFechaEliminacion && $cotizacion['fecha_eliminacion'] ? 
-                                                date('d/m/Y H:i', strtotime($cotizacion['fecha_eliminacion'])) : 'N/A' ?>
-                                        </td>
+                                        <td data-label="Total">$<?php echo number_format($cotizacion['total_cotizacion'], 2); ?></td>
                                         <td data-label="Acciones">
-                                            <a href="index.php?restaurar=<?= $cotizacion['id_cotizacion'] ?>" class="btn btn-success btn-sm" title="Restaurar">
-                                                <i class="fas fa-undo"></i>
-                                            </a>
-                                            <a href="index.php?eliminar_permanentemente=<?= $cotizacion['id_cotizacion'] ?>" class="btn btn-danger btn-sm" title="Eliminar permanentemente" onclick="return confirm('¿Estás seguro de eliminar permanentemente esta cotización? Esta acción no se puede deshacer.')">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
+                                            <button class="btn btn-sm btn-success" onclick="restoreItem(<?php echo $cotizacion['id_cotizacion']; ?>)">
+                                                <i class="fas fa-undo"></i> Restaurar
+                                            </button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -1090,144 +1289,161 @@ $title = 'Gestión de Cotizaciones | Nacional Tapizados';
                     </div>
                 <?php else: ?>
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i> No hay cotizaciones en la papelera.
+                        <i class="fas fa-info-circle"></i> La papelera está vacía.
                     </div>
                 <?php endif; ?>
             </div>
-            <?php endif; ?>
         </div>
     </div>
 
-    <!-- Overlay y tarjeta flotante de opciones -->
-    <div class="overlay" id="overlay" onclick="hideOptionsCard()"></div>
+    <!-- Tarjeta flotante para detalles -->
+    <div class="overlay" id="overlay"></div>
+    <div class="floating-card" id="detailsCard">
+        <div class="card-header">
+            <h2 class="card-title">Detalles de Cotización</h2>
+            <button class="close-card" onclick="closeDetails()">&times;</button>
+        </div>
+        <div class="card-content" id="detailsContent">
+            <!-- Los detalles se cargarán aquí mediante AJAX -->
+        </div>
+    </div>
+
+    <!-- Tarjeta flotante para opciones -->
     <div class="options-floating-card" id="optionsCard">
-        <button class="option-close" onclick="hideOptionsCard()">
-            <i class="fas fa-times"></i>
-        </button>
         <div class="options-card-header">
-            <h3 class="options-card-title" id="optionsCardTitle">Opciones</h3>
+            <h3 class="options-card-title">Opciones de Cotización</h3>
+            <button class="option-close" onclick="closeOptions()">&times;</button>
         </div>
         <div class="options-card-body">
-            <a href="#" class="option-item" id="optionView">
-                <i class="fas fa-eye"></i> Ver detalles
+            <a href="crear.php" class="option-item">
+                <i class="fas fa-plus"></i> Nueva Cotización
             </a>
-            <a href="#" class="option-item" id="optionEdit">
-                <i class="fas fa-edit"></i> Editar
+            <a href="../../dashboard.php" class="option-item">
+                <i class="fas fa-home"></i> Volver al Dashboard
             </a>
-            <a href="#" class="option-item" id="optionChangeStatus">
-                <i class="fas fa-exchange-alt"></i> Cambiar estado
+            <a href="../clientes/index.php" class="option-item">
+                <i class="fas fa-users"></i> Gestión de Clientes
             </a>
-            <a href="#" class="option-item text-danger" id="optionDelete">
-                <i class="fas fa-trash"></i> Eliminar
+            <a href="../vehiculos/index.php" class="option-item">
+                <i class="fas fa-car"></i> Gestión de Vehículos
+            </a>
+            <a href="../servicios/index.php" class="option-item">
+                <i class="fas fa-tools"></i> Gestión de Servicios
             </a>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Variables globales
-        let currentClientId = null;
-        let currentClientName = null;
-        let currentClientPlate = null;
-        let currentClientStatus = null;
+        // Búsqueda en tiempo real
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const query = this.value.trim();
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+            
+            fetch(`index.php?ajax=1&q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    resultsContainer.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        resultsContainer.style.display = 'none';
+                        return;
+                    }
+                    
+                    data.forEach(cotizacion => {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item';
+                        item.innerHTML = `
+                            <div>
+                                <div class="search-client-name">Cotización #${cotizacion.id_cotizacion} - ${cotizacion.nombre_cliente}</div>
+                                <div class="search-client-info">${cotizacion.marca_vehiculo} ${cotizacion.modelo_vehiculo}</div>
+                                <div class="search-client-date">${new Date(cotizacion.fecha_cotizacion).toLocaleDateString()}</div>
+                            </div>
+                            <div>
+                                $${parseFloat(cotizacion.total_cotizacion).toFixed(2)}
+                            </div>
+                        `;
+                        item.addEventListener('click', () => {
+                            showDetails(cotizacion.id_cotizacion);
+                            resultsContainer.style.display = 'none';
+                            document.getElementById('searchInput').value = '';
+                        });
+                        resultsContainer.appendChild(item);
+                    });
+                    
+                    resultsContainer.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error en la búsqueda:', error);
+                    resultsContainer.style.display = 'none';
+                });
+        });
 
-        // Mostrar tarjeta de opciones
-        function showOptionsCard(id, name, plate, status) {
-            currentClientId = id;
-            currentClientName = name;
-            currentClientPlate = plate;
-            currentClientStatus = status;
-            
-            // Actualizar título de la tarjeta
-            document.getElementById('optionsCardTitle').textContent = name;
-            
-            // Actualizar enlaces
-            document.getElementById('optionView').href = `ver.php?id=${id}`;
-            document.getElementById('optionEdit').href = `editar.php?id=${id}`;
-            document.getElementById('optionChangeStatus').href = `cambiar_estado.php?id=${id}`;
-            document.getElementById('optionDelete').href = `index.php?eliminar=${id}`;
+        // Cerrar resultados al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                document.getElementById('searchResults').style.display = 'none';
+            }
+        });
+
+        // Mostrar detalles de la cotización
+        function showDetails(id) {
+            const overlay = document.getElementById('overlay');
+            const detailsCard = document.getElementById('detailsCard');
+            const detailsContent = document.getElementById('detailsContent');
             
             // Mostrar overlay y tarjeta
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById('optionsCard').style.display = 'block';
+            overlay.style.display = 'block';
+            detailsCard.style.display = 'block';
             
-            // Prevenir que el clic en la tarjeta cierre el overlay
-            event.stopPropagation();
+            // Cargar detalles mediante AJAX
+            fetch(`index.php?cargar_detalles=${id}`)
+                .then(response => response.text())
+                .then(data => {
+                    detailsContent.innerHTML = data;
+                })
+                .catch(error => {
+                    console.error('Error al cargar detalles:', error);
+                    detailsContent.innerHTML = '<div class="alert alert-danger">Error al cargar los detalles</div>';
+                });
         }
 
-        // Ocultar tarjeta de opciones
-        function hideOptionsCard() {
+        // Cerrar detalles
+        function closeDetails() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('detailsCard').style.display = 'none';
+        }
+
+        // Confirmar eliminación
+        function confirmDelete(id) {
+            if (confirm('¿Estás seguro de que deseas mover esta cotización a la papelera?')) {
+                window.location.href = `eliminar.php?id=${id}`;
+            }
+        }
+
+        // Restaurar elemento
+        function restoreItem(id) {
+            if (confirm('¿Estás seguro de que deseas restaurar esta cotización?')) {
+                window.location.href = `restaurar.php?id=${id}`;
+            }
+        }
+
+        // Mostrar opciones
+        function showOptions() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('optionsCard').style.display = 'block';
+        }
+
+        // Cerrar opciones
+        function closeOptions() {
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('optionsCard').style.display = 'none';
         }
-
-        // Búsqueda en tiempo real
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('searchInput');
-            const searchResults = document.getElementById('searchResults');
-            const allClientsList = document.getElementById('allClientsList');
-            const searchLoading = document.getElementById('searchLoading');
-
-            searchInput.addEventListener('input', function() {
-                const query = this.value.trim();
-                
-                if (query.length < 2) {
-                    searchResults.style.display = 'none';
-                    allClientsList.style.display = 'block';
-                    return;
-                }
-
-                searchLoading.style.display = 'block';
-                allClientsList.style.display = 'none';
-                
-                fetch(`index.php?ajax=1&q=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        searchLoading.style.display = 'none';
-                        
-                        if (data.length === 0) {
-                            searchResults.innerHTML = '<div class="search-result-item">No se encontraron resultados</div>';
-                            searchResults.style.display = 'block';
-                            return;
-                        }
-                        
-                        let html = '';
-                        data.forEach(item => {
-                            html += `
-                                <div class="search-result-item" onclick="showOptionsCard(${item.id_cotizacion}, '${item.nombre_cliente.replace(/'/g, "\\'")}', '${item.placa_vehiculo}', '${item.estado_cotizacion}')">
-                                    <div>
-                                        <div class="search-client-name">${item.nombre_cliente}</div>
-                                        <div class="search-client-info">${item.placa_vehiculo} | ${item.estado_cotizacion}</div>
-                                    </div>
-                                    <div class="search-client-date">${new Date(item.fecha_cotizacion).toLocaleDateString()}</div>
-                                </div>
-                            `;
-                        });
-                        
-                        searchResults.innerHTML = html;
-                        searchResults.style.display = 'block';
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        searchLoading.style.display = 'none';
-                    });
-            });
-
-            // Ocultar resultados al hacer clic fuera
-            document.addEventListener('click', function(e) {
-                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                    searchResults.style.display = 'none';
-                    if (searchInput.value.trim().length < 2) {
-                        allClientsList.style.display = 'block';
-                    }
-                }
-            });
-        });
-
-        // Prevenir que el clic en la tarjeta cierre el overlay
-        document.getElementById('optionsCard').addEventListener('click', function(event) {
-            event.stopPropagation();
-        });
     </script>
 </body>
 

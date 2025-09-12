@@ -104,7 +104,7 @@
                 </a>
             </li>
 
-                        <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/formularios/papelera/papelera.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -115,7 +115,7 @@
                     <span>Papelera</span>
                 </a>
             </li>
-                        <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/mensajes_contacto.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -142,21 +142,178 @@
 
 </aside>
 
+<style>
+    /* Estilos para el sidebar colapsable */
+    .admin-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 250px;
+        background-color: #2c3e50;
+        color: #FFF8E1;
+        transition: width 0.3s ease;
+        z-index: 1000;
+        overflow-x: hidden;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+    
+    .admin-sidebar.collapsed {
+        width: 60px;
+    }
+    
+    .admin-sidebar.collapsed .sidebar-title span,
+    .admin-sidebar.collapsed .nav-link span,
+    .admin-sidebar.collapsed .badge-notification {
+        display: none;
+    }
+    
+    .admin-sidebar.collapsed .nav-link {
+        padding: 0.75rem 1rem;
+        justify-content: center;
+    }
+    
+    .admin-sidebar.collapsed .nav-link svg {
+        margin-right: 0;
+    }
+    
+    .sidebar-header {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255,248,225,0.1);
+    }
+    
+    .sidebar-title {
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .sidebar-nav {
+        padding: 1rem 0;
+        height: calc(100vh - 60px);
+        overflow-y: auto;
+    }
+    
+    .nav-link {
+        color: #FFF8E1;
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.2s;
+    }
+    
+    .nav-link:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+    
+    .nav-link svg {
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+    }
+    
+    .badge-notification {
+        background-color: #e74c3c;
+        color: white;
+        border-radius: 50%;
+        padding: 0.15rem 0.45rem;
+        font-size: 0.75rem;
+        margin-left: auto;
+    }
+    
+    .logout-link {
+        border-top: 1px solid rgba(255,248,225,0.1);
+        margin-top: auto;
+    }
+    
+    /* Overlay para cerrar al hacer clic fuera */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 999;
+        display: none;
+    }
+    
+    @media (min-width: 992px) {
+        .admin-sidebar.collapsed + .sidebar-overlay {
+            display: none !important;
+        }
+    }
+</style>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const sidebar = document.querySelector('.admin-sidebar');
         const collapseBtn = document.querySelector('.collapse-btn');
-
-        collapseBtn.addEventListener('click', function() {
-            sidebar.classList.toggle('collapsed');
-
-            // Guardar estado en localStorage
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed') ? 'true' : 'false');
-        });
-
-        // Cargar estado al iniciar
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        
+        // Función para colapsar el sidebar
+        function collapseSidebar() {
             sidebar.classList.add('collapsed');
+            localStorage.setItem('sidebarCollapsed', 'true');
         }
+        
+        // Función para expandir el sidebar
+        function expandSidebar() {
+            sidebar.classList.remove('collapsed');
+            localStorage.setItem('sidebarCollapsed', 'false');
+            sidebarOverlay.style.display = 'none';
+        }
+        
+        // Alternar colapso/expansión al hacer clic en el botón
+        collapseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (sidebar.classList.contains('collapsed')) {
+                expandSidebar();
+            } else {
+                collapseSidebar();
+                // En dispositivos móviles, mostrar overlay cuando está colapsado
+                if (window.innerWidth < 992) {
+                    sidebarOverlay.style.display = 'block';
+                }
+            }
+        });
+        
+        // Cerrar sidebar al hacer clic fuera (solo en móviles)
+        sidebarOverlay.addEventListener('click', function() {
+            if (window.innerWidth < 992) {
+                collapseSidebar();
+                sidebarOverlay.style.display = 'none';
+            }
+        });
+        
+        // Cerrar sidebar al hacer clic fuera en desktop (solo cuando está expandido)
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth >= 992 && 
+                !sidebar.contains(e.target) && 
+                !sidebar.classList.contains('collapsed')) {
+                collapseSidebar();
+            }
+        });
+        
+        // Prevenir que los clics dentro del sidebar cierren el sidebar
+        sidebar.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        
+        // Cargar estado del sidebar desde localStorage
+        const isCollapsed = localStorage.getItem('sidebarCollapsed');
+        if (isCollapsed === 'true') {
+            collapseSidebar();
+        }
+        
+        // Ajustar comportamiento en cambio de tamaño de ventana
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 992) {
+                sidebarOverlay.style.display = 'none';
+            } else if (sidebar.classList.contains('collapsed')) {
+                sidebarOverlay.style.display = 'block';
+            }
+        });
     });
 </script>

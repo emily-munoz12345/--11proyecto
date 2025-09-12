@@ -1,160 +1,146 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 require_once __DIR__ . '/../../../php/conexion.php';
 require_once __DIR__ . '/../../../php/auth.php';
 
+// Verificar permisos
 if (!isAdmin() && !isSeller()) {
+    $_SESSION['mensaje'] = 'No tiene permisos para realizar esta acción';
+    $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: ../dashboard.php');
     exit;
 }
 
-session_start();
-
-// Validar CSRF
-if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-    header('Location: index.php?error=Token de seguridad inválido');
-    exit;
-}
-
+// Verificar método POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $_SESSION['mensaje'] = 'Método no permitido';
+    $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: index.php');
     exit;
 }
 
-// Validar y sanitizar entradas
-$accion = isset($_POST['accion']) && in_array($_POST['accion'], ['crear', 'editar']) ? $_POST['accion'] : '';
+// Obtener acción
+$accion = $_POST['accion'] ?? '';
 $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 
-// Validar datos requeridos
+// Validar datos
 $errores = [];
-$camposRequeridos = ['cliente', 'vehiculo', 'subtotal', 'iva', 'total', 'servicios_json'];
-foreach ($camposRequeridos as $campo) {
-    if (empty($_POST[$campo])) {
-        $errores[] = "El campo $campo es requerido";
-    }
-}
+
+$id_cliente = isset($_POST['id_cliente']) ? intval($_POST['id_cliente']) : 0;
+$id_vehiculo = isset($_POST['id_vehiculo']) ? intval($_POST['id_vehiculo']) : 0;
+$servicios = $_POST['servicios'] ?? [];
+$precios = $_POST['precios'] ?? [];
+$subtotal = isset($_POST['subtotal_cotizacion']) ? floatval($_POST['subtotal_cotizacion']) : 0;
+$valor_adicional = isset($_POST['valor_adicional']) ? floatval($_POST['valor_adicional']) : 0;
+$iva = isset($_POST['iva']) ? floatval($_POST['iva']) : 0;
+$total = isset($_POST['total_cotizacion']) ? floatval($_POST['total_cotizacion']) : 0;
+$notas = trim($_POST['notas_cotizacion'] ?? '');
+
+// Validaciones
+if ($id_cliente <= 0) $errores[] = 'Cliente inválido';
+if ($id_vehiculo <= 0) $errores[] = 'Vehículo inválido';
+if (empty($servicios)) $errores[] = 'Debe seleccionar al menos un servicio';
+if ($iva < 0 || $iva > 100) $errores[] = 'IVA debe estar entre 0 y 100';
 
 if (!empty($errores)) {
-    header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id") .
-    '?error=' . urlencode(implode(', ', $errores)));
+    $_SESSION['mensaje'] = implode(', ', $errores);
+    $_SESSION['tipo_mensaje'] = 'danger';
+    header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id"));
     exit;
 }
-
-// Procesar servicios y valor adicional
-$servicios_data = json_decode($_POST['servicios_json'], true);
-if (json_last_error() !== JSON_ERROR_NONE || !is_array($servicios_data['servicios'])) {
-    header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id") .
-    '?error=Error en los servicios seleccionados');
-    exit;
-}
-
-$valor_adicional = isset($servicios_data['valor_adicional']) ? floatval($servicios_data['valor_adicional']) : 0;
-
-// Asignar valores
-$id_cliente = intval($_POST['cliente']);
-$id_vehiculo = intval($_POST['vehiculo']);
-$subtotal = floatval($_POST['subtotal']);
-$iva = floatval($_POST['iva']);
-$total = floatval($_POST['total']);
-$notas = trim($_POST['notas'] ?? '');
 
 try {
     $conex->beginTransaction();
-
+    
     if ($accion === 'crear') {
-        // Insertar cotización
-        $sql = "INSERT INTO cotizaciones (
-                id_usuario, 
-                id_cliente, 
-                id_vehiculo, 
-                fecha_cotizacion, 
-                subtotal_cotizacion, 
-                iva, 
-                total_cotizacion, 
-                valor_adicional,
-                estado_cotizacion, 
-                notas_cotizacion
-            ) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, 'Pendiente', ?)";
+        // Crear nueva cotización
+        $sql = "INSERT INTO cotizaciones (id_usuario, id_cliente, id_vehiculo, subtotal_cotizacion, 
+                valor_adicional, iva, total_cotizacion, estado_cotizacion, notas_cotizacion) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'Pendiente', ?)";
         $stmt = $conex->prepare($sql);
         $stmt->execute([
-            $_SESSION['id_usuario'],
-            $id_cliente,
-            $id_vehiculo,
-            $subtotal,
-            $iva,
-            $total,
-            $valor_adicional,
+            $_SESSION['usuario_id'], 
+            $id_cliente, 
+            $id_vehiculo, 
+            $subtotal, 
+            $valor_adicional, 
+            $iva, 
+            $total, 
             $notas
         ]);
         
         $id_cotizacion = $conex->lastInsertId();
-        $mensaje = 'Cotización creada exitosamente';
+        
+        // Insertar servicios de la cotización
+        $sql_servicios = "INSERT INTO cotizacion_servicios (id_cotizacion, id_servicio, precio) VALUES (?, ?, ?)";
+        $stmt_servicios = $conex->prepare($sql_servicios);
+        
+        foreach ($servicios as $index => $id_servicio) {
+            $precio = $precios[$index];
+            $stmt_servicios->execute([$id_cotizacion, $id_servicio, $precio]);
+        }
+        
+        $_SESSION['mensaje'] = 'Cotización creada exitosamente';
+        $_SESSION['tipo_mensaje'] = 'success';
+        
     } elseif ($accion === 'editar' && $id > 0) {
-        // Actualizar cotización
+        // Actualizar cotización existente
         $sql = "UPDATE cotizaciones SET 
                 id_cliente = ?, 
                 id_vehiculo = ?, 
                 subtotal_cotizacion = ?, 
+                valor_adicional = ?, 
                 iva = ?, 
                 total_cotizacion = ?, 
-                valor_adicional = ?,
                 notas_cotizacion = ? 
                 WHERE id_cotizacion = ?";
         $stmt = $conex->prepare($sql);
         $stmt->execute([
-            $id_cliente,
-            $id_vehiculo,
-            $subtotal,
-            $iva,
-            $total,
-            $valor_adicional,
-            $notas,
+            $id_cliente, 
+            $id_vehiculo, 
+            $subtotal, 
+            $valor_adicional, 
+            $iva, 
+            $total, 
+            $notas, 
             $id
         ]);
         
-        $id_cotizacion = $id;
-        $mensaje = 'Cotización actualizada exitosamente';
+        // Eliminar servicios anteriores
+        $sql_delete = "DELETE FROM cotizacion_servicios WHERE id_cotizacion = ?";
+        $stmt_delete = $conex->prepare($sql_delete);
+        $stmt_delete->execute([$id]);
+        
+        // Insertar nuevos servicios
+        $sql_servicios = "INSERT INTO cotizacion_servicios (id_cotizacion, id_servicio, precio) VALUES (?, ?, ?)";
+        $stmt_servicios = $conex->prepare($sql_servicios);
+        
+        foreach ($servicios as $index => $id_servicio) {
+            $precio = $precios[$index];
+            $stmt_servicios->execute([$id, $id_servicio, $precio]);
+        }
+        
+        $_SESSION['mensaje'] = 'Cotización actualizada exitosamente';
+        $_SESSION['tipo_mensaje'] = 'success';
     } else {
         throw new Exception('Acción inválida');
     }
-
-    // Insertar servicios de la cotización (eliminar los anteriores si es edición)
-    if ($accion === 'editar') {
-        $conex->prepare("DELETE FROM cotizacion_servicios WHERE id_cotizacion = ?")->execute([$id_cotizacion]);
-    }
-
-    $sqlServicios = "INSERT INTO cotizacion_servicios (id_cotizacion, id_servicio, precio) VALUES (?, ?, ?)";
-    $stmtServicios = $conex->prepare($sqlServicios);
-
-    foreach ($servicios_data['servicios'] as $servicio) {
-        if (!isset($servicio['id']) || !isset($servicio['precio'])) {
-            throw new Exception('Datos de servicio inválidos');
-        }
-        $stmtServicios->execute([
-            $id_cotizacion,
-            intval($servicio['id']),
-            floatval($servicio['precio'])
-        ]);
-    }
-
+    
     $conex->commit();
-
-    $_SESSION['mensaje'] = $mensaje;
-    $_SESSION['tipo_mensaje'] = 'success';
-    header("Location: ver.php?id=$id_cotizacion");
+    header("Location: index.php");
     exit;
+    
 } catch (PDOException $e) {
     $conex->rollBack();
-    error_log("Error en la base de datos: " . $e->getMessage());
-    $_SESSION['mensaje'] = 'Error al procesar la cotización';
+    $_SESSION['mensaje'] = 'Error en la base de datos: ' . $e->getMessage();
     $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id"));
     exit;
 } catch (Exception $e) {
     $conex->rollBack();
-    error_log("Error general: " . $e->getMessage());
     $_SESSION['mensaje'] = $e->getMessage();
     $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id"));

@@ -27,7 +27,7 @@ $trabajosEnProgreso = count(array_filter($trabajos, function($t) { return $t['es
     <title>Lista de Trabajos | Nacional Tapizados</title>
     <style>
         body {
-            background-image: url('https://pfst.cf2.poecdn.net/base/image/fe72e5f0bf336b4faca086bc6a42c20a45e904d165e796b52eca655a143283b8?w=1024&h=768&pmaid=426747789');
+            background-image: url('https://pfst.cf2.poecdn.net/base/image/60ab54eef562f30f85a67bde31f924f078199dae0b7bc6c333dfb467a2c13471?w=1024&h=768&pmaid=442168253');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;

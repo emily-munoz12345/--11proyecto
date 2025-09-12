@@ -58,10 +58,10 @@ try {
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-<body>
+<body class="admin-body">
         <?php include '../includes/head.php'; ?>
-            <?php include __DIR__ . '../../includes/sidebar.php'; ?>
-    <div class="main-container">
+            <!--<?php include __DIR__ . '../../includes/sidebar.php'; ?>-->
+    <div class="main-container-cernter">
         <a href="javascript:history.back()" class="back-button">
             <i class="fas fa-arrow-left"></i> Volver
         </a>
@@ -195,6 +195,6 @@ try {
         <?php endif; ?>
     </div>
     
-    <?php include '../includes/footer.php'; ?>
+   <!-- <?php include '../includes/footer.php'; ?>-->
 </body>
 </html>

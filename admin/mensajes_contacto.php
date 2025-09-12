@@ -7,7 +7,7 @@ require_once __DIR__ . '/../php/auth.php';
 
 // Verificar permisos (solo admin y técnicos)
 if (!isAdmin() && !isTechnician()) {
-    header('Location: ../dashboard.php');
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -269,6 +269,8 @@ foreach ($mensajes as $mensaje) {
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            line-clamp: 2;
+            overflow-wrap: anywhere;
         }
 
         .message-meta {
@@ -487,8 +489,8 @@ foreach ($mensajes as $mensaje) {
     <div class="main-container">
         <div class="header-section">
             <h1 class="page-title"><i class="fas fa-envelope"></i>Buzón de Mensajes</h1>
-            <a href="../dashboard.php" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i>Volver al Dashboard
+            <a href="dashboard.php" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i>Volver al inicio 
             </a>
         </div>
 

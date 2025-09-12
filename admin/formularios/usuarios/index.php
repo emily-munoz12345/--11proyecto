@@ -442,12 +442,12 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
                                         <a href="editar.php?id=<?= $usuario['id_usuario'] ?>" class="btn btn-sm btn-warning me-2">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <?php if ($usuario['id_usuario'] != $_SESSION['id_usuario']): ?>
+                                       <!-- <?php if ($usuario['id_usuario'] != $_SESSION['id_usuario']): ?>
                                         <a href="index.php?eliminar=<?= $usuario['id_usuario'] ?>" class="btn btn-sm btn-danger" 
                                            onclick="return confirm('¿Estás seguro de eliminar este usuario?')">
                                             <i class="fas fa-trash"></i>
                                         </a>
-                                        <?php endif; ?>
+                                        <?php endif; ?>-->
                                     </div>
                                 </td>
                             </tr>
