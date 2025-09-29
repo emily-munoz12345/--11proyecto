@@ -1,3 +1,50 @@
+<?php
+require_once __DIR__ . '/../../php/auth.php';
+require_once __DIR__ . '/../../php/conexion.php';
+
+// Obtener el rol del usuario actual
+$userRole = getUserRole();
+
+// Definir qué opciones puede ver cada rol
+$allowedMenuItems = [
+    'Administrador' => ['inicio', 'clientes', 'vehiculos', 'cotizaciones', 'trabajos', 'materiales', 'servicios', 'usuarios', 'papelera', 'buzon'],
+    'Tecnico' => ['inicio', 'clientes', 'vehiculos', 'trabajos', 'materiales'],
+    'Vendedor' => ['inicio', 'clientes', 'vehiculos', 'cotizaciones', 'servicios']
+];
+
+// Obtener las opciones permitidas para el rol actual
+$userMenuItems = $allowedMenuItems[$userRole] ?? ['inicio'];
+
+// Función para contar registros activos
+function getActiveCount($conex, $table) {
+    try {
+        $stmt = $conex->query("SELECT COUNT(*) as total FROM $table WHERE activo = 1");
+        return $stmt->fetch()['total'];
+    } catch (PDOException $e) {
+        error_log("Error al contar registros en $table: " . $e->getMessage());
+        return 0;
+    }
+}
+
+// Obtener conteos para mostrar en badges
+$counts = [];
+if (in_array('clientes', $userMenuItems)) $counts['clientes'] = getActiveCount($conex, 'clientes');
+if (in_array('vehiculos', $userMenuItems)) $counts['vehiculos'] = getActiveCount($conex, 'vehiculos');
+if (in_array('cotizaciones', $userMenuItems)) $counts['cotizaciones'] = getActiveCount($conex, 'cotizaciones');
+if (in_array('materiales', $userMenuItems)) $counts['materiales'] = getActiveCount($conex, 'materiales');
+if (in_array('servicios', $userMenuItems)) $counts['servicios'] = getActiveCount($conex, 'servicios');
+if (in_array('usuarios', $userMenuItems)) $counts['usuarios'] = getActiveCount($conex, 'usuarios');
+
+// Contar mensajes no leídos (solo para administradores)
+if (in_array('buzon', $userMenuItems)) {
+    try {
+        $stmt = $conex->query("SELECT COUNT(*) as total FROM mensajes_contacto WHERE leido = 0 AND activo = 1");
+        $counts['buzon'] = $stmt->fetch()['total'];
+    } catch (PDOException $e) {
+        $counts['buzon'] = 0;
+    }
+}
+?>
 <aside class="admin-sidebar">
     <div class="sidebar-header">
         <h4 class="sidebar-title">
@@ -15,6 +62,7 @@
 
     <nav class="sidebar-nav">
         <ul class="nav flex-column">
+            <!-- Inicio - Disponible para todos -->
             <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/dashboard.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
@@ -25,6 +73,8 @@
                 </a>
             </li>
 
+            <!-- Clientes -->
+            <?php if (in_array('clientes', $userMenuItems)): ?>
             <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/formularios/clientes/index.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
@@ -32,10 +82,13 @@
                         <circle cx="9" cy="7" r="4"></circle>
                     </svg>
                     <span>Clientes</span>
-                    <span class="badge-notification">4</span>
+                    <span class="badge-notification"><?= $counts['clientes'] ?? 0 ?></span>
                 </a>
             </li>
+            <?php endif; ?>
 
+            <!-- Vehículos -->
+            <?php if (in_array('vehiculos', $userMenuItems)): ?>
             <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/formularios/vehiculos/index.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
@@ -45,10 +98,13 @@
                         <circle cx="17" cy="17" r="2"></circle>
                     </svg>
                     <span>Vehículos</span>
-                    <span class="badge-notification">4</span>
+                    <span class="badge-notification"><?= $counts['vehiculos'] ?? 0 ?></span>
                 </a>
             </li>
+            <?php endif; ?>
 
+            <!-- Cotizaciones -->
+            <?php if (in_array('cotizaciones', $userMenuItems)): ?>
             <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/formularios/cotizaciones/index.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
@@ -58,10 +114,13 @@
                         <line x1="16" x2="8" y1="17" y2="17"></line>
                     </svg>
                     <span>Cotizaciones</span>
-                    <span class="badge-notification">4</span>
+                    <span class="badge-notification"><?= $counts['cotizaciones'] ?? 0 ?></span>
                 </a>
             </li>
+            <?php endif; ?>
 
+            <!-- Trabajos -->
+            <?php if (in_array('trabajos', $userMenuItems)): ?>
             <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/formularios/trabajos/index.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
@@ -70,7 +129,10 @@
                     <span>Trabajos</span>
                 </a>
             </li>
+            <?php endif; ?>
 
+            <!-- Materiales -->
+            <?php if (in_array('materiales', $userMenuItems)): ?>
             <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/formularios/materiales/index.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
@@ -78,20 +140,26 @@
                         <path d="M9 6a2 2 0 0 1 2-2h2v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z"></path>
                     </svg>
                     <span>Materiales</span>
-                    <span class="badge-notification">4</span>
+                    <span class="badge-notification"><?= $counts['materiales'] ?? 0 ?></span>
                 </a>
             </li>
+            <?php endif; ?>
 
+            <!-- Servicios -->
+            <?php if (in_array('servicios', $userMenuItems)): ?>
             <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/formularios/servicios/index.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                     </svg>
                     <span>Servicios</span>
-                    <span class="badge-notification">4</span>
+                    <span class="badge-notification"><?= $counts['servicios'] ?? 0 ?></span>
                 </a>
             </li>
+            <?php endif; ?>
 
+            <!-- Usuarios -->
+            <?php if (in_array('usuarios', $userMenuItems)): ?>
             <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/formularios/usuarios/index.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
@@ -101,32 +169,42 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                     <span>Usuarios</span>
+                    <span class="badge-notification"><?= $counts['usuarios'] ?? 0 ?></span>
                 </a>
             </li>
+            <?php endif; ?>
 
+            <!-- Papelera -->
+            <?php if (in_array('papelera', $userMenuItems)): ?>
             <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/formularios/papelera/papelera.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
-                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
                     </svg>
                     <span>Papelera</span>
                 </a>
             </li>
+            <?php endif; ?>
+
+            <!-- Buzón de Entrada -->
+            <?php if (in_array('buzon', $userMenuItems)): ?>
             <li class="nav-item">
                 <a class="nav-link" href="/--11proyecto/admin/mensajes_contacto.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
-                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
                     </svg>
-                    <span>Buzon de Entrada</span>
+                    <span>Buzón de Entrada</span>
+                    <?php if (($counts['buzon'] ?? 0) > 0): ?>
+                    <span class="badge-notification"><?= $counts['buzon'] ?></span>
+                    <?php endif; ?>
                 </a>
             </li>
+            <?php endif; ?>
 
+            <!-- Cerrar Sesión - Disponible para todos -->
             <li class="nav-item mt-auto">
                 <a class="nav-link logout-link" href="/--11proyecto/php/logout.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
@@ -139,7 +217,6 @@
             </li>
         </ul>
     </nav>
-
 </aside>
 
 <style>
