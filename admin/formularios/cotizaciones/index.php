@@ -769,7 +769,7 @@ tr:hover {
             </h1>
             <div>
                 <a href="../../dashboard.php" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                    <i class="fas fa-arrow-left"></i> Volver al Inicio
                 </a>
                 <a href="crear.php" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Nueva Cotización
@@ -920,10 +920,15 @@ tr:hover {
                                         <td><?php echo htmlspecialchars($cotizacion['placa_vehiculo']); ?></td>
                                         <td>$<?php echo number_format($cotizacion['total_cotizacion'], 2); ?></td>
                                         <td><?php echo date('d/m/Y H:i', strtotime($cotizacion['fecha_eliminacion'])); ?></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-success" onclick="restoreCotizacion(<?php echo $cotizacion['id_cotizacion']; ?>)">
+                                        <td data-label="Acciones">
+                                            <a href="restaurar.php?id=<?= $cotizacion['id_cotizacion'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
                                                 <i class="fas fa-undo"></i> Restaurar
-                                            </button>
+                                            </a>
+                                            <?php if (isAdmin()): ?>
+                                            <a href="eliminar_permanentemente.php?id=<?= $cotizacion['id_cotizacion'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?> y no se podrá recuperar.')">
+                                                <i class="fas fa-trash"></i> Eliminar Permanentemente
+                                            </a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -977,7 +982,7 @@ tr:hover {
                     <i class="fas fa-edit"></i>
                     <span>Editar cotización</span>
                 </div>
-                <div class="option-item" onclick="if(confirm('¿Estás seguro de eliminar esta cotización?')) window.location.href='eliminar_cotizacion.php?id=${id}'">
+                <div class="option-item" onclick="if(confirm('¿Estás seguro de eliminar esta cotización?')) window.location.href='eliminar.php?id=${id}'">
                     <i class="fas fa-trash"></i>
                     <span>Eliminar cotización</span>
                 </div>

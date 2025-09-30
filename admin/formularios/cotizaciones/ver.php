@@ -511,9 +511,6 @@ $title = 'Ver Cotización | Nacional Tapizados';
         
         <!-- Botones de acción -->
         <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
-            <button class="btn btn-success" onclick="window.print()">
-                <i class="fas fa-print me-1"></i>Imprimir Cotización
-            </button>
             <a href="generar_pdf.php?id=<?= $cotizacion['id_cotizacion'] ?>" class="btn btn-danger">
                 <i class="fas fa-file-pdf me-1"></i>Generar PDF
             </a>
