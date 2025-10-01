@@ -26,9 +26,9 @@ $title = 'Crear Cliente | Nacional Tapizados';
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
-            --bg-input: rgba(0, 0, 0, 0.4); /* Fondo más oscuro para inputs */
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -53,7 +53,7 @@ $title = 'Crear Cliente | Nacional Tapizados';
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -73,6 +73,7 @@ $title = 'Crear Cliente | Nacional Tapizados';
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -85,30 +86,42 @@ $title = 'Crear Cliente | Nacional Tapizados';
             backdrop-filter: blur(8px);
             border: 1px solid var(--border-color);
             border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: 600;
         }
 
         .card-body {
-            padding: 2rem;
+            padding: 1.5rem;
+            color: var(--text-color);
         }
 
         .form-label {
-            font-weight: 500;
             color: var(--text-color);
+            font-weight: 500;
             margin-bottom: 0.5rem;
         }
 
-        .form-control {
-            background-color: var(--bg-input); /* Fondo más oscuro para mejor contraste */
+        .form-control, .form-select {
+            background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            backdrop-filter: blur(5px);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
             transition: all 0.3s ease;
         }
 
-        .form-control:focus {
-            background-color: rgba(0, 0, 0, 0.5); /* Fondo aún más oscuro al enfocar */
+        .form-control:focus, .form-select:focus {
+            background-color: rgba(0, 0, 0, 0.7);
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
+            box-shadow: 0 0 0 2px var(--primary-color);
             color: var(--text-color);
         }
 
@@ -127,7 +140,12 @@ $title = 'Crear Cliente | Nacional Tapizados';
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
+            font-size: 1rem;
             gap: 0.5rem;
+        }
+
+        .btn i {
+            font-size: 1rem;
         }
 
         .btn-primary {
@@ -160,13 +178,34 @@ $title = 'Crear Cliente | Nacional Tapizados';
             backdrop-filter: blur(5px);
             border-left: 4px solid var(--danger-color);
             background-color: rgba(220, 53, 69, 0.2);
+            color: var(--text-color);
+        }
+
+        .alert .btn-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .alert .btn-close:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .main-container {
+                padding: 1rem;
                 margin: 1rem;
-                padding: 1.5rem;
             }
 
             .header-section {
@@ -177,13 +216,13 @@ $title = 'Crear Cliente | Nacional Tapizados';
             .page-title {
                 font-size: 1.5rem;
             }
+
+            .card-body {
+                padding: 1rem;
+            }
         }
 
         @media (max-width: 576px) {
-            .card-body {
-                padding: 1.5rem;
-            }
-
             .btn {
                 width: 100%;
                 margin-bottom: 0.5rem;
@@ -206,12 +245,17 @@ $title = 'Crear Cliente | Nacional Tapizados';
         
         <?php if (isset($_GET['error'])): ?>
             <div class="alert">
-                <?= htmlspecialchars($_GET['error']) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <span><?= htmlspecialchars($_GET['error']) ?></span>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
         <?php endif; ?>
         
         <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Información del Cliente</h5>
+            </div>
             <div class="card-body">
                 <form action="procesar.php" method="POST">
                     <input type="hidden" name="accion" value="crear">

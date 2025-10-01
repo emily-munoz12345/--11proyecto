@@ -175,8 +175,9 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -201,7 +202,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -221,6 +222,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -268,7 +270,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             padding: 1rem;
             border-radius: 8px;
             border: none;
-            background-color: var(--bg-transparent-light);
+            background-color: var(--bg-input);
             color: var(--text-color);
             font-size: 1rem;
             backdrop-filter: blur(5px);
@@ -279,7 +281,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
         .search-input:focus {
             outline: none;
             box-shadow: 0 0 0 2px var(--primary-color);
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(0, 0, 0, 0.7);
         }
 
         .search-input::placeholder {
@@ -290,10 +292,10 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             position: absolute;
             width: 100%;
             z-index: 1000;
-            background-color: rgba(50, 50, 50, 0.95);
+            background-color: rgba(30, 30, 30, 0.95);
             backdrop-filter: blur(15px);
             border-radius: 0 0 8px 8px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
             border: 1px solid var(--border-color);
             border-top: none;
             max-height: 400px;
@@ -336,7 +338,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border-color);
             overflow: hidden;
         }
@@ -353,12 +355,13 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
         }
 
         .client-item:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(140, 74, 63, 0.3);
         }
 
         .client-name {
             font-weight: 500;
             font-size: 1.1rem;
+            color: var(--text-color);
         }
 
         .client-description {
@@ -371,6 +374,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             margin-left: 1rem;
             opacity: 0.7;
             transition: all 0.3s ease;
+            color: var(--text-color);
         }
 
         .client-item:hover .client-arrow {
@@ -384,7 +388,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border-color);
         }
 
@@ -399,6 +403,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             padding: 1rem;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
         }
 
         th {
@@ -414,7 +419,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
         }
 
         tr:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(140, 74, 63, 0.2);
         }
 
         /* Estilos para botones */
@@ -505,17 +510,18 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
         }
 
         .summary-card {
-            background-color: rgba(140, 74, 63, 0.5);
+            background-color: var(--bg-transparent-light);
             border-radius: 10px;
             padding: 1.5rem;
             text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             transition: transform 0.3s ease;
+            border: 1px solid var(--border-color);
         }
 
         .summary-card:hover {
             transform: translateY(-5px);
-            background-color: rgba(140, 74, 63, 0.6);
+            background-color: rgba(140, 74, 63, 0.3);
         }
 
         .summary-card h3 {
@@ -524,7 +530,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: rgba(255, 255, 255, 0.9);
+            color: var(--text-muted);
             margin-bottom: 0.5rem;
         }
 
@@ -532,6 +538,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             font-size: 1.5rem;
             font-weight: bold;
             margin-bottom: 0;
+            color: var(--text-color);
         }
 
         /* Estilos para alertas */
@@ -543,6 +550,9 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
+            border-left: 4px solid var(--info-color);
+            background-color: rgba(13, 202, 240, 0.2);
+            color: var(--text-color);
         }
 
         .alert-success {
@@ -590,182 +600,6 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             margin-top: 0.25rem;
         }
 
-        /* Estilos para modal de historial de ediciones */
-        .modal-content {
-            background-color: var(--bg-transparent);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-        }
-
-        .modal-header {
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .modal-footer {
-            border-top: 1px solid var(--border-color);
-        }
-
-        .edit-history-item {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid var(--info-color);
-        }
-        
-        .edit-field {
-            font-weight: bold;
-            color: var(--info-color);
-        }
-        
-        .edit-old-value, .edit-new-value {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            margin: 0.25rem 0;
-            display: inline-block;
-        }
-        
-        .edit-old-value {
-            background-color: rgba(220, 53, 69, 0.2);
-            text-decoration: line-through;
-        }
-        
-        .edit-new-value {
-            background-color: rgba(25, 135, 84, 0.2);
-        }
-        
-        .edit-meta {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-top: 0.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .edit-count-badge {
-            background-color: var(--info-color);
-            color: white;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            margin-left: 0.5rem;
-        }
-
-        /* Estilos para tarjetas flotantes */
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-        }
-
-        .floating-card {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 700px;
-            max-height: 90vh;
-            background-color: rgba(50, 50, 50, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            z-index: 1001;
-            animation: fadeInUp 0.4s ease;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translate(-50%, -40%);
-            }
-            to {
-                opacity: 1;
-                transform: translate(-50%, -50%);
-            }
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .card-title {
-            margin: 0;
-            font-size: 1.8rem;
-            color: #fff;
-        }
-
-        .close-card {
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            transition: all 0.3s ease;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .close-card:hover {
-            color: white;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .card-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .detail-item {
-            margin-bottom: 1rem;
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 1rem;
-            border-radius: 8px;
-        }
-
-        .detail-label {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 0.25rem;
-        }
-
-        .detail-value {
-            font-size: 1.1rem;
-            word-break: break-word;
-            color: #fff;
-        }
-
-        .notes-section {
-            grid-column: 1 / -1;
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-        }
-
         /* Estilos para tarjetas de clientes */
         .client-cards {
             display: grid;
@@ -786,7 +620,8 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
 
         .client-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            background-color: rgba(140, 74, 63, 0.2);
         }
 
         .client-card-header {
@@ -800,6 +635,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             margin: 0;
             font-size: 1.25rem;
             font-weight: 600;
+            color: var(--text-color);
         }
 
         .client-card-badge {
@@ -821,6 +657,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             gap: 0.75rem;
             margin-bottom: 0.75rem;
             font-size: 0.95rem;
+            color: var(--text-color);
         }
 
         .client-card-detail i {
@@ -829,7 +666,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             text-align: center;
         }
 
-        /* Flecha para tarjetas de editados */
+        /* Flecha para tarjetas */
         .edit-arrow {
             position: absolute;
             bottom: 15px;
@@ -853,11 +690,11 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             left: 50%;
             transform: translate(-50%, -50%);
             width: 300px;
-            background-color: rgba(50, 50, 50, 0.95);
+            background-color: rgba(40, 40, 40, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 12px;
             padding: 0;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
             z-index: 1001;
             animation: fadeInUp 0.4s ease;
             overflow: hidden;
@@ -934,17 +771,35 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             background-color: rgba(255, 255, 255, 0.1);
         }
 
-        /* Responsive */
-        @media (max-width: 992px) {
-            .summary-cards {
-                grid-template-columns: repeat(2, 1fr);
+        /* Estilos para tarjetas flotantes */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
             }
         }
 
+        /* Responsive */
         @media (max-width: 768px) {
             .main-container {
+                padding: 1rem;
                 margin: 1rem;
-                padding: 1.5rem;
             }
 
             .header-section {
@@ -952,93 +807,26 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                 align-items: flex-start;
             }
 
-            .nav-tabs {
-                flex-wrap: wrap;
+            .page-title {
+                font-size: 1.5rem;
             }
 
-            .nav-link {
-                border-radius: 8px;
-                margin-bottom: 0.5rem;
-            }
-
-            .client-cards {
-                grid-template-columns: 1fr;
+            .nav-tabs .nav-link {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
             }
 
             .summary-cards {
                 grid-template-columns: 1fr;
             }
 
-            table,
-            thead,
-            tbody,
-            th,
-            td,
-            tr {
-                display: block;
-            }
-
-            thead tr {
-                position: absolute;
-                top: -9999px;
-                left: -9999px;
-            }
-
-            tr {
-                margin-bottom: 1rem;
-                border: 1px solid var(--border-color);
-                border-radius: 8px;
-                padding: 0.5rem;
-            }
-
-            td {
-                border: none;
-                position: relative;
-                padding-left: 50%;
-                text-align: right;
-            }
-
-            td::before {
-                content: attr(data-label);
-                position: absolute;
-                left: 1rem;
-                width: calc(50% - 1rem);
-                padding-right: 10px;
-                text-align: left;
-                font-weight: 600;
-                color: var(--text-muted);
-            }
-            
-            .edit-meta {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
+            .client-cards {
+                grid-template-columns: 1fr;
             }
 
             .options-floating-card {
                 width: 90%;
                 max-width: 300px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .client-card-footer {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .floating-card {
-                width: 95%;
-                padding: 1.5rem;
-            }
-
-            .card-content {
-                grid-template-columns: 1fr;
             }
         }
     </style>   
@@ -1177,10 +965,6 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
 
             <!-- Pestaña de eliminación -->
             <div class="tab-pane fade" id="delete" role="tabpanel">
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Clientes eliminados. Estos registros se pueden restaurar.
-                </div>
                 
                 <?php if (!empty($clientesEliminar)): ?>
                     <div class="table-container">
@@ -1198,15 +982,11 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                             <tbody>
                                 <?php foreach ($clientesEliminar as $cliente): ?>
                                     <tr class="deleted-item">
-                                        <td data-label="ID"><?= $cliente['id_cliente'] ?></td>
-                                        <td data-label="Cliente">
-                                            <?= htmlspecialchars($cliente['nombre_cliente']) ?>
-                                        </td>
-                                        <td data-label="Teléfono"><?= htmlspecialchars($cliente['telefono_cliente']) ?></td>
-                                        <td data-label="Correo"><?= htmlspecialchars($cliente['correo_cliente']) ?></td>
-                                        <td data-label="Fecha Eliminación">
-                                            <?= !empty($cliente['fecha_eliminacion']) ? date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) : 'N/A' ?>
-                                        </td>
+                                        <td><?= $cliente['id_cliente'] ?></td>
+                                        <td><?= htmlspecialchars($cliente['nombre_cliente']) ?></td>
+                                        <td><?= htmlspecialchars($cliente['telefono_cliente']) ?></td>
+                                        <td><?= htmlspecialchars($cliente['correo_cliente']) ?></td>
+                                        <td><?= date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) ?></td>
                                         <td data-label="Acciones">
                                             <a href="restaurar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
                                                 <i class="fas fa-undo"></i> Restaurar
@@ -1225,229 +1005,145 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                 <?php else: ?>
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        No hay clientes en la papelera.
+                        No hay clientes eliminados.
                     </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 
-    <!-- Tarjeta flotante para detalles de edición -->
-    <div class="overlay" id="editOverlay" onclick="hideEditDetails()"></div>
-    <div class="floating-card" id="editDetailCard">
-        <div class="card-header">
-            <h2 class="card-title" id="editClientName">Detalles del Cliente</h2>
-            <button class="close-detail close-card" onclick="hideEditDetails()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="card-content" id="editDetailContent">
-            <!-- El contenido se cargará dinámicamente -->
-        </div>
-    </div>
-
-    <!-- Nueva tarjeta flotante para opciones -->
-    <div class="overlay" id="optionsOverlay" onclick="hideOptionsCard()"></div>
+    <!-- Tarjeta flotante para opciones -->
+    <div class="overlay" id="overlay"></div>
     <div class="options-floating-card" id="optionsCard">
+        <button class="option-close" id="closeOptionsCard">
+            <i class="fas fa-times"></i>
+        </button>
         <div class="options-card-header">
-            <h2 class="options-card-title" id="optionsClientName">Opciones del Cliente</h2>
-            <button class="option-close" onclick="hideOptionsCard()">
-                <i class="fas fa-times"></i>
-            </button>
+            <h3 class="options-card-title" id="optionsCardTitle">Opciones</h3>
         </div>
-        <div class="options-card-body" id="optionsCardContent">
-            <!-- El contenido se cargará dinámicamente -->
+        <div class="options-card-body">
+            <a href="#" class="option-item" id="viewOption">
+                <i class="fas fa-eye"></i> Ver Detalles
+            </a>
+            <a href="#" class="option-item" id="editOption">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="#" class="option-item" id="deleteOption">
+                <i class="fas fa-trash-alt"></i> Eliminar
+            </a>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Búsqueda en tiempo real con AJAX
-        const searchInput = document.getElementById('searchInput');
-        const searchResults = document.getElementById('searchResults');
-        const searchLoading = document.getElementById('searchLoading');
-        const allClientsList = document.getElementById('allClientsList');
-        let searchTimeout;
-
-        // Función para filtrar en el DOM
-        function filterDomClients(query) {
-            const clientItems = allClientsList.querySelectorAll('.client-item');
-            const lowerQuery = query.toLowerCase();
-
-            clientItems.forEach(item => {
-                const clientText = item.textContent.toLowerCase();
-                item.style.display = clientText.includes(lowerQuery) ? 'flex' : 'none';
-            });
-        }
-
-        // Evento de búsqueda
-        searchInput.addEventListener('input', function() {
-            const query = this.value.trim();
-
-            // Mostrar/ocultar lista completa
-            if (query.length === 0) {
-                searchResults.style.display = 'none';
-                allClientsList.style.display = 'block';
-                return;
-            } else {
-                allClientsList.style.display = 'none';
-            }
-
-            // Filtrado instantáneo en el DOM
-            filterDomClients(query);
-
-            // Búsqueda AJAX para resultados más precisos
-            clearTimeout(searchTimeout);
-
-            if (query.length < 2) {
-                searchResults.style.display = 'none';
-                return;
-            }
-
-            searchLoading.style.display = 'block';
-            searchResults.style.display = 'none';
-
-            searchTimeout = setTimeout(() => {
-                fetch(`?ajax=1&q=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        searchLoading.style.display = 'none';
-
-                        if (data.length > 0) {
-                            searchResults.innerHTML = '';
-                            data.forEach(client => {
-                                const item = document.createElement('div');
-                                item.className = 'search-result-item';
-                                item.setAttribute('data-client-id', client.id_cliente);
-                                item.innerHTML = `
-                                    <div onclick="showOptionsCard(${client.id_cliente}, '${client.nombre_cliente.replace(/'/g, "\\'")}')">
-                                        <div class="search-client-name">${client.nombre_cliente}</div>
-                                        <div class="search-client-info">
-                                            <i class="fas fa-phone"></i> ${client.telefono_cliente} · 
-                                            <i class="fas fa-envelope"></i> ${client.correo_cliente}
-                                        </div>
-                                    </div>
-                                    <div class="search-client-date">
-                                        ${client.fecha_registro ? new Date(client.fecha_registro).toLocaleDateString('es-ES') : ''}
-                                    </div>
-                                `;
-                                searchResults.appendChild(item);
-                            });
-                            searchResults.style.display = 'block';
-                        } else {
-                            searchResults.innerHTML = '<div class="search-result-item">No se encontraron resultados</div>';
-                            searchResults.style.display = 'block';
-                        }
-                    })
-                    .catch(error => {
-                        searchLoading.style.display = 'none';
-                        console.error('Error:', error);
-                        searchResults.innerHTML = '<div class="search-result-item">Error en la búsqueda</div>';
-                        searchResults.style.display = 'block';
-                    });
-            }, 300);
-        });
+        // Variables globales
+        let currentClientId = null;
+        let currentClientName = null;
 
         // Mostrar tarjeta de opciones
         function showOptionsCard(clientId, clientName) {
-            // Actualizar el nombre del cliente en la cabecera
-            document.getElementById('optionsClientName').textContent = clientName;
+            currentClientId = clientId;
+            currentClientName = clientName;
             
-            // Crear el contenido de las opciones
-            const optionsContent = `
-                <div class="option-item" onclick="window.location.href='ver.php?id=${clientId}'">
-                    <i class="fas fa-eye"></i>
-                    <span>Ver detalles</span>
-                </div>
-                <div class="option-item" onclick="window.location.href='editar.php?id=${clientId}'">
-                    <i class="fas fa-edit"></i>
-                    <span>Editar cliente</span>
-                </div>
-                <div class="option-item" onclick="if(confirm('¿Estás seguro de eliminar a ${clientName}?')) window.location.href='eliminar.php?id=${clientId}'">
-                    <i class="fas fa-trash"></i>
-                    <span>Eliminar cliente</span>
-                </div>
-            `;
+            // Actualizar título de la tarjeta
+            document.getElementById('optionsCardTitle').textContent = clientName;
             
-            document.getElementById('optionsCardContent').innerHTML = optionsContent;
+            // Actualizar enlaces
+            document.getElementById('viewOption').href = `ver.php?id=${clientId}`;
+            document.getElementById('editOption').href = `editar.php?id=${clientId}`;
+            document.getElementById('deleteOption').href = `eliminar.php?id=${clientId}`;
             
-            // Mostrar overlay y tarjeta de opciones
-            document.getElementById('optionsOverlay').style.display = 'block';
+            // Mostrar overlay y tarjeta
+            document.getElementById('overlay').style.display = 'block';
             document.getElementById('optionsCard').style.display = 'block';
         }
 
-        // Ocultar tarjeta de opciones
-        function hideOptionsCard() {
-            document.getElementById('optionsOverlay').style.display = 'none';
+        // Cerrar tarjeta de opciones
+        function closeOptionsCard() {
+            document.getElementById('overlay').style.display = 'none';
             document.getElementById('optionsCard').style.display = 'none';
+            currentClientId = null;
+            currentClientName = null;
         }
 
-        // Mostrar detalles de edición
-        function showEditDetails(clientId, clientName) {
-            // Mostrar loading
-            document.getElementById('editClientName').textContent = 'Historial de ' + clientName;
-            document.getElementById('editDetailContent').innerHTML = `
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
-                    <p class="mt-2">Cargando historial de ediciones...</p>
-                </div>
-            `;
+        // Event listeners para cerrar tarjeta
+        document.getElementById('closeOptionsCard').addEventListener('click', closeOptionsCard);
+        document.getElementById('overlay').addEventListener('click', closeOptionsCard);
+
+        // Búsqueda en tiempo real
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const query = this.value.trim();
+            const resultsContainer = document.getElementById('searchResults');
+            const allClientsList = document.getElementById('allClientsList');
             
-            // Mostrar overlay y tarjeta flotante
-            document.getElementById('editOverlay').style.display = 'block';
-            document.getElementById('editDetailCard').style.display = 'block';
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                allClientsList.style.display = 'block';
+                return;
+            }
             
-            // Cargar historial via AJAX
-            fetch(`cargar_historial.php?id=${clientId}`)
-                .then(response => response.text())
+            allClientsList.style.display = 'none';
+            
+            fetch(`?ajax=1&q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
                 .then(data => {
-                    document.getElementById('editDetailContent').innerHTML = data;
+                    resultsContainer.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        resultsContainer.innerHTML = '<div class="search-result-item">No se encontraron clientes</div>';
+                        resultsContainer.style.display = 'block';
+                        return;
+                    }
+                    
+                    data.forEach(cliente => {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item';
+                        item.innerHTML = `
+                            <div>
+                                <div class="search-client-name">${cliente.nombre_cliente}</div>
+                                <div class="search-client-info">${cliente.telefono_cliente} · ${cliente.correo_cliente}</div>
+                                <div class="search-client-date">Registrado: ${new Date(cliente.fecha_registro).toLocaleDateString()}</div>
+                            </div>
+                            <div class="client-arrow">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        `;
+                        item.addEventListener('click', () => {
+                            showOptionsCard(cliente.id_cliente, cliente.nombre_cliente);
+                            resultsContainer.style.display = 'none';
+                            document.getElementById('searchInput').value = '';
+                            allClientsList.style.display = 'block';
+                        });
+                        resultsContainer.appendChild(item);
+                    });
+                    
+                    resultsContainer.style.display = 'block';
                 })
                 .catch(error => {
-                    document.getElementById('editDetailContent').innerHTML = `
-                        <div class="alert alert-danger"> 
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error al cargar el historial de ediciones.
-                        </div>
-                    `;
+                    console.error('Error en la búsqueda:', error);
+                    resultsContainer.innerHTML = '<div class="search-result-item">Error en la búsqueda</div>';
+                    resultsContainer.style.display = 'block';
                 });
-        }
+        });
 
-        // Ocultar detalles de edición
-        function hideEditDetails() {
-            document.getElementById('editOverlay').style.display = 'none';
-            document.getElementById('editDetailCard').style.display = 'none';
-        }
-
-        // Cerrar con tecla ESC
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                hideOptionsCard();
-                hideEditDetails();
+        // Cerrar resultados al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                document.getElementById('searchResults').style.display = 'none';
             }
         });
 
-        // Inicializar pestañas de Bootstrap
-        const tabElms = document.querySelectorAll('button[data-bs-toggle="tab"]');
-        tabElms.forEach(tabEl => {
-            tabEl.addEventListener('click', function(event) {
-                event.preventDefault();
-                const tab = new bootstrap.Tab(this);
-                tab.show();
+        // Función para restaurar cliente
+        function restoreClient(clientId) {
+            if (confirm('¿Estás seguro de que deseas restaurar este cliente?')) {
+                window.location.href = `restaurar.php?id=${clientId}`;
+            }
+        }
 
-                // Restablecer búsqueda al cambiar de pestaña
-                if (this.id !== 'search-tab') {
-                    searchInput.value = '';
-                    searchResults.style.display = 'none';
-                    allClientsList.style.display = 'block';
-                    const clientItems = allClientsList.querySelectorAll('.client-item');
-                    clientItems.forEach(item => item.style.display = 'flex');
-                }
-            });
+        // Prevenir envío del formulario de búsqueda
+        document.querySelector('.search-container').addEventListener('submit', function(e) {
+            e.preventDefault();
         });
     </script>
 </body>
-
 </html>

@@ -82,9 +82,9 @@ if (!isset($_SESSION['mensaje'])) {
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
-            --bg-input: rgba(0, 0, 0, 0.4); /* Fondo más oscuro para inputs */
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -109,7 +109,7 @@ if (!isset($_SESSION['mensaje'])) {
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -129,6 +129,7 @@ if (!isset($_SESSION['mensaje'])) {
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -160,15 +161,13 @@ if (!isset($_SESSION['mensaje'])) {
             background-color: var(--primary-hover);
         }
 
-        .btn-outline-secondary {
-            background-color: transparent;
-            border: 1px solid var(--secondary-color);
-            color: var(--text-color);
-        }
-
-        .btn-outline-secondary:hover {
+        .btn-secondary {
             background-color: var(--secondary-color);
             color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(108, 117, 125, 1);
         }
 
         .btn-danger {
@@ -216,8 +215,9 @@ if (!isset($_SESSION['mensaje'])) {
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
-            border-left: 4px solid var(--danger-color);
-            background-color: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid var(--info-color);
+            background-color: rgba(13, 202, 240, 0.2);
+            color: var(--text-color);
         }
 
         .alert-success {
@@ -248,6 +248,7 @@ if (!isset($_SESSION['mensaje'])) {
             padding: 2rem;
             margin-bottom: 2rem;
             border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .info-card-header {
@@ -274,10 +275,16 @@ if (!isset($_SESSION['mensaje'])) {
 
         .detail-item {
             margin-bottom: 1.5rem;
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.08);
+            padding: 1.5rem;
             border-radius: 8px;
             border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .detail-item:hover {
+            background-color: rgba(140, 74, 63, 0.2);
+            transform: translateY(-2px);
         }
 
         .detail-label {
@@ -297,7 +304,7 @@ if (!isset($_SESSION['mensaje'])) {
         }
 
         .notes-section {
-            background-color: rgba(0, 0, 0, 0.2);
+            background-color: rgba(0, 0, 0, 0.3);
             padding: 1.5rem;
             border-radius: 8px;
             margin-top: 1rem;
@@ -311,12 +318,18 @@ if (!isset($_SESSION['mensaje'])) {
         }
 
         .history-item {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.08);
             border-radius: 8px;
-            padding: 1rem;
+            padding: 1.5rem;
             margin-bottom: 1rem;
             border-left: 4px solid var(--info-color);
             border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            background-color: rgba(13, 202, 240, 0.1);
+            transform: translateX(5px);
         }
         
         .edit-field {
@@ -354,7 +367,7 @@ if (!isset($_SESSION['mensaje'])) {
             padding: 2rem;
             color: var(--text-muted);
             font-style: italic;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.08);
             border-radius: 8px;
             border: 1px solid var(--border-color);
         }
@@ -365,6 +378,7 @@ if (!isset($_SESSION['mensaje'])) {
             border-radius: 20px;
             font-weight: 600;
             font-size: 0.85rem;
+            background-color: var(--primary-color);
         }
 
         .bg-success {
@@ -373,6 +387,10 @@ if (!isset($_SESSION['mensaje'])) {
 
         .bg-danger {
             background-color: var(--danger-color) !important;
+        }
+
+        .bg-primary {
+            background-color: var(--primary-color) !important;
         }
 
         /* Responsive */
@@ -400,6 +418,16 @@ if (!isset($_SESSION['mensaje'])) {
             .info-card {
                 padding: 1.5rem;
             }
+
+            .info-card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .info-card-title {
+                font-size: 1.5rem;
+            }
         }
 
         @media (max-width: 576px) {
@@ -422,6 +450,10 @@ if (!isset($_SESSION['mensaje'])) {
             .info-card-title {
                 font-size: 1.5rem;
             }
+
+            .detail-item {
+                padding: 1rem;
+            }
         }
     </style>   
 </head>
@@ -434,7 +466,7 @@ if (!isset($_SESSION['mensaje'])) {
                 <i class="fas fa-user"></i> Detalles del Cliente
             </h1>
             <div class="d-flex gap-2 flex-wrap button-group">
-                <a href="index.php" class="btn btn-outline-secondary">
+                <a href="index.php" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-1"></i> Volver
                 </a>
                 <a href="editar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-primary">
@@ -472,104 +504,74 @@ if (!isset($_SESSION['mensaje'])) {
             <div class="info-grid">
                 <div class="detail-item">
                     <div class="detail-label">ID del Cliente</div>
-                    <div class="detail-value"><?= $cliente['id_cliente'] ?></div>
+                    <div class="detail-value">#<?= $cliente['id_cliente'] ?></div>
                 </div>
                 
                 <div class="detail-item">
                     <div class="detail-label">Teléfono</div>
-                    <div class="detail-value"><?= htmlspecialchars($cliente['telefono_cliente']) ?></div>
+                    <div class="detail-value">
+                        <i class="fas fa-phone me-2 text-primary"></i>
+                        <?= htmlspecialchars($cliente['telefono_cliente']) ?>
+                    </div>
                 </div>
                 
                 <div class="detail-item">
                     <div class="detail-label">Correo Electrónico</div>
-                    <div class="detail-value"><?= htmlspecialchars($cliente['correo_cliente']) ?></div>
+                    <div class="detail-value">
+                        <i class="fas fa-envelope me-2 text-primary"></i>
+                        <?= htmlspecialchars($cliente['correo_cliente']) ?>
+                    </div>
                 </div>
                 
                 <div class="detail-item">
                     <div class="detail-label">Fecha de Registro</div>
-                    <div class="detail-value"><?= date('d/m/Y H:i', strtotime($cliente['fecha_registro'])) ?></div>
+                    <div class="detail-value">
+                        <i class="fas fa-calendar me-2 text-primary"></i>
+                        <?= date('d/m/Y H:i', strtotime($cliente['fecha_registro'])) ?>
+                    </div>
                 </div>
                 
                 <?php if (!empty($cliente['fecha_actualizacion']) && $cliente['fecha_actualizacion'] != $cliente['fecha_registro']): ?>
                 <div class="detail-item">
                     <div class="detail-label">Última Actualización</div>
-                    <div class="detail-value"><?= date('d/m/Y H:i', strtotime($cliente['fecha_actualizacion'])) ?></div>
+                    <div class="detail-value">
+                        <i class="fas fa-sync me-2 text-primary"></i>
+                        <?= date('d/m/Y H:i', strtotime($cliente['fecha_actualizacion'])) ?>
+                    </div>
                 </div>
                 <?php endif; ?>
                 
                 <?php if (!empty($cliente['fecha_eliminacion'])): ?>
                 <div class="detail-item">
                     <div class="detail-label">Fecha de Eliminación</div>
-                    <div class="detail-value"><?= date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) ?></div>
+                    <div class="detail-value">
+                        <i class="fas fa-trash me-2 text-primary"></i>
+                        <?= date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) ?>
+                    </div>
                 </div>
                 <?php endif; ?>
                 
                 <?php if (!empty($cliente['direccion_cliente'])): ?>
                 <div class="detail-item">
                     <div class="detail-label">Dirección</div>
-                    <div class="detail-value"><?= htmlspecialchars($cliente['direccion_cliente']) ?></div>
+                    <div class="detail-value">
+                        <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                        <?= htmlspecialchars($cliente['direccion_cliente']) ?>
+                    </div>
                 </div>
                 <?php endif; ?>
                 
                 <?php if (!empty($cliente['notas_cliente'])): ?>
                 <div class="notes-section">
-                    <div class="detail-label">Notas Adicionales</div>
-                    <div class="detail-value"><?= nl2br(htmlspecialchars($cliente['notas_cliente'])) ?></div>
+                    <div class="detail-label">
+                        <i class="fas fa-sticky-note me-2"></i>
+                        Notas Adicionales
+                    </div>
+                    <div class="detail-value mt-2"><?= nl2br(htmlspecialchars($cliente['notas_cliente'])) ?></div>
                 </div>
                 <?php endif; ?>
             </div>
         </div>
-
-        <!-- Historial de ediciones -->
-        <?php if (!empty($historialEdiciones)): ?>
-        <div class="info-card">
-            <div class="info-card-header">
-                <h2 class="info-card-title">
-                    <i class="fas fa-history me-2"></i> Historial de Ediciones
-                </h2>
-            </div>
-            
-            <div class="history-section">
-                <?php foreach ($historialEdiciones as $edicion): ?>
-                <div class="history-item">
-                    <div class="edit-meta">
-                        <span>
-                            <i class="fas fa-user-edit me-1"></i>
-                            Editado por: <?= $edicion['editor'] ?? 'Sistema' ?>
-                        </span>
-                        <span>
-                            <i class="fas fa-clock me-1"></i>
-                            <?= date('d/m/Y H:i', strtotime($edicion['fecha_eliminacion'])) ?>
-                        </span>
-                    </div>
-                    
-                    <?php 
-                    // Parsear datos de la edición si están disponibles
-                    if (!empty($edicion['datos_anteriores']) && !empty($edicion['datos_nuevos'])) {
-                        $datosAntiguos = explode('|', $edicion['datos_anteriores']);
-                        $datosNuevos = explode('|', $edicion['datos_nuevos']);
-                        
-                        $campos = ['ID', 'Nombre', 'Correo', 'Teléfono', 'Dirección', 'Notas'];
-                        
-                        for ($i = 0; $i < count($campos); $i++) {
-                            if (isset($datosAntiguos[$i]) && isset($datosNuevos[$i]) && $datosAntiguos[$i] !== $datosNuevos[$i]) {
-                                echo '<div class="mb-2">';
-                                echo '<span class="edit-field">' . $campos[$i] . ':</span><br>';
-                                echo '<span class="edit-old-value">' . htmlspecialchars($datosAntiguos[$i]) . '</span> → ';
-                                echo '<span class="edit-new-value">' . htmlspecialchars($datosNuevos[$i]) . '</span>';
-                                echo '</div>';
-                            }
-                        }
-                    } else {
-                        echo '<div class="detail-value">' . htmlspecialchars($edicion['datos'] ?? 'Información de modificación') . '</div>';
-                    }
-                    ?>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php endif; ?>
-
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

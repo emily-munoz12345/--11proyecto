@@ -23,17 +23,15 @@ try {
     $clientes = [];
 }
 
-$title = 'Nacional Tapizados - Nuevo Vehículo';
+require_once __DIR__ . '/../../includes/head.php';
+$title = 'Crear Vehículo | Nacional Tapizados';
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?></title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <?php require_once __DIR__ . '/../../includes/head.php'; ?>
+    <title>Crear Vehículo | Nacional Tapizados</title>
     <style>
         :root {
             --primary-color: rgba(140, 74, 63, 0.8);
@@ -41,8 +39,9 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -67,7 +66,7 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -87,6 +86,7 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -94,14 +94,26 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
             color: var(--primary-color);
         }
 
-        /* Estilos para formularios */
-        .form-container {
+        .card {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+            color: var(--text-color);
         }
 
         .form-label {
@@ -111,16 +123,16 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
         }
 
         .form-control, .form-select {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 0.75rem;
             border-radius: 8px;
+            padding: 0.75rem 1rem;
             transition: all 0.3s ease;
         }
 
         .form-control:focus, .form-select:focus {
-            background-color: rgba(255, 255, 255, 0.15);
+            background-color: rgba(0, 0, 0, 0.7);
             border-color: var(--primary-color);
             box-shadow: 0 0 0 2px var(--primary-color);
             color: var(--text-color);
@@ -135,7 +147,6 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
             font-size: 0.85rem;
         }
 
-        /* Estilos para botones */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -147,6 +158,7 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
+            font-size: 1rem;
             gap: 0.5rem;
         }
 
@@ -163,15 +175,6 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
             background-color: var(--primary-hover);
         }
 
-        .btn-secondary {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background-color: rgba(108, 117, 125, 1);
-        }
-
         .btn-outline-secondary {
             background-color: transparent;
             border: 1px solid var(--secondary-color);
@@ -183,7 +186,6 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
             color: white;
         }
 
-        /* Estilos para alertas */
         .alert {
             padding: 1rem;
             border-radius: 8px;
@@ -192,37 +194,51 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
+            border-left: 4px solid var(--danger-color);
+            background-color: rgba(220, 53, 69, 0.2);
+            color: var(--text-color);
         }
 
         .alert-success {
             background-color: rgba(25, 135, 84, 0.2);
             border-left: 4px solid var(--success-color);
-            color: white;
-        }
-
-        .alert-danger {
-            background-color: rgba(220, 53, 69, 0.2);
-            border-left: 4px solid var(--danger-color);
-            color: white;
         }
 
         .alert-warning {
             background-color: rgba(255, 193, 7, 0.2);
             border-left: 4px solid var(--warning-color);
-            color: white;
         }
 
         .alert-info {
             background-color: rgba(13, 202, 240, 0.2);
             border-left: 4px solid var(--info-color);
+        }
+
+        .alert .btn-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .alert .btn-close:hover {
             color: white;
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .main-container {
+                padding: 1rem;
                 margin: 1rem;
-                padding: 1.5rem;
             }
 
             .header-section {
@@ -230,38 +246,36 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
                 align-items: flex-start;
             }
 
-            .form-container {
-                padding: 1.5rem;
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .card-body {
+                padding: 1rem;
             }
         }
 
         @media (max-width: 576px) {
             .btn {
                 width: 100%;
-                justify-content: center;
+                margin-bottom: 0.5rem;
             }
-            
+
             .d-md-flex {
                 flex-direction: column;
-                gap: 0.5rem;
             }
         }
     </style>
 </head>
-
 <body>
     <div class="main-container">
-        <!-- Encabezado -->
         <div class="header-section">
-            <h1 class="page-title">
-                <i class="fas fa-car"></i> Nuevo Vehículo
-            </h1>
-            <a href="index.php" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
+            <h1 class="page-title"><i class="fas fa-car"></i>Nuevo Vehículo</h1>
+            <a href="index.php" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver
             </a>
         </div>
-
-        <!-- Mensajes -->
+        
         <?php if (isset($_SESSION['mensaje'])): ?>
             <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
                 <div>
@@ -270,95 +284,101 @@ $title = 'Nacional Tapizados - Nuevo Vehículo';
                                         ?> me-2"></i>
                     <?= htmlspecialchars($_SESSION['mensaje']) ?>
                 </div>
-                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <?php unset($_SESSION['mensaje']); unset($_SESSION['tipo_mensaje']); ?>
         <?php endif; ?>
         
-        <!-- Formulario -->
-        <div class="form-container">
-            <form action="procesar.php" method="POST" id="formVehiculo">
-                <input type="hidden" name="accion" value="crear">
-                
-<div class="cliente-section">
-    <div class="row mb-4">
-        <div class="col-md-6 ">
-            <label for="cliente" class="form-label">Cliente *</label>
-            <select class="form-select " id="cliente" name="id_cliente" required>
-                <option value="">Seleccione un cliente</option>
-                                            <?php foreach ($clientes as $cliente): ?>
-                                <option value="<?= $cliente['id_cliente'] ?>">
-                                    <?= htmlspecialchars($cliente['nombre_cliente']) ?>
-                                </option>
-                            <?php endforeach; ?>
-            </select>
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-car me-2"></i>Información del Vehículo</h5>
+            </div>
+            <div class="card-body">
+                <form action="procesar.php" method="POST" id="formVehiculo">
+                    <input type="hidden" name="accion" value="crear">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="cliente" class="form-label">Cliente *</label>
+                            <select class="form-select" id="cliente" name="id_cliente" required>
+                                <option value="">Seleccione un cliente</option>
+                                <?php foreach ($clientes as $cliente): ?>
+                                    <option value="<?= $cliente['id_cliente'] ?>">
+                                        <?= htmlspecialchars($cliente['nombre_cliente']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="marca" class="form-label">Marca *</label>
+                            <input type="text" class="form-control" id="marca" name="marca" required
+                                   pattern="[A-Za-záéíóúÁÉÍÓÚ\s]{2,50}" 
+                                   title="Solo letras (2-50 caracteres)"
+                                   placeholder="Ej: Toyota, Ford, Chevrolet">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="modelo" class="form-label">Modelo *</label>
+                            <input type="text" class="form-control" id="modelo" name="modelo" required
+                                   pattern="[A-Za-záéíóúÁÉÍÓÚ0-9\s]{1,50}" 
+                                   title="Letras y números (1-50 caracteres)"
+                                   placeholder="Ej: Corolla, F-150, Spark">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="placa" class="form-label">Placa *</label>
+                            <input type="text" class="form-control" id="placa" name="placa" 
+                                   placeholder="Ejemplo: ABC123" required
+                                   pattern="[A-Za-z]{3}[0-9]{3,4}" 
+                                   title="3 letras seguidas de 3-4 números (ej: ABC123)">
+                            <div class="form-text">Formato: 3 letras seguidas de 3-4 números (ej: ABC123)</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="anio" class="form-label">Año</label>
+                            <input type="number" class="form-control" id="anio" name="anio" 
+                                   min="1900" max="<?= date('Y') + 1 ?>" 
+                                   placeholder="Ej: 2020">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="color" class="form-label">Color</label>
+                            <input type="text" class="form-control" id="color" name="color" 
+                                   pattern="[A-Za-záéíóúÁÉÍÓÚ\s]{2,30}" 
+                                   title="Solo letras (2-30 caracteres)"
+                                   placeholder="Ej: Rojo, Azul, Negro">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notas" class="form-label">Notas Adicionales</label>
+                        <textarea class="form-control" id="notas" name="notas" rows="4" 
+                                  maxlength="500" placeholder="Observaciones o detalles adicionales del vehículo..."></textarea>
+                        <div class="form-text">Máximo 500 caracteres</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="reset" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-undo me-1"></i>Limpiar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Guardar Vehículo
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
-                
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label for="marca" class="form-label">Marca *</label>
-                        <input type="text" class="form-control" id="marca" name="marca" required
-                               pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]{2,50}" 
-                               title="Solo letras (2-50 caracteres)"
-                               placeholder="Ej: Toyota, Ford, Chevrolet">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="modelo" class="form-label">Modelo *</label>
-                        <input type="text" class="form-control" id="modelo" name="modelo" required
-                               pattern="[A-Za-záéíóúÁÉÍÓÚñÑ0-9\s]{1,50}" 
-                               title="Letras y números (1-50 caracteres)"
-                               placeholder="Ej: Corolla, F-150, Spark">
-                    </div>
-                </div>
-                
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label for="placa" class="form-label">Placa *</label>
-                        <input type="text" class="form-control" id="placa" name="placa" 
-                               placeholder="Ejemplo: ABC123" required
-                               pattern="[A-Za-z]{3}[0-9]{3,4}" 
-                               title="3 letras seguidas de 3-4 números (ej: ABC123)">
-                        <div class="form-text">Formato: 3 letras seguidas de 3-4 números (ej: ABC123)</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="anio" class="form-label">Año</label>
-                        <input type="number" class="form-control" id="anio" name="anio" 
-                               min="1900" max="<?= date('Y') + 1 ?>" 
-                               placeholder="Ej: 2020">
-                    </div>
-                </div>
 
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label for="color" class="form-label">Color</label>
-                        <input type="text" class="form-control" id="color" name="color" 
-                               pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]{2,30}" 
-                               title="Solo letras (2-30 caracteres)"
-                               placeholder="Ej: Rojo, Azul, Negro">
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <label for="notas" class="form-label">Notas Adicionales</label>
-                    <textarea class="form-control" id="notas" name="notas" rows="4" 
-                              maxlength="500" placeholder="Observaciones o detalles adicionales del vehículo..."></textarea>
-                    <div class="form-text">Máximo 500 caracteres</div>
-                </div>
-                
-                <div class="d-flex gap-2 justify-content-end">
-                    <button type="reset" class="btn btn-outline-secondary">
-                        <i class="fas fa-undo"></i> Limpiar
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Guardar Vehículo
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
+    <?php include '../../includes/footer.php'; ?>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     // Validación adicional del formulario
