@@ -158,6 +158,8 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
     }
     exit;
 }
+//require_once __DIR__ . '/../../includes/head.php';
+//$title = 'Gestión de Vehículos';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -165,7 +167,8 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Clientes | Nacional Tapizados</title>
+    <!--<title><?= $title ?></title>-->
+    <title>Gestión de Clientes </title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -380,6 +383,13 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
         .client-item:hover .client-arrow {
             opacity: 1;
             transform: translateX(3px);
+        }
+
+        /* Estilos para acciones en la lista */
+        .client-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         /* Estilos para tablas */
@@ -967,40 +977,30 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             <div class="tab-pane fade" id="delete" role="tabpanel">
                 
                 <?php if (!empty($clientesEliminar)): ?>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Cliente</th>
-                                    <th>Teléfono</th>
-                                    <th>Correo</th>
-                                    <th>Fecha Eliminación</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($clientesEliminar as $cliente): ?>
-                                    <tr class="deleted-item">
-                                        <td><?= $cliente['id_cliente'] ?></td>
-                                        <td><?= htmlspecialchars($cliente['nombre_cliente']) ?></td>
-                                        <td><?= htmlspecialchars($cliente['telefono_cliente']) ?></td>
-                                        <td><?= htmlspecialchars($cliente['correo_cliente']) ?></td>
-                                        <td><?= date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) ?></td>
-                                        <td data-label="Acciones">
-                                            <a href="restaurar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
-                                                <i class="fas fa-undo"></i> Restaurar
-                                            </a>
-                                            <?php if (isAdmin()): ?>
-                                            <a href="eliminar_permanentemente.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?> y no se podrá recuperar.')">
-                                                <i class="fas fa-trash"></i> Eliminar Permanentemente
-                                            </a>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                    <div class="client-list">
+                        <?php foreach ($clientesEliminar as $cliente): ?>
+                            <div class="client-item">
+                                <div class="client-info">
+                                    <div class="client-name"><?= htmlspecialchars($cliente['nombre_cliente']) ?></div>
+                                    <div class="client-description">
+                                        <?= htmlspecialchars($cliente['telefono_cliente']) ?> · 
+                                        <?= htmlspecialchars($cliente['correo_cliente']) ?>
+                                        <br>
+                                        <small>Eliminado: <?= $cliente['fecha_eliminacion'] ? date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) : 'Fecha no disponible' ?></small>
+                                    </div>
+                                </div>
+                                <div class="client-actions">
+                                    <a href="restaurar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
+                                        <i class="fas fa-undo"></i> Restaurar
+                                    </a>
+                                    <?php if (isAdmin()): ?>
+                                    <a href="eliminar_permanentemente.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?> y no se podrá recuperar.')">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 <?php else: ?>
                     <div class="alert alert-info">
@@ -1029,7 +1029,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                 <i class="fas fa-edit"></i> Editar
             </a>
             <a href="#" class="option-item" id="deleteOption">
-                <i class="fas fa-trash-alt"></i> Eliminar
+                <i class="fas fa-trash-alt"></i> Mover a Papelera 
             </a>
         </div>
     </div>

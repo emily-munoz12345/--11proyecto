@@ -54,7 +54,7 @@ foreach ($userCards as $card) {
 
 <head>
     <?php include __DIR__ . '/includes/head.php'; ?>
-    <title>MSkingCars - Panel Administrativo</title>
+    <title>MSkingCars - Inicio</title>
     <style>
         :root {
             --primary-color: rgba(140, 74, 63, 0.8);

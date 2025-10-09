@@ -31,7 +31,7 @@ $title = 'Crear Vehículo | Nacional Tapizados';
 <html lang="es">
 <head>
     <?php require_once __DIR__ . '/../../includes/head.php'; ?>
-    <title>Crear Vehículo | Nacional Tapizados</title>
+    <title>Crear Vehículo </title>
     <style>
         :root {
             --primary-color: rgba(140, 74, 63, 0.8);
@@ -276,19 +276,13 @@ $title = 'Crear Vehículo | Nacional Tapizados';
             </a>
         </div>
         
-        <?php if (isset($_SESSION['mensaje'])): ?>
-            <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
-                <div>
-                    <i class="fas fa-<?=
-                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : ($_SESSION['tipo_mensaje'] === 'danger' ? 'times-circle' : ($_SESSION['tipo_mensaje'] === 'warning' ? 'exclamation-triangle' : 'info-circle'))
-                                        ?> me-2"></i>
-                    <?= htmlspecialchars($_SESSION['mensaje']) ?>
-                </div>
+        <?php if (isset($_GET['error'])): ?>
+            <div class="alert">
+                <span><?= htmlspecialchars($_GET['error']) ?></span>
                 <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <?php unset($_SESSION['mensaje']); unset($_SESSION['tipo_mensaje']); ?>
         <?php endif; ?>
         
         <div class="card">

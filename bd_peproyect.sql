@@ -33,7 +33,7 @@ CREATE TABLE `clientes` (
   `correo_cliente` varchar(70) NOT NULL,
   `telefono_cliente` varchar(25) NOT NULL,
   `direccion_cliente` text NOT NULL,
-  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
   `fecha_eliminacion` timestamp NULL DEFAULT NULL,
   `notas_cliente` text NOT NULL,
   `activo` tinyint(1) NOT NULL DEFAULT 1
@@ -57,18 +57,21 @@ INSERT INTO `clientes` (`id_cliente`, `nombre_cliente`, `correo_cliente`, `telef
 
 CREATE TABLE `cliente_vehiculo` (
   `id_cliente` int(11) NOT NULL,
-  `id_vehiculo` int(11) NOT NULL
+  `id_vehiculo` int(11) NOT NULL,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
+  `fecha_eliminacion` timestamp NULL DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `cliente_vehiculo`
 --
 
-INSERT INTO `cliente_vehiculo` (`id_cliente`, `id_vehiculo`) VALUES
-(1, 1),
-(2, 2),
-(3, 3),
-(4, 4);
+INSERT INTO `cliente_vehiculo` (`id_cliente`, `id_vehiculo`, `fecha_registro`, `fecha_eliminacion`, `activo`) VALUES
+(1, 1, '2025-06-26 01:10:35', NULL, 1),
+(2, 2, '2025-06-26 01:10:35', NULL, 1),
+(3, 3, '2025-06-26 01:10:35', NULL, 1),
+(4, 4, '2025-06-26 01:10:35', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -111,19 +114,22 @@ INSERT INTO `cotizaciones` (`id_cotizacion`, `id_usuario`, `id_cliente`, `id_veh
 CREATE TABLE `cotizacion_servicios` (
   `id_cotizacion` int(11) NOT NULL,
   `id_servicio` int(11) NOT NULL,
-  `precio` decimal(10,2) NOT NULL
+  `precio` decimal(10,2) NOT NULL,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
+  `fecha_eliminacion` timestamp NULL DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `cotizacion_servicios`
 --
 
-INSERT INTO `cotizacion_servicios` (`id_cotizacion`, `id_servicio`, `precio`) VALUES
-(2, 2, 120000.00),
-(3, 3, 180000.00),
-(1, 3, 180000.00),
-(4, 2, 120000.00),
-(4, 3, 180000.00);
+INSERT INTO `cotizacion_servicios` (`id_cotizacion`, `id_servicio`, `precio`, `fecha_registro`, `fecha_eliminacion`, `activo`) VALUES
+(2, 2, 120000.00, '2025-06-26 01:10:35', NULL, 1),
+(3, 3, 180000.00, '2025-06-26 01:10:35', NULL, 1),
+(1, 3, 180000.00, '2025-06-26 01:10:35', NULL, 1),
+(4, 2, 120000.00, '2025-06-26 01:10:35', NULL, 1),
+(4, 3, 180000.00, '2025-06-26 01:10:35', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -139,6 +145,7 @@ CREATE TABLE `materiales` (
   `stock_material` int(11) NOT NULL,
   `categoria_material` varchar(50) NOT NULL,
   `proveedor_material` varchar(100) NOT NULL,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
   `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `fecha_eliminacion` timestamp NULL DEFAULT NULL,
   `activo` tinyint(1) NOT NULL DEFAULT 1
@@ -148,11 +155,11 @@ CREATE TABLE `materiales` (
 -- Volcado de datos para la tabla `materiales`
 --
 
-INSERT INTO `materiales` (`id_material`, `nombre_material`, `descripcion_material`, `precio_metro`, `stock_material`, `categoria_material`, `proveedor_material`, `fecha_actualizacion`, `fecha_eliminacion`, `activo`) VALUES
-(1, 'Vinilcuero', 'Material sintético de alta durabilidad', 45000.00, 25, 'Tapicería', 'Textiles S.A.', '2025-06-26 01:10:35', NULL, 1),
-(2, 'Espuma HD', 'Espuma de alta densidad 2cm grosor', 18000.00, 15, 'Reparación', 'Espumas Colombia', '2025-06-26 01:10:35', NULL, 1),
-(3, 'Alfombra automotriz', 'Color gris, resistente a humedad', 32000.00, 8, 'Cueros', 'Autopartes Ltda.', '2025-06-28 20:01:20', NULL, 1),
-(4, 'Alcantara', 'Material suave al tacto, lujoso y duradero', 75000.00, 8, 'Telas', 'Estilo Automotriz', '2025-07-03 03:43:29', NULL, 1);
+INSERT INTO `materiales` (`id_material`, `nombre_material`, `descripcion_material`, `precio_metro`, `stock_material`, `categoria_material`, `proveedor_material`, `fecha_registro`, `fecha_actualizacion`, `fecha_eliminacion`, `activo`) VALUES
+(1, 'Vinilcuero', 'Material sintético de alta durabilidad', 45000.00, 25, 'Tapicería', 'Textiles S.A.', '2025-06-26 01:10:35', '2025-06-26 01:10:35', NULL, 1),
+(2, 'Espuma HD', 'Espuma de alta densidad 2cm grosor', 18000.00, 15, 'Reparación', 'Espumas Colombia', '2025-06-26 01:10:35', '2025-06-26 01:10:35', NULL, 1),
+(3, 'Alfombra automotriz', 'Color gris, resistente a humedad', 32000.00, 8, 'Cueros', 'Autopartes Ltda.', '2025-06-26 01:10:35', '2025-06-28 20:01:20', NULL, 1),
+(4, 'Alcantara', 'Material suave al tacto, lujoso y duradero', 75000.00, 8, 'Telas', 'Estilo Automotriz', '2025-06-26 01:10:35', '2025-07-03 03:43:29', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -209,17 +216,20 @@ CREATE TABLE `registro_eliminaciones` (
 CREATE TABLE `roles` (
   `id_rol` int(11) NOT NULL,
   `nombre_rol` varchar(50) NOT NULL,
-  `descripcion_rol` varchar(100) NOT NULL
+  `descripcion_rol` varchar(100) NOT NULL,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
+  `fecha_eliminacion` timestamp NULL DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `roles`
 --
 
-INSERT INTO `roles` (`id_rol`, `nombre_rol`, `descripcion_rol`) VALUES
-(1, 'Administrador', 'Acceso completo al sistema'),
-(2, 'Técnico', 'Personal encargado de realizar los trabajos'),
-(3, 'Vendedor', 'Personal encargado de ventas and cotizaciones');
+INSERT INTO `roles` (`id_rol`, `nombre_rol`, `descripcion_rol`, `fecha_registro`, `fecha_eliminacion`, `activo`) VALUES
+(1, 'Administrador', 'Acceso completo al sistema', '2025-06-26 01:10:35', NULL, 1),
+(2, 'Técnico', 'Personal encargado de realizar los trabajos', '2025-06-26 01:10:35', NULL, 1),
+(3, 'Vendedor', 'Personal encargado de ventas and cotizaciones', '2025-06-26 01:10:35', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -234,6 +244,7 @@ CREATE TABLE `servicios` (
   `precio_servicio` decimal(10,2) NOT NULL,
   `tiempo_estimado` varchar(50) NOT NULL,
   `categoria_servicio` varchar(50) NOT NULL,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
   `fecha_eliminacion` timestamp NULL DEFAULT NULL,
   `activo` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -242,11 +253,11 @@ CREATE TABLE `servicios` (
 -- Volcado de datos para la tabla `servicios`
 --
 
-INSERT INTO `servicios` (`id_servicio`, `nombre_servicio`, `descripcion_servicio`, `precio_servicio`, `tiempo_estimado`, `categoria_servicio`, `fecha_eliminacion`, `activo`) VALUES
-(1, 'Tapizado completo', 'Tapizado de asientos en vinilcuero', 350000.00, '3 días', 'Tapicería', NULL, 1),
-(2, 'Cambio de alfombra', 'Instalación de alfombra', 120000.00, '1 día', 'Interior', NULL, 1),
-(3, 'Reparación de asiento', 'Arreglo de estructura and espuma', 180000.00, '2 días', 'Reparación', NULL, 1),
-(4, 'Tratamiento de cuero', 'Aplicación de producto para cuidar cuero de asientos', 100000.00, '1 día', 'Mantenimiento', NULL, 1);
+INSERT INTO `servicios` (`id_servicio`, `nombre_servicio`, `descripcion_servicio`, `precio_servicio`, `tiempo_estimado`, `categoria_servicio`, `fecha_registro`, `fecha_eliminacion`, `activo`) VALUES
+(1, 'Tapizado completo', 'Tapizado de asientos en vinilcuero', 350000.00, '3 días', 'Tapicería', '2025-06-26 01:10:35', NULL, 1),
+(2, 'Cambio de alfombra', 'Instalación de alfombra', 120000.00, '1 día', 'Interior', '2025-06-26 01:10:35', NULL, 1),
+(3, 'Reparación de asiento', 'Arreglo de estructura and espuma', 180000.00, '2 días', 'Reparación', '2025-06-26 01:10:35', NULL, 1),
+(4, 'Tratamiento de cuero', 'Aplicación de producto para cuidar cuero de asientos', 100000.00, '1 día', 'Mantenimiento', '2025-06-26 01:10:35', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -289,8 +300,7 @@ CREATE TABLE `usuarios` (
   `nombre_completo` varchar(70) NOT NULL,
   `correo_usuario` varchar(70) NOT NULL,
   `telefono_usuario` varchar(25) NOT NULL,
-  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `activo_usuario` enum('Activo','Inactivo') NOT NULL,
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
   `ultima_actividad` datetime NOT NULL,
   `fecha_eliminacion` timestamp NULL DEFAULT NULL,
   `activo` tinyint(1) NOT NULL DEFAULT 1
@@ -300,11 +310,11 @@ CREATE TABLE `usuarios` (
 -- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `usuarios` (`id_usuario`, `id_rol`, `username_usuario`, `contrasena_usuario`, `nombre_completo`, `correo_usuario`, `telefono_usuario`, `fecha_creacion`, `activo_usuario`, `ultima_actividad`, `fecha_eliminacion`, `activo`) VALUES
-(1, 1, 'admin1', '12345', 'Jose Alonso', 'alonso@tallertapiceria.com', '3204569555', '2025-07-08 01:51:51', 'Activo', '2025-07-07 20:51:51', NULL, 1),
-(2, 2, 'tecnico1', '12345', 'Johan Sebastian', 'johan@tallertapiceria.com', '3625489561', '2025-06-30 02:14:54', 'Activo', '2025-06-26 19:51:53', NULL, 1),
-(3, 3, 'vendedor1', '12345', 'Yamm Alonso', 'yamm@tallertapiceria.com', '3125468579', '2025-06-29 02:10:56', 'Activo', '2025-06-28 21:10:56', NULL, 1),
-(4, 1, 'admin2', '12345', 'Edith Diasmin', 'edit@gmail.com', '3122654845', '2025-06-28 22:02:00', 'Activo', '2025-06-28 17:02:00', NULL, 1);
+INSERT INTO `usuarios` (`id_usuario`, `id_rol`, `username_usuario`, `contrasena_usuario`, `nombre_completo`, `correo_usuario`, `telefono_usuario`, `fecha_creacion`, `ultima_actividad`, `fecha_eliminacion`, `activo`) VALUES
+(1, 1, 'admin1', '12345', 'Jose Alonso', 'alonso@tallertapiceria.com', '3204569555', '2025-06-26 01:10:35', '2025-07-07 20:51:51', NULL, 1),
+(2, 2, 'tecnico1', '12345', 'Johan Sebastian', 'johan@tallertapiceria.com', '3625489561', '2025-06-26 01:10:35', '2025-06-26 19:51:53', NULL, 1),
+(3, 3, 'vendedor1', '12345', 'Yamm Alonso', 'yamm@tallertapiceria.com', '3125468579', '2025-06-26 01:10:35', '2025-06-28 21:10:56', NULL, 1),
+(4, 1, 'admin2', '12345', 'Edith Diasmin', 'edit@gmail.com', '3122654845', '2025-06-26 01:10:35', '2025-06-28 17:02:00', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -318,6 +328,7 @@ CREATE TABLE `vehiculos` (
   `modelo_vehiculo` varchar(50) NOT NULL,
   `placa_vehiculo` varchar(20) NOT NULL,
   `notas_vehiculo` text NOT NULL,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
   `fecha_eliminacion` timestamp NULL DEFAULT NULL,
   `activo` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -326,11 +337,11 @@ CREATE TABLE `vehiculos` (
 -- Volcado de datos para la tabla `vehiculos`
 --
 
-INSERT INTO `vehiculos` (`id_vehiculo`, `marca_vehiculo`, `modelo_vehiculo`, `placa_vehiculo`, `notas_vehiculo`, `fecha_eliminacion`, `activo`) VALUES
-(1, 'Toyota', 'Corolla', 'ABC123', 'Color blanco, año 2020', NULL, 1),
-(2, 'Chevrolet', 'Spark', 'DEF654', 'Color azul, año 2018', NULL, 1),
-(3, 'Renault', 'Logan', 'GHI789', 'Color gris, año 2019', NULL, 1),
-(4, 'Honda', 'Civic', 'JKL9101', 'carro gris', NULL, 1);
+INSERT INTO `vehiculos` (`id_vehiculo`, `marca_vehiculo`, `modelo_vehiculo`, `placa_vehiculo`, `notas_vehiculo`, `fecha_registro`, `fecha_eliminacion`, `activo`) VALUES
+(1, 'Toyota', 'Corolla', 'ABC123', 'Color blanco, año 2020', '2025-06-26 01:10:35', NULL, 1),
+(2, 'Chevrolet', 'Spark', 'DEF654', 'Color azul, año 2018', '2025-06-26 01:10:35', NULL, 1),
+(3, 'Renault', 'Logan', 'GHI789', 'Color gris, año 2019', '2025-06-26 01:10:35', NULL, 1),
+(4, 'Honda', 'Civic', 'JKL9101', 'carro gris', '2025-06-26 01:10:35', NULL, 1);
 
 --
 -- Índices para tablas volcadas
@@ -663,7 +674,7 @@ BEGIN
                 CONCAT('Usuario: ', OLD.nombre_completo, ' - ', OLD.username_usuario),
                 CONCAT_WS('|', OLD.id_usuario, OLD.id_rol, OLD.username_usuario, 
                          OLD.nombre_completo, OLD.correo_usuario, OLD.telefono_usuario,
-                         OLD.activo_usuario));
+                         OLD.ultima_actividad));
     ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
         SET NEW.fecha_eliminacion = NULL;
         
@@ -744,6 +755,73 @@ BEGIN
         INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
         VALUES ('mensajes_contacto', OLD.id_mensaje, user_id, 'RESTAURACION',
                 CONCAT('Mensaje restaurado de: ', OLD.nombre_completo));
+    END IF;
+END$$
+
+-- Trigger para roles
+CREATE TRIGGER `before_roles_update` BEFORE UPDATE ON `roles`
+FOR EACH ROW
+BEGIN
+    DECLARE user_id INT;
+    SET user_id = NULLIF(@usuario_actual, '');
+    
+    IF NEW.activo = 0 AND OLD.activo = 1 THEN
+        SET NEW.fecha_eliminacion = CURRENT_TIMESTAMP;
+        
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores)
+        VALUES ('roles', OLD.id_rol, user_id, 'ELIMINACION',
+                CONCAT('Rol: ', OLD.nombre_rol, ' - ', OLD.descripcion_rol),
+                CONCAT_WS('|', OLD.id_rol, OLD.nombre_rol, OLD.descripcion_rol));
+    ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
+        SET NEW.fecha_eliminacion = NULL;
+        
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('roles', OLD.id_rol, user_id, 'RESTAURACION',
+                CONCAT('Rol restaurado: ', OLD.nombre_rol));
+    END IF;
+END$$
+
+-- Trigger para cliente_vehiculo
+CREATE TRIGGER `before_cliente_vehiculo_update` BEFORE UPDATE ON `cliente_vehiculo`
+FOR EACH ROW
+BEGIN
+    DECLARE user_id INT;
+    SET user_id = NULLIF(@usuario_actual, '');
+    
+    IF NEW.activo = 0 AND OLD.activo = 1 THEN
+        SET NEW.fecha_eliminacion = CURRENT_TIMESTAMP;
+        
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('cliente_vehiculo', OLD.id_cliente, user_id, 'ELIMINACION',
+                CONCAT('Relación Cliente-Vehículo: Cliente ', OLD.id_cliente, ' - Vehículo ', OLD.id_vehiculo));
+    ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
+        SET NEW.fecha_eliminacion = NULL;
+        
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('cliente_vehiculo', OLD.id_cliente, user_id, 'RESTAURACION',
+                CONCAT('Relación Cliente-Vehículo restaurada: Cliente ', OLD.id_cliente, ' - Vehículo ', OLD.id_vehiculo));
+    END IF;
+END$$
+
+-- Trigger para cotizacion_servicios
+CREATE TRIGGER `before_cotizacion_servicios_update` BEFORE UPDATE ON `cotizacion_servicios`
+FOR EACH ROW
+BEGIN
+    DECLARE user_id INT;
+    SET user_id = NULLIF(@usuario_actual, '');
+    
+    IF NEW.activo = 0 AND OLD.activo = 1 THEN
+        SET NEW.fecha_eliminacion = CURRENT_TIMESTAMP;
+        
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('cotizacion_servicios', OLD.id_cotizacion, user_id, 'ELIMINACION',
+                CONCAT('Servicio en Cotización: Cotización ', OLD.id_cotizacion, ' - Servicio ', OLD.id_servicio, ' - Precio $', OLD.precio));
+    ELSEIF NEW.activo = 1 AND OLD.activo = 0 THEN
+        SET NEW.fecha_eliminacion = NULL;
+        
+        INSERT INTO registro_eliminaciones (tabla, id_registro, eliminado_por, accion, datos)
+        VALUES ('cotizacion_servicios', OLD.id_cotizacion, user_id, 'RESTAURACION',
+                CONCAT('Servicio en Cotización restaurado: Cotización ', OLD.id_cotizacion, ' - Servicio ', OLD.id_servicio));
     END IF;
 END$$
 
@@ -841,6 +919,17 @@ WHERE activo = 0
 UNION ALL
 
 SELECT 
+    'roles',
+    id_rol,
+    nombre_rol,
+    fecha_eliminacion,
+    'Rol'
+FROM roles 
+WHERE activo = 0
+
+UNION ALL
+
+SELECT 
     'cotizaciones',
     id_cotizacion,
     CONCAT('Cotización #', id_cotizacion),
@@ -869,6 +958,28 @@ SELECT
     fecha_eliminacion,
     'Mensaje'
 FROM mensajes_contacto 
+WHERE activo = 0
+
+UNION ALL
+
+SELECT 
+    'cliente_vehiculo',
+    id_cliente,
+    CONCAT('Relación Cliente ', id_cliente, ' - Vehículo ', id_vehiculo),
+    fecha_eliminacion,
+    'Relación'
+FROM cliente_vehiculo 
+WHERE activo = 0
+
+UNION ALL
+
+SELECT 
+    'cotizacion_servicios',
+    id_cotizacion,
+    CONCAT('Servicio en Cotización ', id_cotizacion, ' - Servicio ', id_servicio),
+    fecha_eliminacion,
+    'Servicio en Cotización'
+FROM cotizacion_servicios 
 WHERE activo = 0
 
 ORDER BY fecha_eliminacion DESC;

@@ -42,7 +42,7 @@ $title = 'Editar Cliente | Nacional Tapizados';
 <html lang="es">
 <head>
     <?php require_once __DIR__ . '/../../includes/head.php'; ?>
-    <title>Editar Cliente | Nacional Tapizados</title>
+    <title>Editar Cliente</title>
     <style>
         :root {
             --primary-color: rgba(140, 74, 63, 0.8);

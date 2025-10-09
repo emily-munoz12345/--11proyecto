@@ -72,13 +72,13 @@ try {
     $stmt = $conex->prepare("DELETE FROM cliente_vehiculo WHERE id_vehiculo = ?");
     $stmt->execute([$id_vehiculo]);
     
-    // 3. Verificar si hay cotizaciones relacionadas
-    $stmt = $conex->prepare("SELECT COUNT(*) FROM cotizaciones WHERE id_vehiculo = ? AND activo = 1");
+    // 3. Verificar si hay cotizaciones relacionadas (aunque estén inactivas)
+    $stmt = $conex->prepare("SELECT COUNT(*) FROM cotizaciones WHERE id_vehiculo = ?");
     $stmt->execute([$id_vehiculo]);
-    $cotizaciones_activas = $stmt->fetchColumn();
+    $cotizaciones_relacionadas = $stmt->fetchColumn();
     
-    if ($cotizaciones_activas > 0) {
-        $_SESSION['mensaje'] = 'No se puede eliminar el vehículo porque tiene cotizaciones activas relacionadas.';
+    if ($cotizaciones_relacionadas > 0) {
+        $_SESSION['mensaje'] = 'No se puede eliminar permanentemente el vehículo porque tiene cotizaciones relacionadas en el historial.';
         $_SESSION['tipo_mensaje'] = 'danger';
         $conex->rollBack();
         header('Location: index.php');

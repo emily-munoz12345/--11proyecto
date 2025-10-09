@@ -66,7 +66,7 @@ try {
 }
 
 require_once __DIR__ . '/../../includes/head.php';
-$title = 'Ver Vehículo | Nacional Tapizados';
+$title = 'Detalles del Vehículo';
 ?>
 
 <!DOCTYPE html>

@@ -44,6 +44,25 @@ try {
     exit;
 }
 
+// VERIFICAR SI EL VEHÍCULO TIENE COTIZACIONES ACTIVAS ANTES DE ELIMINAR
+try {
+    $stmt = $conex->prepare("SELECT COUNT(*) FROM cotizaciones WHERE id_vehiculo = ? AND activo = 1");
+    $stmt->execute([$id_vehiculo]);
+    $cotizaciones_activas = $stmt->fetchColumn();
+    
+    if ($cotizaciones_activas > 0) {
+        $_SESSION['mensaje'] = 'No se puede eliminar el vehículo porque tiene cotizaciones activas relacionadas.';
+        $_SESSION['tipo_mensaje'] = 'danger';
+        header('Location: index.php');
+        exit;
+    }
+} catch (PDOException $e) {
+    $_SESSION['mensaje'] = 'Error al verificar cotizaciones: ' . $e->getMessage();
+    $_SESSION['tipo_mensaje'] = 'danger';
+    header('Location: index.php');
+    exit;
+}
+
 // Realizar eliminación lógica (soft delete)
 try {
     // Verificar si existe la columna fecha_eliminacion

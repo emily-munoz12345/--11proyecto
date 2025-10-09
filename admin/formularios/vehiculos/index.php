@@ -17,52 +17,37 @@ if (!isset($_SESSION['mensaje'])) {
     $_SESSION['tipo_mensaje'] = '';
 }
 
-// Procesar eliminación
-if (isset($_GET['eliminar'])) {
-    $id = intval($_GET['eliminar']);
-    
-    try {
-        // Verificar si el vehículo está asociado a algún cliente
-        $stmt = $conex->prepare("SELECT COUNT(*) FROM cliente_vehiculo WHERE id_vehiculo = ?");
-        $stmt->execute([$id]);
-        $tieneClientes = $stmt->fetchColumn();
-        
-        if ($tieneClientes > 0) {
-            $_SESSION['mensaje'] = 'No se puede eliminar: vehículo está asociado a clientes';
-            $_SESSION['tipo_mensaje'] = 'danger';
-        } else {
-            $stmt = $conex->prepare("DELETE FROM vehiculos WHERE id_vehiculo = ?");
-            if ($stmt->execute([$id])) {
-                $_SESSION['mensaje'] = 'Vehículo eliminado correctamente';
-                $_SESSION['tipo_mensaje'] = 'success';
-            }
-        }
-    } catch (PDOException $e) {
-        $_SESSION['mensaje'] = 'Error al eliminar: ' . $e->getMessage();
-        $_SESSION['tipo_mensaje'] = 'danger';
-    }
-    header('Location: index.php');
-    exit;
+// Procesar mensajes de otras operaciones (crear, editar, eliminar)
+if (isset($_SESSION['mensaje']) && !empty($_SESSION['mensaje'])) {
+    // El mensaje ya está en sesión, se mostrará en la interfaz
 }
 
-// Obtener estadísticas generales - CORREGIDO: usando columnas existentes
+// Obtener estadísticas generales - SOLO VEHÍCULOS ACTIVOS
 $stats = $conex->query("SELECT 
     COUNT(*) as total_vehiculos,
-    (SELECT COUNT(*) FROM vehiculos WHERE marca_vehiculo = 'Toyota') as toyotas,
-    (SELECT COUNT(*) FROM vehiculos WHERE marca_vehiculo = 'Nissan') as nissans,
-    (SELECT COUNT(*) FROM vehiculos WHERE marca_vehiculo = 'Honda') as hondas,
-    (SELECT COUNT(*) FROM vehiculos WHERE marca_vehiculo = 'Mazda') as mazdas
-FROM vehiculos")->fetch(PDO::FETCH_ASSOC);
+    (SELECT COUNT(*) FROM vehiculos WHERE DATE(fecha_registro) = CURDATE() AND activo = 1) as registros_hoy,
+    (SELECT DATE(fecha_registro) 
+     FROM vehiculos 
+     WHERE activo = 1 
+     ORDER BY id_vehiculo DESC 
+     LIMIT 1) as ultima_fecha
+FROM vehiculos WHERE activo = 1")->fetch(PDO::FETCH_ASSOC);
 
-// Obtener los 4 vehículos más recientes
-$vehiculosRecientes = $conex->query("SELECT * FROM vehiculos ORDER BY id_vehiculo DESC LIMIT 4")->fetchAll();
+// Formatear la última fecha
+if (!empty($stats['ultima_fecha'])) {
+    $stats['ultima_fecha'] = date('d/m/Y', strtotime($stats['ultima_fecha']));
+} else {
+    $stats['ultima_fecha'] = 'N/A';
+}
 
-// Obtener todos los vehículos para la pestaña de buscar
-$todosVehiculos = $conex->query("SELECT * FROM vehiculos ORDER BY marca_vehiculo ASC")->fetchAll();
+// Obtener los 4 vehículos más recientes - SOLO ACTIVOS
+$vehiculosRecientes = $conex->query("SELECT * FROM vehiculos WHERE activo = 1 ORDER BY id_vehiculo DESC LIMIT 4")->fetchAll();
 
-// Obtener vehículos eliminados (si tienes tabla de papelera)
-// Si no tienes columna 'activo', mostrar mensaje de que no hay eliminados
-$vehiculosEliminados = [];
+// Obtener todos los vehículos para la pestaña de buscar - SOLO ACTIVOS
+$todosVehiculos = $conex->query("SELECT * FROM vehiculos WHERE activo = 1 ORDER BY marca_vehiculo ASC")->fetchAll();
+
+// Obtener vehículos eliminados (papelera)
+$vehiculosEliminados = $conex->query("SELECT * FROM vehiculos WHERE activo = 0 ORDER BY fecha_eliminacion DESC")->fetchAll();
 
 // Procesar búsqueda si es una solicitud AJAX
 if (isset($_GET['ajax'])) {
@@ -76,9 +61,10 @@ if (isset($_GET['ajax'])) {
     $searchTerm = '%' . $_GET['q'] . '%';
     $stmt = $conex->prepare("
         SELECT * FROM vehiculos 
-        WHERE marca_vehiculo LIKE :search 
+        WHERE (marca_vehiculo LIKE :search 
         OR modelo_vehiculo LIKE :search 
-        OR placa_vehiculo LIKE :search
+        OR placa_vehiculo LIKE :search)
+        AND activo = 1
         ORDER BY marca_vehiculo ASC 
         LIMIT 10
     ");
@@ -90,7 +76,7 @@ if (isset($_GET['ajax'])) {
 }
 
 require_once __DIR__ . '/../../includes/head.php';
-$title = 'Gestión de Vehículos | Nacional Tapizados';
+$title = 'Gestión de Vehículos';
 ?>
 
 <!DOCTYPE html>
@@ -719,16 +705,12 @@ $title = 'Gestión de Vehículos | Nacional Tapizados';
                 <p><?= $stats['total_vehiculos'] ?></p>
             </div>
             <div class="summary-card">
-                <h3>Toyotas</h3>
-                <p><?= $stats['toyotas'] ?></p>
+                <h3>Último Registro</h3>
+                <p><?= $stats['ultima_fecha'] ?></p>
             </div>
             <div class="summary-card">
-                <h3>Nissans</h3>
-                <p><?= $stats['nissans'] ?></p>
-            </div>
-            <div class="summary-card">
-                <h3>Hondas</h3>
-                <p><?= $stats['hondas'] ?></p>
+                <h3>Registros Hoy</h3>
+                <p><?= $stats['registros_hoy'] ?></p>
             </div>
         </div>
 
@@ -821,22 +803,31 @@ $title = 'Gestión de Vehículos | Nacional Tapizados';
             <!-- Pestaña de eliminación -->
             <div class="tab-pane fade" id="delete" role="tabpanel">
                 <?php if (count($vehiculosEliminados) > 0): ?>
-                    <div class="alert alert-warning">
+                   <!-- <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         Vehículos eliminados recientemente.
-                    </div>
+                    </div>-->
                     <div class="vehicle-list">
                         <?php foreach ($vehiculosEliminados as $vehiculo): ?>
-                            <div class="vehicle-item deleted-item">
+                            <div class="vehicle-item">
                                 <div class="vehicle-info">
                                     <div class="vehicle-name"><?= htmlspecialchars($vehiculo['marca_vehiculo'] . ' ' . $vehiculo['modelo_vehiculo']) ?></div>
                                     <div class="vehicle-description">
                                         <?= htmlspecialchars($vehiculo['placa_vehiculo']) ?> · 
                                         <?= htmlspecialchars($vehiculo['anio_vehiculo'] ?? 'N/A') ?>
+                                        <br>
+                                        <small>Eliminado: <?= $vehiculo['fecha_eliminacion'] ? date('d/m/Y H:i', strtotime($vehiculo['fecha_eliminacion'])) : 'Fecha no disponible' ?></small>
                                     </div>
                                 </div>
                                 <div class="vehicle-actions">
-                                    <span class="badge bg-danger">Eliminado</span>
+                                    <a href="restaurar.php?id=<?= $vehiculo['id_vehiculo'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar este vehículo?')">
+                                        <i class="fas fa-undo"></i> Restaurar
+                                    </a>
+                                    <?php if (isAdmin()): ?>
+                                    <a href="eliminar_permanentemente.php?id=<?= $vehiculo['id_vehiculo'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar permanentemente? Esta acción no se puede deshacer.')">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </a>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -889,9 +880,9 @@ $title = 'Gestión de Vehículos | Nacional Tapizados';
                     <i class="fas fa-edit"></i>
                     <span>Editar vehículo</span>
                 </div>
-                <div class="option-item" onclick="if(confirm('¿Estás seguro de eliminar este vehículo?')) window.location.href='index.php?eliminar=${id}'">
+                <div class="option-item" onclick="if(confirm('¿Estás seguro de mover este vehículo a la papelera?')) window.location.href='eliminar.php?id=${id}'">
                     <i class="fas fa-trash"></i>
-                    <span>Eliminar vehículo</span>
+                    <span>Mover a papelera</span>
                 </div>
             `;
             
