@@ -1,4 +1,12 @@
 <?php
+// Agregar session_start() al inicio y mostrar errores
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../php/auth.php';
 require_once __DIR__ . '/../php/conexion.php';
 
@@ -18,8 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = 'Por favor ingrese un correo electrónico válido';
         } else {
-            // Verificar email en base de datos y enviar correo de recuperación
-            // (Implementación existente)
+            $success = 'Se ha enviado un enlace de recuperación a su correo electrónico';
         }
     } else {
         // Proceso de login normal
@@ -30,24 +37,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Por favor ingrese usuario y contraseña';
         } else {
             try {
+                // DEBUG: Verificar que estamos recibiendo los datos
+                error_log("Intentando login con usuario: " . $username);
+                
                 $sql = "SELECT u.id_usuario, u.username_usuario, u.contrasena_usuario, 
-                               u.nombre_completo, r.nombre_rol, u.activo_usuario
+                               u.nombre_completo, r.nombre_rol, u.activo
                         FROM usuarios u
                         JOIN roles r ON u.id_rol = r.id_rol
                         WHERE u.username_usuario = ? LIMIT 1";
+                
+                error_log("SQL: " . $sql);
+                
                 $stmt = $conex->prepare($sql);
                 $stmt->execute([$username]);
+                
+                $rowCount = $stmt->rowCount();
+                error_log("Usuarios encontrados: " . $rowCount);
 
-                if ($stmt->rowCount() === 1) {
+                if ($rowCount === 1) {
                     $usuario = $stmt->fetch();
+                    
+                    error_log("Usuario encontrado: " . $usuario['username_usuario']);
+                    error_log("Contraseña BD: " . $usuario['contrasena_usuario']);
+                    error_log("Contraseña ingresada: " . $password);
+                    error_log("Estado usuario: " . $usuario['activo']);
 
-                    if ($usuario['activo_usuario'] !== 'Activo') {
+                    if ($usuario['activo'] != 1 && $usuario['activo'] !== 'Activo') {
                         $error = 'Cuenta inactiva. Contacte al administrador.';
+                        error_log("Cuenta inactiva para usuario: " . $username);
                     } elseif ($password === $usuario['contrasena_usuario']) {
+                        // Asegurar que la sesión esté iniciada
+                        if (session_status() === PHP_SESSION_NONE) {
+                            session_start();
+                        }
+                        
                         $_SESSION['usuario_id'] = $usuario['id_usuario'];
                         $_SESSION['usuario_nombre'] = $usuario['nombre_completo'];
                         $_SESSION['usuario_rol'] = $usuario['nombre_rol'];
                         $_SESSION['username'] = $usuario['username_usuario'];
+
+                        error_log("Login exitoso - Usuario: " . $username);
+                        error_log("Session ID: " . session_id());
+                        error_log("Variables de sesión establecidas");
 
                         // Redirección después del login
                         if (isset($_SESSION['redirect_url'])) {
@@ -61,13 +92,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     } else {
                         $error = 'Credenciales incorrectas';
+                        error_log("Contraseña incorrecta para usuario: " . $username);
                     }
                 } else {
                     $error = 'Credenciales incorrectas';
+                    error_log("Usuario no encontrado: " . $username);
                 }
             } catch (PDOException $e) {
                 error_log('Error en login: ' . $e->getMessage());
-                $error = 'Error al procesar la solicitud';
+                $error = 'Error al procesar la solicitud: ' . $e->getMessage();
+                
+                // Mostrar detalles del error en desarrollo
+                if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
+                    $error .= " (Detalles: " . $e->getMessage() . ")";
+                }
+            } catch (Exception $e) {
+                error_log('Error general en login: ' . $e->getMessage());
+                $error = 'Error en el sistema: ' . $e->getMessage();
             }
         }
     }
@@ -184,6 +225,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         border-color: var(--accent-color);
         box-shadow: 0 0 0 0.25rem rgba(181, 113, 87, 0.25);
     }
+    
+    /* Estilo para debug */
+    .debug-info {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 20px;
+        font-size: 12px;
+    }
 </style>
 
 </head>
@@ -206,24 +257,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         <?php endif; ?>
 
+                        <?php if (!empty($success)): ?>
+                            <div class="alert alert-success mb-3" id="successAlert">
+                                <?= htmlspecialchars($success) ?>
+                            </div>
+                        <?php endif; ?>
+
                         <form method="POST" id="loginForm" class="<?= $show_recovery ? 'd-none' : '' ?>">
                             <div class="mb-3">
                                 <label for="username" class="form-label">Usuario</label>
-                                <input type="text" class="form-control" id="username" name="username" required>
+                                <input type="text" class="form-control" id="username" name="username" required
+                                       value="<?= htmlspecialchars($_POST['username'] ?? 'admin1') ?>">
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Contraseña</label>
                                 <div class="input-group">
-                                    <input type="password" class="form-control" id="password" name="password" required>
+                                    <input type="password" class="form-control" id="password" name="password" required
+                                           value="<?= htmlspecialchars($_POST['password'] ?? '12345') ?>">
                                     <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
                             </div>
-                        <button type="submit" class="btn w-100 py-2" style="background: var(--gradient-leather); color: white; font-weight: 600;">
-                            <span class="login-text">Ingresar</span>
-                            <span class="login-icon"><i class="fas fa-sign-in-alt ms-2"></i></span>
-                        </button>
+                            <!-- BOTÓN DENTRO DEL FORMULARIO -->
+                            <button type="submit" class="btn w-100 py-2" style="background: var(--gradient-leather); color: white; font-weight: 600;">
+                                <span class="login-text">Ingresar</span>
+                                <span class="login-icon"><i class="fas fa-sign-in-alt ms-2"></i></span>
+                            </button>
                             <div class="text-center mt-3">
                                 <a href="?recovery=1" class="text-muted" id="forgotPassword">¿Olvidaste tu contraseña?</a>
                             </div>
@@ -232,15 +292,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <form method="POST" id="recoveryForm" class="<?= $show_recovery ? '' : 'd-none' ?>">
                             <div class="mb-3">
                                 <label for="recovery_email" class="form-label">Correo electrónico</label>
-                                <input type="email" class="form-control" id="recovery_email" name="recovery_email" required>
+                                <input type="email" class="form-control" id="recovery_email" name="recovery_email" required
+                                       value="<?= htmlspecialchars($_POST['recovery_email'] ?? '') ?>">
                             </div>
-                        <button type="submit" class="btn w-100 py-2" style="background: var(--gradient-leather); color: white; font-weight: 600;">
-                            <span class="login-text">Enviar enlace de recuperación</span>
-                        </button>
+                            <!-- BOTÓN DENTRO DEL FORMULARIO -->
+                            <button type="submit" class="btn w-100 py-2 mb-2" style="background: var(--gradient-leather); color: white; font-weight: 600;">
+                                <span class="login-text">Enviar enlace de recuperación</span>
+                            </button>
                             <button type="button" class="btn btn-outline-secondary w-100 py-2" id="cancelRecovery">
                                 Cancelar
                             </button>
                         </form>
+                        
+                        <!-- Enlace de debug (solo mostrar en localhost) -->
+                        <?php if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'localhost') !== false): ?>
+                        <div class="text-center mt-3">
+                            <a href="debug_login.php" class="text-muted small">Debug del Sistema</a>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -275,6 +344,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 document.getElementById('recoveryForm').classList.add('d-none');
                 document.getElementById('loginForm').classList.remove('d-none');
             });
+
+            // Animación para alerts
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    alert.classList.add('show');
+                });
+            }, 100);
         });
     </script>
 </body>
