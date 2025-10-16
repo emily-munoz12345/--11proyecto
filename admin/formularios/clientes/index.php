@@ -24,7 +24,8 @@ if (!isset($_SESSION['mensaje'])) {
 $stats = $conex->query("SELECT 
     COUNT(*) as total_clientes,
     MAX(fecha_registro) as ultimo_registro,
-    (SELECT COUNT(*) FROM clientes WHERE DATE(fecha_registro) = CURDATE() AND activo = 1) as registros_hoy
+    (SELECT COUNT(*) FROM clientes WHERE DATE(fecha_registro) = CURDATE() AND activo = 1) as registros_hoy,
+    (SELECT COUNT(*) FROM clientes WHERE activo = 0) as en_papelera
 FROM clientes WHERE activo = 1")->fetch(PDO::FETCH_ASSOC);
 
 // Obtener los 4 clientes más recientes (excluyendo eliminados - activos = 1)
@@ -34,7 +35,7 @@ $clientesRecientes = $conex->query("SELECT * FROM clientes WHERE activo = 1 ORDE
 $clientesEditar = $conex->query("SELECT * FROM clientes WHERE activo = 1 ORDER BY nombre_cliente ASC")->fetchAll();
 
 // Obtener clientes en la papelera (eliminados - activos = 0)
-$clientesEliminar = $conex->query("SELECT * FROM clientes WHERE activo = 0 ORDER BY fecha_registro DESC")->fetchAll();
+$clientesEliminar = $conex->query("SELECT * FROM clientes WHERE activo = 0 ORDER BY fecha_eliminacion DESC")->fetchAll();
 
 // Obtener todos los clientes activos para vista general
 $todosClientes = $conex->query("SELECT * FROM clientes WHERE activo = 1 ORDER BY nombre_cliente ASC")->fetchAll();
@@ -158,8 +159,6 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
     }
     exit;
 }
-//require_once __DIR__ . '/../../includes/head.php';
-//$title = 'Gestión de Vehículos';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -167,8 +166,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!--<title><?= $title ?></title>-->
-    <title>Gestión de Clientes </title>
+    <title>Gestión de Clientes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -390,46 +388,6 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
-        }
-
-        /* Estilos para tablas */
-        .table-container {
-            overflow-x: auto;
-            background-color: var(--bg-transparent-light);
-            backdrop-filter: blur(8px);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border-color);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
-        }
-
-        th,
-        td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-color);
-        }
-
-        th {
-            background-color: var(--primary-color);
-            font-weight: 500;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.5px;
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        tr:hover {
-            background-color: rgba(140, 74, 63, 0.2);
         }
 
         /* Estilos para botones */
@@ -876,7 +834,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             ?>
         <?php endif; ?>
 
-        <!-- Estadísticas rápidas -->
+        <!-- Estadísticas rápidas (ACTUALIZADAS) -->
         <div class="summary-cards">
             <div class="summary-card">
                 <h3>Total de Clientes</h3>
@@ -889,6 +847,10 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             <div class="summary-card">
                 <h3>Registros Hoy</h3>
                 <p><?= $stats['registros_hoy'] ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>En Papelera</h3>
+                <p><?= $stats['en_papelera'] ?></p>
             </div>
         </div>
 
@@ -973,44 +935,50 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                 </div>
             </div>
 
-            <!-- Pestaña de eliminación -->
-            <div class="tab-pane fade" id="delete" role="tabpanel">
-                
-                <?php if (!empty($clientesEliminar)): ?>
-                    <div class="client-list">
-                        <?php foreach ($clientesEliminar as $cliente): ?>
-                            <div class="client-item">
-                                <div class="client-info">
-                                    <div class="client-name"><?= htmlspecialchars($cliente['nombre_cliente']) ?></div>
-                                    <div class="client-description">
-                                        <?= htmlspecialchars($cliente['telefono_cliente']) ?> · 
-                                        <?= htmlspecialchars($cliente['correo_cliente']) ?>
-                                        <br>
-                                        <small>Eliminado: <?= $cliente['fecha_eliminacion'] ? date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) : 'Fecha no disponible' ?></small>
-                                    </div>
-                                </div>
-                                <div class="client-actions">
-                                    <a href="restaurar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
-                                        <i class="fas fa-undo"></i> Restaurar
-                                    </a>
-                                    <?php if (isAdmin()): ?>
-                                    <a href="eliminar_permanentemente.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?> y no se podrá recuperar.')">
-                                        <i class="fas fa-trash"></i> Eliminar
-                                    </a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php else: ?>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        No hay clientes eliminados.
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+<!-- Pestaña de papelera (ACTUALIZADA) -->
+<div class="tab-pane fade" id="delete" role="tabpanel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <?php if (isAdmin() && !empty($clientesEliminar)): ?>
+            <button type="button" class="btn btn-outline-warning btn-sm" onclick="vaciarPapelera()">
+                <i class="fas fa-broom me-1"></i> Vaciar papelera
+            </button>
+        <?php endif; ?>
     </div>
+    
+    <?php if (!empty($clientesEliminar)): ?>
+        <div class="client-list">
+            <?php foreach ($clientesEliminar as $cliente): ?>
+                <div class="client-item deleted-item">
+                    <div class="client-info">
+                        <div class="client-name"><?= htmlspecialchars($cliente['nombre_cliente']) ?></div>
+                        <div class="client-description">
+                            <?= htmlspecialchars($cliente['telefono_cliente']) ?> · 
+                            <?= htmlspecialchars($cliente['correo_cliente']) ?>
+                            <br>
+                            <small>Eliminado: <?= $cliente['fecha_eliminacion'] ? date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) : 'Fecha no disponible' ?></small>
+                        </div>
+                    </div>
+                    <div class="client-actions">
+                        <a href="restaurar.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?>?')">
+                            <i class="fas fa-undo"></i> Restaurar
+                        </a>
+                        <?php if (isAdmin()): ?>
+                        <a href="eliminar_permanentemente.php?id=<?= $cliente['id_cliente'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente a <?= htmlspecialchars(addslashes($cliente['nombre_cliente'])) ?> y no se podrá recuperar.')">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php else: ?>
+        <div class="text-center py-5">
+            <i class="fas fa-trash-alt fa-3x mb-3" style="color: var(--text-muted);"></i>
+            <h4 style="color: var(--text-muted);">La papelera está vacía</h4>
+            <p style="color: var(--text-muted);">No hay Clientes eliminados</p>
+        </div>
+    <?php endif; ?>
+</div>
 
     <!-- Tarjeta flotante para opciones -->
     <div class="overlay" id="overlay"></div>
@@ -1069,6 +1037,13 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
         // Event listeners para cerrar tarjeta
         document.getElementById('closeOptionsCard').addEventListener('click', closeOptionsCard);
         document.getElementById('overlay').addEventListener('click', closeOptionsCard);
+
+        // Función para vaciar papelera
+        function vaciarPapelera() {
+            if (confirm('¿Estás seguro de que deseas vaciar la papelera?\n\nSe eliminarán permanentemente todos los clientes en la papelera.\n\n⚠️ Esta acción NO se puede deshacer.')) {
+                window.location.href = 'vaciar_papelera.php';
+            }
+        }
 
         // Búsqueda en tiempo real
         document.getElementById('searchInput').addEventListener('input', function() {
@@ -1132,13 +1107,6 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                 document.getElementById('searchResults').style.display = 'none';
             }
         });
-
-        // Función para restaurar cliente
-        function restoreClient(clientId) {
-            if (confirm('¿Estás seguro de que deseas restaurar este cliente?')) {
-                window.location.href = `restaurar.php?id=${clientId}`;
-            }
-        }
 
         // Prevenir envío del formulario de búsqueda
         document.querySelector('.search-container').addEventListener('submit', function(e) {

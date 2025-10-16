@@ -22,20 +22,21 @@ if (isset($_GET['eliminar'])) {
     $id = intval($_GET['eliminar']);
     
     // No permitir auto-eliminación
-    if ($id != $_SESSION['id_usuario']) {
+    if ($id != $_SESSION['usuario_id']) {
         try {
             // Verificar si el usuario tiene trabajos asociados
             $stmt = $conex->prepare("SELECT COUNT(*) FROM trabajos WHERE id_usuario = ?");
             $stmt->execute([$id]);
             $tieneTrabajos = $stmt->fetchColumn();
             
-          if ($tieneTrabajos > 0) {
+            if ($tieneTrabajos > 0) {
                 $_SESSION['mensaje'] = 'No se puede eliminar: usuario tiene trabajos asociados';
                 $_SESSION['tipo_mensaje'] = 'danger';
             } else {
-                $stmt = $极速conex->prepare("DELETE FROM usuarios WHERE id_usuario = ?");
+                // Marcar como inactivo en lugar de eliminar
+                $stmt = $conex->prepare("UPDATE usuarios SET activo = 0 WHERE id_usuario = ?");
                 if ($stmt->execute([$id])) {
-                    $_SESSION['mensaje'] = 'Usuario eliminado correctamente';
+                    $_SESSION['mensaje'] = 'Usuario desactivado correctamente';
                     $_SESSION['tipo_mensaje'] = 'success';
                 }
             }
@@ -44,48 +45,95 @@ if (isset($_GET['eliminar'])) {
             $_SESSION['tipo_mensaje'] = 'danger';
         }
     } else {
-        $_SESSION['mensaje'] = 'No puedes eliminar tu propio usuario';
+        $_SESSION['mensaje'] = 'No puedes desactivar tu propio usuario';
         $_SESSION['tipo_mensaje'] = 'danger';
     }
     header('Location: index.php');
     exit;
 }
 
-// Búsqueda y paginación
-$busqueda = $_GET['busqueda'] ?? '';
-$pagina = max(1, intval($_GET['pagina'] ?? 1));
-$porPagina = 10;
-
-$sql = "SELECT u.*, r.nombre_rol FROM usuarios u JOIN roles r ON u.id_rol = r.id_rol";
-$params = [];
-$where = '';
-
-if (!empty($busqueda)) {
-    $where = " WHERE u.nombre_completo LIKE ? OR u.username_usuario LIKE ? OR u.correo_usuario LIKE ? OR r.nombre_rol LIKE ?";
-    $params = ["%$busqueda%", "%$busqueda%", "%$busqueda%", "%$busqueda%"];
+// Procesar activación/desactivación
+if (isset($_GET['cambiar_estado'])) {
+    $id = intval($_GET['cambiar_estado']);
+    
+    // No permitir auto-desactivación
+    if ($id != $_SESSION['usuario_id']) {
+        try {
+            // Obtener estado actual
+            $stmt = $conex->prepare("SELECT activo, nombre_completo FROM usuarios WHERE id_usuario = ?");
+            $stmt->execute([$id]);
+            $usuario = $stmt->fetch();
+            
+            if ($usuario) {
+                $nuevoEstado = $usuario['activo'] ? 0 : 1;
+                $accion = $nuevoEstado ? 'activado' : 'desactivado';
+                
+                $stmt = $conex->prepare("UPDATE usuarios SET activo = ? WHERE id_usuario = ?");
+                if ($stmt->execute([$nuevoEstado, $id])) {
+                    $_SESSION['mensaje'] = "Usuario {$usuario['nombre_completo']} {$accion} correctamente";
+                    $_SESSION['tipo_mensaje'] = 'success';
+                }
+            }
+        } catch (PDOException $e) {
+            $_SESSION['mensaje'] = 'Error al cambiar estado: ' . $e->getMessage();
+            $_SESSION['tipo_mensaje'] = 'danger';
+        }
+    } else {
+        $_SESSION['mensaje'] = 'No puedes cambiar tu propio estado';
+        $_SESSION['tipo_mensaje'] = 'danger';
+    }
+    header('Location: index.php');
+    exit;
 }
 
-// Contar total para paginación
-$sqlCount = "SELECT COUNT(*) FROM usuarios u JOIN roles r ON u.id_rol = r.id_rol $where";
-$stmt = $conex->prepare($sqlCount);
-$stmt->execute($params);
-$totalUsuarios = $stmt->fetchColumn();
-$totalPaginas = ceil($totalUsuarios / $porPagina);
+// Obtener estadísticas generales
+$stats = $conex->query("SELECT 
+    COUNT(*) as total_usuarios,
+    (SELECT COUNT(*) FROM usuarios WHERE activo = 1) as usuarios_activos,
+    (SELECT COUNT(*) FROM usuarios WHERE activo = 0) as usuarios_inactivos,
+    (SELECT COUNT(*) FROM usuarios WHERE activo = 0) as usuarios_papelera,
+    (SELECT COUNT(*) FROM usuarios WHERE DATE(fecha_creacion) = CURDATE()) as registros_hoy
+FROM usuarios")->fetch(PDO::FETCH_ASSOC);
 
-// Obtener usuarios
-$offset = ($pagina - 1) * $porPagina;
-$sql .= " $where ORDER BY username_usuario ASC LIMIT $offset, $porPagina";
+// Obtener los 8 usuarios más recientes (activos e inactivos)
+$usuariosRecientes = $conex->query("SELECT u.*, r.nombre_rol FROM usuarios u JOIN roles r ON u.id_rol = r.id_rol ORDER BY u.fecha_creacion DESC LIMIT 8")->fetchAll();
 
-$stmt = $conex->prepare($sql);
-if (!empty($busqueda)) {
-    $stmt->execute($params);
-} else {
+// Obtener todos los usuarios activos para las pestañas
+$todosUsuarios = $conex->query("SELECT u.*, r.nombre_rol FROM usuarios u JOIN roles r ON u.id_rol = r.id_rol WHERE u.activo = 1 ORDER BY u.nombre_completo ASC")->fetchAll();
+
+// Obtener usuarios inactivos (activo = 0)
+$usuariosInactivos = $conex->query("SELECT u.*, r.nombre_rol FROM usuarios u JOIN roles r ON u.id_rol = r.id_rol WHERE u.activo = 0 ORDER BY u.nombre_completo ASC")->fetchAll();
+
+// Obtener usuarios en papelera (activo = 0)
+$usuariosPapelera = $conex->query("SELECT u.*, r.nombre_rol FROM usuarios u JOIN roles r ON u.id_rol = r.id_rol WHERE u.activo = 0 ORDER BY u.fecha_eliminacion DESC")->fetchAll();
+
+// Procesar búsqueda si es una solicitud AJAX
+if (isset($_GET['ajax'])) {
+    header('Content-Type: application/json');
+
+    if (!isset($_GET['q']) || strlen($_GET['q']) < 2) {
+        echo json_encode([]);
+        exit;
+    }
+
+    $searchTerm = '%' . $_GET['q'] . '%';
+    $stmt = $conex->prepare("SELECT u.*, r.nombre_rol FROM usuarios u 
+                            JOIN roles r ON u.id_rol = r.id_rol
+                            WHERE u.activo = 1 
+                            AND (u.nombre_completo LIKE :search 
+                            OR u.username_usuario LIKE :search 
+                            OR u.correo_usuario LIKE :search
+                            OR r.nombre_rol LIKE :search)
+                            ORDER BY u.nombre_completo ASC 
+                            LIMIT 10");
+    $stmt->bindParam(':search', $searchTerm);
     $stmt->execute();
-}
-$usuarios = $stmt->fetchAll();
 
-require_once __DIR__ . '/../../includes/head.php';
-$title = 'Gestión de Usuarios | Nacional Tapizados';
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit;
+}
+
+$title = 'Gestión de Usuarios';
 ?>
 
 <!DOCTYPE html>
@@ -104,15 +152,14 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
             --warning-color: rgba(255, 193, 7, 0.8);
             --info-color: rgba(13, 202, 240, 0.8);
-            --dark-bg: #1a1a1a;
-            --darker-bg: #121212;
         }
 
         body {
@@ -132,7 +179,7 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -152,6 +199,7 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -159,68 +207,163 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
             color: var(--primary-color);
         }
 
-        /* Estilos para tarjetas */
-        .card {
-            background-color: var(--bg-transparent-light);
-            backdrop-filter: blur(8px);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--border-color);
-            margin-bottom: 1.5rem;
-        }
-
-        .card-header {
-            background-color: var(--primary-color);
-            color: white;
+        /* Estilos para pestañas */
+        .nav-tabs {
             border-bottom: 1px solid var(--border-color);
-            padding: 1rem 1.5rem;
-            border-radius: 12px 12px 0 0 !important;
+            margin-bottom: 2rem;
         }
 
-        .card-body {
-            padding: 1.5rem;
+        .nav-link {
+            color: var(--text-muted);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
 
-        /* Estilos para formularios */
-        .form-control, .form-select {
-            background-color: var(--dark-bg);
-            border: 1px solid var(--border-color);
+        .nav-link:hover {
             color: var(--text-color);
+            background-color: var(--bg-transparent-light);
+        }
+
+        .nav-link.active {
+            color: white;
+            background-color: var(--primary-color);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tab-content {
+            padding: 1.5rem 0;
+        }
+
+        /* Estilos para el buscador */
+        .search-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--bg-input);
+            color: var(--text-color);
+            font-size: 1rem;
             backdrop-filter: blur(5px);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
         }
 
-        .form-control:focus, .form-select:focus {
-            background-color: var(--darker-bg);
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
-            color: var(--text-color);
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-color);
+            background-color: rgba(0, 0, 0, 0.7);
         }
 
-        .form-control::placeholder {
+        .search-input::placeholder {
             color: var(--text-muted);
         }
 
-        /* Estilos para tablas */
-        .table {
-            --bs-table-bg: transparent;
-            --bs-table-color: var(--text-color);
-            --bs-table-border-color: var(--border-color);
+        .search-results {
+            position: absolute;
             width: 100%;
+            z-index: 1000;
+            background-color: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
         }
 
-        .table th {
+        .search-result-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .search-result-item:hover {
+            background-color: var(--primary-color);
+        }
+
+        .search-client-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .search-client-info {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .search-client-date {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Estilos para la lista de usuarios */
+        .client-list {
+            background-color: var(--bg-transparent-light);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .client-item {
+            padding: 1.2rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .client-item:hover {
             background-color: rgba(140, 74, 63, 0.3);
-            color: var(--text-color);
+        }
+
+        .client-name {
             font-weight: 500;
+            font-size: 1.1rem;
+            color: var(--text-color);
         }
 
-        .table td, .table th {
-            padding: 0.75rem;
-            border-color: var(--border-color);
+        .client-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
         }
 
-        .table-hover tbody tr:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+        .client-arrow {
+            margin-left: 1rem;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            color: var(--text-color);
+        }
+
+        .client-item:hover .client-arrow {
+            opacity: 1;
+            transform: translateX(3px);
+        }
+
+        /* Estilos para acciones en la lista */
+        .client-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         /* Estilos para botones */
@@ -243,6 +386,11 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
             font-size: 0.9rem;
         }
 
+        .btn-sm {
+            padding: 0.35rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
         .btn-primary {
             background-color: var(--primary-color);
             color: white;
@@ -261,15 +409,31 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
             background-color: rgba(108, 117, 125, 1);
         }
 
-        .btn-outline-secondary {
-            background-color: transparent;
-            border: 1px solid var(--secondary-color);
-            color: var(--text-color);
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
         }
 
-        .btn-outline-secondary:hover {
-            background-color: var(--secondary-color);
+        .btn-danger:hover {
+            background-color: rgba(220, 53, 69, 1);
+        }
+
+        .btn-info {
+            background-color: var(--info-color);
             color: white;
+        }
+
+        .btn-info:hover {
+            background-color: rgba(13, 202, 240, 1);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: rgba(25, 135, 84, 1);
         }
 
         .btn-warning {
@@ -281,11 +445,44 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
             background-color: rgba(255, 193, 7, 1);
         }
 
-        /* Estilos para badges */
-        .badge {
-            padding: 0.5rem 0.75rem;
-            border-radius: 20px;
+        /* Estilos para tarjetas de resumen */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background-color: var(--bg-transparent-light);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            background-color: rgba(140, 74, 63, 0.3);
+        }
+
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 1rem;
             font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card p {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0;
+            color: var(--text-color);
         }
 
         /* Estilos para alertas */
@@ -297,6 +494,9 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
+            border-left: 4px solid var(--info-color);
+            background-color: rgba(13, 202, 240, 0.2);
+            color: var(--text-color);
         }
 
         .alert-success {
@@ -319,28 +519,234 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
             border-left: 4px solid var(--info-color);
         }
 
-        /* Estilos para paginación */
-        .pagination .page-link {
-            background-color: var(--dark-bg);
-            border-color: var(--border-color);
+        /* Estilos para elementos inactivos */
+        .inactive-item {
+            opacity: 0.8;
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+        
+        .inactive-item:hover {
+            background-color: rgba(255, 193, 7, 0.2);
+        }
+        
+        .inactive-badge {
+            background-color: var(--warning-color);
+            color: black;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        .active-badge {
+            background-color: var(--success-color);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        /* Estilos para tarjetas de usuarios */
+        .client-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .client-card {
+            background-color: var(--bg-transparent-light);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .client-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            background-color: rgba(140, 74, 63, 0.2);
+        }
+
+        .client-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .client-card-title {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
             color: var(--text-color);
         }
 
-        .pagination .page-item.active .page-link {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .pagination .page-link:hover {
+        .client-card-badge {
             background-color: var(--primary-color);
             color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .client-card-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .client-card-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+            color: var(--text-color);
+        }
+
+        .client-card-detail i {
+            color: var(--primary-color);
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Flecha para tarjetas */
+        .edit-arrow {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .edit-arrow:hover {
+            transform: translateX(3px);
+            color: var(--text-color);
+        }
+
+        /* Nueva tarjeta flotante para opciones */
+        .options-floating-card {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background-color: rgba(40, 40, 40, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            z-index: 1001;
+            animation: fadeInUp 0.4s ease;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .options-card-header {
+            background-color: var(--primary-color);
+            padding: 1.2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .options-card-title {
+            margin: 0;
+            font-size: 1.2rem;
+            color: white;
+            font-weight: 500;
+        }
+
+        .options-card-body {
+            padding: 1.5rem;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.8rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            color: var(--text-color);
+            text-decoration: none;
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .option-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .option-item:hover {
+            background-color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .option-item i {
+            margin-right: 0.8rem;
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .option-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-close:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para tarjetas flotantes */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .main-container {
+                padding: 1rem;
                 margin: 1rem;
-                padding: 1.5rem;
             }
 
             .header-section {
@@ -348,8 +754,26 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
                 align-items: flex-start;
             }
 
-            .table-responsive {
-                overflow-x: auto;
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .nav-tabs .nav-link {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .client-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .options-floating-card {
+                width: 90%;
+                max-width: 300px;
             }
         }
     </style>   
@@ -360,14 +784,14 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
         <!-- Encabezado -->
         <div class="header-section">
             <h1 class="page-title">
-                <i class="fas fa-users-cog"></i> Gestión de Usuarios
+                <i class="fas fa-users-cog"></i> Gesti&oacute;n de Usuarios
             </h1>
             <div class="d-flex gap-2">
                 <a href="crear.php" class="btn btn-primary">
-                    <i class="fas fa-plus-circle me-1"></i> Nuevo Usuario
+                    <i class="fas fa-plus"></i> Nuevo Usuario
                 </a>
                 <a href="../../dashboard.php" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-1"></i> Volver
+                    <i class="fas fa-arrow-left"></i> Volver
                 </a>
             </div>
         </div>
@@ -391,103 +815,329 @@ $title = 'Gestión de Usuarios | Nacional Tapizados';
             ?>
         <?php endif; ?>
 
-        <!-- Búsqueda -->
-        <div class="card">
-            <div class="card-body">
-                <form class="row g-3">
-                    <div class="col-md-8">
-                        <input type="text" class="form-control" name="busqueda" value="<?= htmlspecialchars($busqueda) ?>" 
-                            placeholder="Buscar por nombre, usuario, correo o rol">
-                    </div>
-                    <div class="col-md-4">
-                        <button class="btn btn-primary w-100" type="submit">
-                            <i class="fas fa-search me-1"></i> Buscar
-                        </button>
-                    </div>
-                </form>
+        <!-- Estadísticas rápidas -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>Total de Usuarios</h3>
+                <p><?= $stats['total_usuarios'] ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Usuarios Activos</h3>
+                <p><?= $stats['usuarios_activos'] ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Usuarios Inactivos</h3>
+                <p><?= $stats['usuarios_inactivos'] ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Registros Hoy</h3>
+                <p><?= $stats['registros_hoy'] ?></p>
             </div>
         </div>
 
-        <!-- Tabla de usuarios -->
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre Completo</th>
-                                <th>Usuario</th>
-                                <th>Correo</th>
-                                <th>Rol</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($usuarios as $usuario): ?>
-                            <tr>
-                                <td><?= $usuario['id_usuario'] ?></td>
-                                <td><?= htmlspecialchars($usuario['nombre_completo']) ?></td>
-                                <td><?= htmlspecialchars($usuario['username_usuario']) ?></td>
-                                <td><?= htmlspecialchars($usuario['correo_usuario']) ?></td>
-                                <td><?= htmlspecialchars($usuario['nombre_rol']) ?></td>
-                                <td>
-                                    <span class="badge bg-<?= $usuario['activo_usuario'] == 'Activo' ? 'success' : 'secondary' ?>">
-                                        <?= $usuario['activo_usuario'] ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="d-flex">
-                                        <a href="editar.php?id=<?= $usuario['id_usuario'] ?>" class="btn btn-sm btn-warning me-2">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                       <!-- <?php if ($usuario['id_usuario'] != $_SESSION['id_usuario']): ?>
-                                        <a href="index.php?eliminar=<?= $usuario['id_usuario'] ?>" class="btn btn-sm btn-danger" 
-                                           onclick="return confirm('¿Estás seguro de eliminar este usuario?')">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
-                                        <?php endif; ?>-->
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+        <!-- Pestañas de navegación -->
+        <ul class="nav nav-tabs" id="clientTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab">
+                    <i class="fas fa-clock"></i> Recientes
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="inactive-tab" data-bs-toggle="tab" data-bs-target="#inactive" type="button" role="tab">
+                    <i class="fas fa-user-slash"></i> Inactivos
+                </button>
+            </li>
+        </ul>
+
+        <!-- Contenido de las pestañas -->
+        <div class="tab-content" id="clientTabsContent">
+            <!-- Pestaña de búsqueda -->
+            <div class="tab-pane fade show active" id="search" role="tabpanel">
+                <div class="search-container">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Buscar usuario por nombre, usuario, correo o rol..." autocomplete="off">
+                    <div class="search-results" id="searchResults"></div>
                 </div>
 
-                <!-- Paginación -->
-                <?php if ($totalPaginas > 1): ?>
-                <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center mt-4">
-                        <?php if ($pagina > 1): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="?busqueda=<?= urlencode($busqueda) ?>&pagina=<?= $pagina - 1 ?>">
-                                <i class="fas fa-chevron-left"></i>
-                            </a>
-                        </li>
-                        <?php endif; ?>
-
-                        <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-                        <li class="page-item <?= $i == $pagina ? 'active' : '' ?>">
-                            <a class="page-link" href="?busqueda=<?= urlencode($busqueda) ?>&pagina=<?= $i ?>"><?= $i ?></a>
-                        </li>
-                        <?php endfor; ?>
-
-                        <?php if ($pagina < $totalPaginas): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="?busqueda=<?= urlencode($busqueda) ?>&pagina=<?= $pagina + 1 ?>">
+                <!-- Resultados iniciales (todos los usuarios activos) -->
+                <div class="client-list" id="allClientsList">
+                    <?php foreach ($todosUsuarios as $usuario): ?>
+                        <div class="client-item" data-client-id="<?= $usuario['id_usuario'] ?>" onclick="showOptionsCard(<?= $usuario['id_usuario'] ?>, '<?= htmlspecialchars(addslashes($usuario['nombre_completo'])) ?>', <?= $usuario['activo'] ?>)">
+                            <div class="client-info">
+                                <div class="client-name">
+                                    <?= htmlspecialchars($usuario['nombre_completo']) ?>
+                                </div>
+                                <div class="client-description">
+                                    <?= htmlspecialchars($usuario['username_usuario']) ?> · 
+                                    <?= htmlspecialchars($usuario['correo_usuario']) ?> · 
+                                    <?= htmlspecialchars($usuario['nombre_rol']) ?>
+                                </div>
+                            </div>
+                            <div class="client-arrow">
                                 <i class="fas fa-chevron-right"></i>
-                            </a>
-                        </li>
-                        <?php endif; ?>
-                    </ul>
-                </nav>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- Pestaña de usuarios recientes -->
+            <div class="tab-pane fade" id="recent" role="tabpanel">
+                <div class="client-cards">
+                    <?php foreach ($usuariosRecientes as $usuario): ?>
+                        <div class="client-card" onclick="showOptionsCard(<?= $usuario['id_usuario'] ?>, '<?= htmlspecialchars(addslashes($usuario['nombre_completo'])) ?>', <?= $usuario['activo'] ?>)">
+                            <div class="client-card-header">
+                                <h3 class="client-card-title"><?= htmlspecialchars($usuario['nombre_completo']) ?></h3>
+                                <div>
+                                    <span class="client-card-badge"><?= htmlspecialchars($usuario['nombre_rol']) ?></span>
+                                </div>
+                            </div>
+                            <div class="client-card-body">
+                                <div class="client-card-detail">
+                                    <i class="fas fa-user"></i>
+                                    <span><?= htmlspecialchars($usuario['username_usuario']) ?></span>
+                                </div>
+                                <div class="client-card-detail">
+                                    <i class="fas fa-toggle-<?= $usuario['activo'] ? 'on' : 'off' ?>"></i>
+                                    <span>Estado: <?= $usuario['activo'] ? 'Activo' : 'Inactivo' ?></span>
+                                </div>
+                            </div>
+                            <div class="edit-arrow">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- Pestaña de usuarios inactivos -->
+            <div class="tab-pane fade" id="inactive" role="tabpanel">
+                <?php if (!empty($usuariosInactivos)): ?>
+                    <div class="client-list">
+                        <?php foreach ($usuariosInactivos as $usuario): ?>
+                            <div class="client-item inactive-item">
+                                <div class="client-info">
+                                    <div class="client-name">
+                                        <?= htmlspecialchars($usuario['nombre_completo']) ?>
+                                    </div>
+                                    <div class="client-description">
+                                        <?= htmlspecialchars($usuario['username_usuario']) ?> · 
+                                        <?= htmlspecialchars($usuario['correo_usuario']) ?> · 
+                                        <?= htmlspecialchars($usuario['nombre_rol']) ?>
+                                        <br>
+                                        <small>Última actividad: <?= $usuario['ultima_actividad'] ? date('d/m/Y H:i', strtotime($usuario['ultima_actividad'])) : 'Nunca' ?></small>
+                                    </div>
+                                </div>
+                                <div class="client-actions">
+                                    <a href="index.php?cambiar_estado=<?= $usuario['id_usuario'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Activar a <?= htmlspecialchars(addslashes($usuario['nombre_completo'])) ?>?')">
+                                        <i class="fas fa-check"></i> Activar
+                                    </a>
+                                    <a href="eliminar_permanentemente.php?id=<?= $usuario['id_usuario'] ?>" class="btn btn-primary btn-sm" onclick="return confirm('¿Mover a papelera a <?= htmlspecialchars(addslashes($usuario['nombre_completo'])) ?>?')">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="text-center py-5">
+                        <i class="fas fa-user-slash fa-3x mb-3" style="color: var(--text-muted);"></i>
+                        <h4 style="color: var(--text-muted);">No hay usuarios inactivos</h4>
+                        <p style="color: var(--text-muted);">Todos los usuarios están activos en el sistema</p>
+                    </div>
                 <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Tarjeta flotante para opciones -->
+        <div class="overlay" id="overlay"></div>
+        <div class="options-floating-card" id="optionsCard">
+            <button class="option-close" id="closeOptionsCard">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="options-card-header">
+                <h3 class="options-card-title" id="optionsCardTitle">Opciones</h3>
+            </div>
+            <div class="options-card-body">
+                <a href="#" class="option-item" id="viewOption">
+                    <i class="fas fa-eye"></i> Ver Detalles
+                </a>
+                <a href="#" class="option-item" id="editOption">
+                    <i class="fas fa-edit"></i> Editar Usuario
+                </a>
+                <a href="#" class="option-item" id="stateOption">
+                    <i class="fas fa-toggle-on"></i> Cambiar Estado
+                </a>
+                <a href="#" class="option-item " id="deleteOption">
+                    <i class="fas fa-trash-alt"></i> Eliminar Usuario
+                </a>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variables globales
+        let currentClientId = null;
+        let currentClientName = '';
+        let currentClientActive = true;
+
+        // Función para mostrar la tarjeta de opciones
+        function showOptionsCard(clientId, clientName, isActive) {
+            currentClientId = clientId;
+            currentClientName = clientName;
+            currentClientActive = isActive;
+            
+            // Actualizar título de la tarjeta
+            document.getElementById('optionsCardTitle').textContent = clientName;
+            
+            // Actualizar enlaces
+            document.getElementById('viewOption').href = `ver.php?id=${clientId}`;
+            document.getElementById('editOption').href = `editar.php?id=${clientId}`;
+            document.getElementById('stateOption').href = `index.php?cambiar_estado=${clientId}`;
+            document.getElementById('deleteOption').href = `eliminar_permanentemente.php?id=${clientId}`;
+            
+            // Actualizar texto del botón de estado
+            const stateIcon = document.querySelector('#stateOption i');
+            const stateText = document.querySelector('#stateOption');
+            if (currentClientActive) {
+                stateIcon.className = 'fas fa-toggle-off';
+                stateText.innerHTML = '<i class="fas fa-toggle-off"></i> Desactivar';
+            } else {
+                stateIcon.className = 'fas fa-toggle-on';
+                stateText.innerHTML = '<i class="fas fa-toggle-on"></i> Activar';
+            }
+            
+            // Actualizar texto del botón de eliminar/mover a papelera
+            const deleteText = document.querySelector('#deleteOption');
+            if (currentClientActive) {
+                deleteText.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar Usuario';
+            } else {
+                deleteText.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar Usuario';
+            }
+            
+            // Mostrar overlay y tarjeta
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('optionsCard').style.display = 'block';
+        }
+
+        // Función para ocultar la tarjeta de opciones
+        function hideOptionsCard() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('optionsCard').style.display = 'none';
+            currentClientId = null;
+            currentClientName = '';
+            currentClientActive = true;
+        }
+
+        // Event listeners para cerrar la tarjeta
+        document.getElementById('closeOptionsCard').addEventListener('click', hideOptionsCard);
+        document.getElementById('overlay').addEventListener('click', hideOptionsCard);
+
+        // Confirmaciones para acciones
+        document.addEventListener('DOMContentLoaded', function() {
+            // Confirmación para cambio de estado
+            const stateLinks = document.querySelectorAll('a[href*="cambiar_estado"]');
+            stateLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const clientItem = this.closest('.client-item');
+                    const clientName = clientItem.querySelector('.client-name').textContent.split('Inactivo')[0].split('Activo')[0].trim();
+                    const isActive = !clientItem.classList.contains('inactive-item');
+                    const action = isActive ? 'desactivar' : 'activar';
+                    
+                    if (!confirm(`¿Estás seguro de ${action} a "${clientName}"?`)) {
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            // Confirmación para eliminación permanente
+            const permanentDeleteLinks = document.querySelectorAll('a[href*="eliminar_permanentemente"]');
+            permanentDeleteLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const clientName = this.closest('.client-item').querySelector('.client-name').textContent.split('Inactivo')[0].split('Activo')[0].trim();
+                    if (!confirm(`¿Estás seguro de eliminar permanentemente a "${clientName}"? Esta acción no se puede deshacer.`)) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+
+        // Manejo de búsqueda en tiempo real
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.trim();
+            const resultsContainer = document.getElementById('searchResults');
+            const allClientsList = document.getElementById('allClientsList');
+            
+            if (searchTerm.length < 2) {
+                resultsContainer.style.display = 'none';
+                allClientsList.style.display = 'block';
+                return;
+            }
+            
+            // Mostrar loading
+            resultsContainer.innerHTML = '<div class="search-result-item">Buscando...</div>';
+            resultsContainer.style.display = 'block';
+            allClientsList.style.display = 'none';
+            
+            // Realizar búsqueda AJAX
+            fetch(`index.php?ajax=1&q=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(data => {
+                    resultsContainer.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        resultsContainer.innerHTML = '<div class="search-result-item">No se encontraron resultados</div>';
+                        return;
+                    }
+                    
+                    data.forEach(user => {
+                        const resultItem = document.createElement('div');
+                        resultItem.className = 'search-result-item';
+                        resultItem.innerHTML = `
+                            <div>
+                                <div class="search-client-name">${escapeHtml(user.nombre_completo)}</div>
+                                <div class="search-client-info">
+                                    ${escapeHtml(user.username_usuario)} · ${escapeHtml(user.correo_usuario)} · ${escapeHtml(user.nombre_rol)}
+                                </div>
+                            </div>
+                            <div class="client-arrow">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        `;
+                        resultItem.addEventListener('click', () => {
+                            showOptionsCard(user.id_usuario, user.nombre_completo, user.activo);
+                            resultsContainer.style.display = 'none';
+                            document.getElementById('searchInput').value = '';
+                            allClientsList.style.display = 'block';
+                        });
+                        resultsContainer.appendChild(resultItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error en la búsqueda:', error);
+                    resultsContainer.innerHTML = '<div class="search-result-item">Error al buscar</div>';
+                });
+        });
+
+        // Función para escapar HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Cerrar resultados al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                document.getElementById('searchResults').style.display = 'none';
+            }
+        });
+    </script>
 </body>
+
 </html>

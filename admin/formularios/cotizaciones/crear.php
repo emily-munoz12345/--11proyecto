@@ -10,64 +10,27 @@ if (!isAdmin() && !isSeller()) {
     exit;
 }
 
-// Manejar la solicitud AJAX para obtener vehículos
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'get_vehiculos') {
-    if (!isset($_POST['id_cliente']) || !is_numeric($_POST['id_cliente'])) {
-        header('Content-Type: application/json');
-        echo json_encode([]);
-        exit;
-    }
-
-    $idCliente = intval($_POST['id_cliente']);
-    
-    try {
-        $sql = "SELECT v.id_vehiculo, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo
-                FROM vehiculos v
-                JOIN cliente_vehiculo cv ON v.id_vehiculo = cv.id_vehiculo
-                WHERE cv.id_cliente = ?";
-        $stmt = $conex->prepare($sql);
-        $stmt->execute([$idCliente]);
-        $vehiculos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        header('Content-Type: application/json');
-        echo json_encode($vehiculos);
-        exit;
-    } catch (PDOException $e) {
-        error_log("Error al obtener vehículos: " . $e->getMessage());
-        header('Content-Type: application/json');
-        echo json_encode([]);
-        exit;
-    }
-}
-
-// Generar token CSRF
-//session_start();
+// Generar token CSRF (sesión ya iniciada en auth.php)
 $csrf_token = bin2hex(random_bytes(32));
 $_SESSION['csrf_token'] = $csrf_token;
 
-// Obtener clientes y servicios
 try {
-    $clientes = $conex->query("SELECT id_cliente, nombre_cliente FROM clientes ORDER BY nombre_cliente")->fetchAll();
-    $servicios = $conex->query("SELECT id_servicio, nombre_servicio, precio_servicio FROM servicios ORDER BY nombre_servicio")->fetchAll();
+    // Obtener listados para los select
+    $clientes = $conex->query("SELECT id_cliente, nombre_cliente FROM clientes WHERE activo = 1 ORDER BY nombre_cliente")->fetchAll();
+    $servicios = $conex->query("SELECT id_servicio, nombre_servicio, precio_servicio FROM servicios WHERE activo = 1 ORDER BY nombre_servicio")->fetchAll();
 } catch (PDOException $e) {
     error_log("Error al obtener datos: " . $e->getMessage());
-    $_SESSION['mensaje'] = 'Error al cargar datos necesarios';
-    $_SESSION['tipo_mensaje'] = 'danger';
-    header('Location: index.php');
+    header('Location: index.php?error=Error al cargar datos');
     exit;
 }
-
-require_once __DIR__ . '/../../includes/head.php';
-$title = 'Nueva Cotización | Nacional Tapizados';
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?></title>
+    <title>Crear Cotización | Nacional Tapizados</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -77,15 +40,14 @@ $title = 'Nueva Cotización | Nacional Tapizados';
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
             --warning-color: rgba(255, 193, 7, 0.8);
             --info-color: rgba(13, 202, 240, 0.8);
-            --dark-bg: #1a1a1a;
-            --darker-bg: #121212;
         }
 
         body {
@@ -105,7 +67,7 @@ $title = 'Nueva Cotización | Nacional Tapizados';
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -125,6 +87,7 @@ $title = 'Nueva Cotización | Nacional Tapizados';
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -132,33 +95,47 @@ $title = 'Nueva Cotización | Nacional Tapizados';
             color: var(--primary-color);
         }
 
-        /* Estilos para formulario */
-        .form-container {
+        .card {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+            color: var(--text-color);
         }
 
         .form-label {
+            color: var(--text-color);
             font-weight: 500;
             margin-bottom: 0.5rem;
-            color: var(--text-color);
         }
 
         .form-control, .form-select {
-            background-color: var(--dark-bg);
+            background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            backdrop-filter: blur(5px);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
         }
 
         .form-control:focus, .form-select:focus {
-            background-color: var(--darker-bg);
+            background-color: rgba(0, 0, 0, 0.7);
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
+            box-shadow: 0 0 0 2px var(--primary-color);
             color: var(--text-color);
         }
 
@@ -166,71 +143,118 @@ $title = 'Nueva Cotización | Nacional Tapizados';
             color: var(--text-muted);
         }
 
+        .form-control:read-only, .form-select:read-only {
+            background-color: rgba(0, 0, 0, 0.4);
+            border-color: var(--border-color);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
         .input-group-text {
-            background-color: var(--dark-bg);
+            background-color: var(--primary-color);
             border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        /* Estilos específicos para la tabla de servicios */
+        .table-container {
+            overflow-x: auto;
+            background-color: var(--bg-transparent-light);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+        }
+
+        .servicios-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+            background-color: var(--bg-transparent-light);
+        }
+
+        .servicios-table th, 
+        .servicios-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            background-color: transparent;
+        }
+
+        .servicios-table th {
+            background-color: var(--primary-color);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .servicios-table tbody tr {
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        .servicios-table tbody tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .servicios-table tbody tr:hover {
+            background-color: rgba(140, 74, 63, 0.3);
+        }
+
+        .servicios-table tfoot tr {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .servicios-table tfoot td {
+            padding: 0.75rem;
+        }
+
+        .servicios-table .form-select,
+        .servicios-table .form-control {
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .servicios-table .form-select:focus,
+        .servicios-table .form-control:focus {
+            background-color: rgba(0, 0, 0, 0.8);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px var(--primary-color);
+            color: var(--text-color);
+        }
+
+        .servicios-table .form-control:read-only {
+            background-color: rgba(0, 0, 0, 0.4);
             color: var(--text-muted);
         }
 
-        /* Estilos específicos para los menús desplegables */
-        .form-select {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 0.75rem center;
-            background-size: 16px 12px;
-        }
-
-        /* Estilo para las opciones del menú desplegable */
-        .form-select option {
-            background-color: var(--darker-bg);
-            color: var(--text-color);
-            padding: 10px;
-        }
-
-        /* Estilo cuando se pasa el mouse sobre las opciones */
-        .form-select option:hover {
-            background-color: var(--primary-color) !important;
-            color: white;
-        }
-
-        /* Estilo para las opciones cuando están seleccionadas */
-        .form-select option:checked {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .table {
-            --bs-table-bg: transparent;
-            --bs-table-color: var(--text-color);
-            --bs-table-border-color: var(--border-color);
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .table-light {
-            --bs-table-bg: rgba(255, 255, 255, 0.1);
-            --bs-table-color: var(--text-color);
-        }
-
-        /* Estilos para botones */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
             font-weight: 500;
             text-decoration: none;
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 1rem;
             gap: 0.5rem;
         }
 
         .btn i {
+            font-size: 1rem;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
             font-size: 0.9rem;
         }
 
@@ -252,6 +276,15 @@ $title = 'Nueva Cotización | Nacional Tapizados';
             background-color: rgba(108, 117, 125, 1);
         }
 
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: rgba(220, 53, 69, 1);
+        }
+
         .btn-outline-secondary {
             background-color: transparent;
             border: 1px solid var(--secondary-color);
@@ -263,18 +296,6 @@ $title = 'Nueva Cotización | Nacional Tapizados';
             color: white;
         }
 
-        .btn-outline-danger {
-            background-color: transparent;
-            border: 1px solid var(--danger-color);
-            color: var(--text-color);
-        }
-
-        .btn-outline-danger:hover {
-            background-color: var(--danger-color);
-            color: white;
-        }
-
-        /* Estilos para alertas */
         .alert {
             padding: 1rem;
             border-radius: 8px;
@@ -283,11 +304,9 @@ $title = 'Nueva Cotización | Nacional Tapizados';
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
-        }
-
-        .alert-success {
-            background-color: rgba(25, 135, 84, 0.2);
-            border-left: 4px solid var(--success-color);
+            border-left: 4px solid var(--info-color);
+            background-color: rgba(13, 202, 240, 0.2);
+            color: var(--text-color);
         }
 
         .alert-danger {
@@ -295,29 +314,51 @@ $title = 'Nueva Cotización | Nacional Tapizados';
             border-left: 4px solid var(--danger-color);
         }
 
-        .alert-warning {
-            background-color: rgba(255, 193, 7, 0.2);
-            border-left: 4px solid var(--warning-color);
+        .alert .btn-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .alert-info {
-            background-color: rgba(13, 202, 240, 0.2);
-            border-left: 4px solid var(--info-color);
+        .alert .btn-close:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .main-container {
+                padding: 1rem;
                 margin: 1rem;
-                padding: 1.5rem;
             }
 
             .header-section {
                 flex-direction: column;
                 align-items: flex-start;
             }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            .servicios-table {
+                min-width: 600px;
+            }
         }
-    </style>   
+    </style>
 </head>
 
 <body>
@@ -325,156 +366,139 @@ $title = 'Nueva Cotización | Nacional Tapizados';
         <!-- Encabezado -->
         <div class="header-section">
             <h1 class="page-title">
-                <i class="fas fa-file-invoice-dollar"></i> Nueva Cotización
+                <i class="fas fa-file-invoice-dollar"></i>Crear Nueva Cotización
             </h1>
-            <div class="d-flex gap-2">
+            <div>
                 <a href="index.php" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Volver
                 </a>
             </div>
         </div>
 
-        <!-- Mensajes -->
-        <?php if (isset($_SESSION['mensaje'])): ?>
-            <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
-                <div>
-                    <i class="fas fa-<?=
-                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : ($_SESSION['tipo_mensaje'] === 'danger' ? 'times-circle' : ($_SESSION['tipo_mensaje'] === 'warning' ? 'exclamation-triangle' : 'info-circle'))
-                                        ?> me-2"></i>
-                    <?= $_SESSION['mensaje'] ?>
-                </div>
-                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+        <?php if (isset($_GET['error'])): ?>
+            <div class="alert alert-danger">
+                <span><?= htmlspecialchars($_GET['error']) ?></span>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <?php 
-            unset($_SESSION['mensaje']);
-            unset($_SESSION['tipo_mensaje']);
-            ?>
         <?php endif; ?>
 
         <!-- Formulario -->
-        <div class="form-container">
-            <form action="procesar.php" method="POST" id="formCotizacion">
-                <input type="hidden" name="accion" value="crear">
-                <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
-                
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label for="cliente" class="form-label">Cliente *</label>
-                        <select class="form-select" id="cliente" name="cliente" required>
-                            <option value="">Seleccione un cliente...</option>
-                            <?php foreach ($clientes as $cliente): ?>
-                            <option value="<?= $cliente['id_cliente'] ?>"><?= htmlspecialchars($cliente['nombre_cliente']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="vehiculo" class="form-label">Vehículo *</label>
-                        <div class="input-group">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Crear Nueva Cotización</h5>
+            </div>
+            <div class="card-body">
+                <form action="procesar.php" method="POST" id="formCotizacion">
+                    <input type="hidden" name="accion" value="crear">
+                    <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
+                    
+                    <!-- Información del Cliente y Vehículo -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="cliente" class="form-label">Cliente *</label>
+                            <select class="form-select" id="cliente" name="cliente" required>
+                                <option value="">Seleccione un cliente...</option>
+                                <?php foreach ($clientes as $cliente): ?>
+                                <option value="<?= $cliente['id_cliente'] ?>"><?= htmlspecialchars($cliente['nombre_cliente']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vehiculo" class="form-label">Vehículo *</label>
                             <select class="form-select" id="vehiculo" name="vehiculo" required disabled>
                                 <option value="">Primero seleccione un cliente</option>
                             </select>
-                            <span class="input-group-text" id="loadingVehiculos">
-                                <div class="spinner-border spinner-border-sm text-primary d-none" role="status">
-                                    <span class="visually-hidden">Cargando...</span>
-                                </div>
-                            </span>
                         </div>
                     </div>
-                </div>
-                
-                <div class="mb-4">
-                    <h5 class="mb-3 border-bottom pb-2">
-                        <i class="fas fa-list me-2"></i>Servicios
-                    </h5>
                     
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="tablaServicios">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Servicio</th>
-                                    <th width="150">Precio</th>
-                                    <th width="100">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="serviciosAgregados">
-                                <!-- Servicios se agregarán aquí dinámicamente -->
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td>
-                                        <select class="form-select" id="selectServicio">
-                                            <option value="">Seleccione un servicio...</option>
-                                            <?php foreach ($servicios as $servicio): ?>
-                                            <option value="<?= $servicio['id_servicio'] ?>" data-precio="<?= $servicio['precio_servicio'] ?>">
-                                                <?= htmlspecialchars($servicio['nombre_servicio']) ?> ($<?= number_format($servicio['precio_servicio'], 2, ',', '.') ?>)
-                                            </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control" id="precioServicio" readonly>
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-primary w-100" id="btnAgregarServicio">
-                                            <i class="fas fa-plus me-1"></i> Agregar
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                    <!-- Servicios -->
+                    <div class="mb-4">
+                        <h5 class="mb-3" style="color: var(--text-color);"><i class="fas fa-list me-2"></i>Servicios</h5>
+                        <div class="table-container">
+                            <table class="servicios-table" id="tablaServicios">
+                                <thead>
+                                    <tr>
+                                        <th>Servicio</th>
+                                        <th width="120">Precio</th>
+                                        <th width="100">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="serviciosAgregados">
+                                    <!-- Los servicios se agregarán aquí dinámicamente -->
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td>
+                                            <select class="form-select" id="selectServicio">
+                                                <option value="">Seleccione un servicio...</option>
+                                                <?php foreach ($servicios as $servicio): ?>
+                                                <option value="<?= $servicio['id_servicio'] ?>" 
+                                                    data-precio="<?= $servicio['precio_servicio'] ?>">
+                                                    <?= htmlspecialchars($servicio['nombre_servicio']) ?> ($<?= number_format($servicio['precio_servicio'], 2, ',', '.') ?>)
+                                                </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control" id="precioServicio" readonly>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary" id="btnAgregarServicio">
+                                                <i class="fas fa-plus"></i> Agregar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <label for="subtotal" class="form-label">Subtotal</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
+                    
+                    <!-- Totales -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="subtotal" class="form-label">Subtotal</label>
                             <input type="text" class="form-control" id="subtotal" name="subtotal" value="0.00" readonly>
                         </div>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="iva" class="form-label">IVA (19%)</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
+                        <div class="col-md-4">
+                            <label for="iva" class="form-label">IVA (19%)</label>
                             <input type="text" class="form-control" id="iva" name="iva" value="0.00" readonly>
                         </div>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="valor_adicional" class="form-label">Valor Adicional</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" id="valor_adicional" name="valor_adicional" value="0.00" min="0" step="0.01">
+                        <div class="col-md-4">
+                            <label for="valor_adicional" class="form-label">Valor Adicional</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="valor_adicional" name="valor_adicional" value="0.00" min="0" step="0.01">
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="row mb-4">
-                    <div class="col-md-4 offset-md-8">
-                        <label for="total" class="form-label">Total</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="text" class="form-control fw-bold" id="total" name="total" value="0.00" readonly>
+                    <div class="row mb-4">
+                        <div class="col-md-4 offset-md-8">
+                            <label for="total" class="form-label">Total</label>
+                            <input type="text" class="form-control" id="total" name="total" value="0.00" readonly>
                         </div>
                     </div>
-                </div>
-                
-                <div class="mb-4">
-                    <label for="notas" class="form-label">Notas Adicionales</label>
-                    <textarea class="form-control" id="notas" name="notas" rows="3"></textarea>
-                </div>
-                
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end border-top pt-3">
-                    <button type="reset" class="btn btn-outline-secondary me-md-2" onclick="resetForm()">
-                        <i class="fas fa-undo me-1"></i> Limpiar
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i> Guardar Cotización
-                    </button>
-                </div>
-                
-                <input type="hidden" name="servicios_json" id="servicios_json">
-            </form>
+                    
+                    <!-- Notas -->
+                    <div class="mb-4">
+                        <label for="notas" class="form-label">Notas Adicionales</label>
+                        <textarea class="form-control" id="notas" name="notas" rows="3" placeholder="Ingrese notas adicionales sobre la cotización..."></textarea>
+                    </div>
+                    
+                    <!-- Botones -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="index.php" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Crear Cotización
+                        </button>
+                    </div>
+                    
+                    <input type="hidden" name="servicios_json" id="servicios_json" value='{"servicios":[],"valor_adicional":0}'>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -483,59 +507,6 @@ $title = 'Nueva Cotización | Nacional Tapizados';
     // Variables globales
     let serviciosSeleccionados = [];
     let valorAdicional = 0;
-
-    // Función para cargar vehículos del cliente
-    function cargarVehiculos(idCliente) {
-        if (!idCliente) {
-            document.getElementById('vehiculo').innerHTML = '<option value="">Primero seleccione un cliente</option>';
-            document.getElementById('vehiculo').disabled = true;
-            return;
-        }
-
-        const selectVehiculo = document.getElementById('vehiculo');
-        const loading = document.querySelector('#loadingVehiculos .spinner-border');
-        
-        loading.classList.remove('d-none');
-        selectVehiculo.disabled = true;
-        selectVehiculo.innerHTML = '<option value="">Cargando vehículos...</option>';
-        
-        // Usamos FormData para enviar los datos
-        const formData = new FormData();
-        formData.append('action', 'get_vehiculos');
-        formData.append('id_cliente', idCliente);
-
-        fetch('crear.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Error en la respuesta del servidor');
-            return response.json();
-        })
-        .then(data => {
-            let options = '<option value="">Seleccione un vehículo...</option>';
-            
-            if (data.length > 0) {
-                data.forEach(vehiculo => {
-                    options += `<option value="${vehiculo.id_vehiculo}">
-                        ${vehiculo.marca_vehiculo} ${vehiculo.modelo_vehiculo} (${vehiculo.placa_vehiculo})
-                    </option>`;
-                });
-                selectVehiculo.disabled = false;
-            } else {
-                options = '<option value="">Este cliente no tiene vehículos registrados</option>';
-            }
-            
-            selectVehiculo.innerHTML = options;
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            selectVehiculo.innerHTML = '<option value="">Error al cargar vehículos. Intente nuevamente.</option>';
-        })
-        .finally(() => {
-            loading.classList.add('d-none');
-        });
-    }
 
     // Función para formatear números con decimales
     function formatearNumero(num) {
@@ -581,15 +552,6 @@ $title = 'Nueva Cotización | Nacional Tapizados';
         });
     }
 
-    // Función para resetear el formulario
-    function resetForm() {
-        serviciosSeleccionados = [];
-        valorAdicional = 0;
-        document.getElementById('valor_adicional').value = '0.00';
-        calcularTotales();
-        actualizarTablaServicios();
-    }
-
     // Función para actualizar la tabla de servicios
     function actualizarTablaServicios() {
         const tablaServicios = document.getElementById('serviciosAgregados');
@@ -599,10 +561,10 @@ $title = 'Nueva Cotización | Nacional Tapizados';
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${servicio.nombre}</td>
-                <td>$${formatearNumero(servicio.precio)}</td>
+                <td>$ ${formatearNumero(servicio.precio)}</td>
                 <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarServicio(${index})">
-                        <i class="fas fa-trash-alt"></i>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="eliminarServicio(${index})">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </td>
             `;
@@ -619,13 +581,51 @@ $title = 'Nueva Cotización | Nacional Tapizados';
         }
     };
 
+    // Función para cargar vehículos del cliente seleccionado
+    function cargarVehiculosCliente(idCliente) {
+        const selectVehiculo = document.getElementById('vehiculo');
+        
+        if (!idCliente) {
+            selectVehiculo.innerHTML = '<option value="">Primero seleccione un cliente</option>';
+            selectVehiculo.disabled = true;
+            return;
+        }
+        
+        // Realizar petición AJAX para obtener los vehículos del cliente
+        fetch(`obtener_vehiculos.php?cliente_id=${idCliente}`)
+            .then(response => response.json())
+            .then(data => {
+                selectVehiculo.innerHTML = '<option value="">Seleccione un vehículo...</option>';
+                
+                if (data.success && data.vehiculos.length > 0) {
+                    data.vehiculos.forEach(vehiculo => {
+                        const option = document.createElement('option');
+                        option.value = vehiculo.id_vehiculo;
+                        option.textContent = `${vehiculo.marca_vehiculo} ${vehiculo.modelo_vehiculo} (${vehiculo.placa_vehiculo})`;
+                        selectVehiculo.appendChild(option);
+                    });
+                    selectVehiculo.disabled = false;
+                } else {
+                    selectVehiculo.innerHTML = '<option value="">El cliente no tiene vehículos registrados</option>';
+                    selectVehiculo.disabled = true;
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar vehículos:', error);
+                selectVehiculo.innerHTML = '<option value="">Error al cargar vehículos</option>';
+                selectVehiculo.disabled = true;
+            });
+    }
+
     // Configurar eventos al cargar el documento
     document.addEventListener('DOMContentLoaded', function() {
-        // Configurar evento para selección de cliente
-        document.getElementById('cliente').addEventListener('change', function() {
-            cargarVehiculos(this.value);
+        // Configurar eventos para cliente y vehículo
+        const selectCliente = document.getElementById('cliente');
+        selectCliente.addEventListener('change', function() {
+            const idCliente = this.value;
+            cargarVehiculosCliente(idCliente);
         });
-
+        
         // Configurar eventos para servicios
         const selectServicio = document.getElementById('selectServicio');
         const precioServicio = document.getElementById('precioServicio');
@@ -647,7 +647,7 @@ $title = 'Nueva Cotización | Nacional Tapizados';
                 return;
             }
             
-            if (serviciosSeleccionados.some(s => s.id === idServicio)) {
+            if (serviciosSeleccionados.some(s => s.id == idServicio)) {
                 alert('Este servicio ya fue agregado');
                 return;
             }
@@ -669,8 +669,29 @@ $title = 'Nueva Cotización | Nacional Tapizados';
         document.getElementById('valor_adicional').addEventListener('change', calcularTotales);
         document.getElementById('valor_adicional').addEventListener('input', calcularTotales);
 
-        // Calcular totales iniciales
-        calcularTotales();
+        // Validar formulario antes de enviar
+        document.getElementById('formCotizacion').addEventListener('submit', function(e) {
+            const cliente = document.getElementById('cliente').value;
+            const vehiculo = document.getElementById('vehiculo').value;
+            
+            if (!cliente) {
+                e.preventDefault();
+                alert('Debe seleccionar un cliente');
+                return;
+            }
+            
+            if (!vehiculo) {
+                e.preventDefault();
+                alert('Debe seleccionar un vehículo');
+                return;
+            }
+            
+            if (serviciosSeleccionados.length === 0) {
+                e.preventDefault();
+                alert('Debe agregar al menos un servicio');
+                return;
+            }
+        });
     });
     </script>
 </body>

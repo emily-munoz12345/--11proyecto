@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 require_once __DIR__ . '/../../includes/head.php';
-$title = 'Editar Material | Nacional Tapizados';
+$title = 'Editar Material ';
 ?>
 
 <!DOCTYPE html>
@@ -83,8 +83,9 @@ $title = 'Editar Material | Nacional Tapizados';
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -109,7 +110,7 @@ $title = 'Editar Material | Nacional Tapizados';
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -129,6 +130,7 @@ $title = 'Editar Material | Nacional Tapizados';
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -136,33 +138,44 @@ $title = 'Editar Material | Nacional Tapizados';
             color: var(--primary-color);
         }
 
-        /* Estilos para formulario */
-        .form-container {
+        .card {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-body {
+            padding: 2rem;
         }
 
         .form-label {
             font-weight: 500;
             color: var(--text-color);
             margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-label i {
+            color: var(--primary-color);
+            width: 16px;
         }
 
         .form-control {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 0.75rem;
-            border-radius: 8px;
+            backdrop-filter: blur(5px);
             transition: all 0.3s ease;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
         }
 
         .form-control:focus {
-            background-color: rgba(255, 255, 255, 0.15);
+            background-color: rgba(0, 0, 0, 0.7);
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
             color: var(--text-color);
@@ -173,11 +186,10 @@ $title = 'Editar Material | Nacional Tapizados';
         }
 
         textarea.form-control {
-            min-height: 120px;
             resize: vertical;
+            min-height: 100px;
         }
 
-        /* Estilos para botones */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -189,12 +201,7 @@ $title = 'Editar Material | Nacional Tapizados';
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
-            font-size: 1rem;
             gap: 0.5rem;
-        }
-
-        .btn i {
-            font-size: 1rem;
         }
 
         .btn-primary {
@@ -204,6 +211,7 @@ $title = 'Editar Material | Nacional Tapizados';
 
         .btn-primary:hover {
             background-color: var(--primary-hover);
+            transform: translateY(-2px);
         }
 
         .btn-secondary {
@@ -213,9 +221,9 @@ $title = 'Editar Material | Nacional Tapizados';
 
         .btn-secondary:hover {
             background-color: rgba(108, 117, 125, 1);
+            transform: translateY(-2px);
         }
 
-        /* Estilos para alertas */
         .alert {
             padding: 1rem;
             border-radius: 8px;
@@ -224,18 +232,49 @@ $title = 'Editar Material | Nacional Tapizados';
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
+            border-left: 4px solid var(--danger-color);
+            background-color: rgba(220, 53, 69, 0.2);
+            color: var(--text-color);
         }
 
         .alert-success {
             background-color: rgba(25, 135, 84, 0.2);
             border-left: 4px solid var(--success-color);
-            color: white;
         }
 
-        .alert-danger {
-            background-color: rgba(220, 53, 69, 0.2);
-            border-left: 4px solid var(--danger-color);
-            color: white;
+        .alert-warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .alert-info {
+            background-color: rgba(13, 202, 240, 0.2);
+            border-left: 4px solid var(--info-color);
+        }
+
+        .required-field::after {
+            content: " *";
+            color: var(--danger-color);
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .form-section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-section-title i {
+            color: var(--primary-color);
         }
 
         /* Responsive */
@@ -248,6 +287,39 @@ $title = 'Editar Material | Nacional Tapizados';
             .header-section {
                 flex-direction: column;
                 align-items: flex-start;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .card-body {
+                padding: 1.5rem;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .d-md-flex {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .form-section-title {
+                font-size: 1.1rem;
+            }
+            
+            .row {
+                margin-left: -0.5rem;
+                margin-right: -0.5rem;
+            }
+            
+            .col-md-6 {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
             }
         }
     </style>
@@ -285,55 +357,134 @@ $title = 'Editar Material | Nacional Tapizados';
         <?php endif; ?>
 
         <!-- Formulario -->
-        <div class="form-container">
-            <form method="POST">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="nombre_material" class="form-label">Nombre del Material</label>
-                        <input type="text" class="form-control" id="nombre_material" name="nombre_material" 
-                               value="<?= htmlspecialchars($material['nombre_material']) ?>" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="categoria_material" class="form-label">Categoría</label>
-                        <input type="text" class="form-control" id="categoria_material" name="categoria_material" 
-                               value="<?= htmlspecialchars($material['categoria_material']) ?>" required>
-                    </div>
-                </div>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-cube"></i>
+                            Información del Material
+                        </h3>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="nombre_material" class="form-label required-field">
+                                    <i class="fas fa-tag"></i>
+                                    Nombre del Material
+                                </label>
+                                <input type="text" class="form-control" id="nombre_material" name="nombre_material" 
+                                       value="<?= htmlspecialchars($material['nombre_material']) ?>" 
+                                       placeholder="Ingrese el nombre del material"
+                                       required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="categoria_material" class="form-label required-field">
+                                    <i class="fas fa-layer-group"></i>
+                                    Categoría
+                                </label>
+                                <input type="text" class="form-control" id="categoria_material" name="categoria_material" 
+                                       value="<?= htmlspecialchars($material['categoria_material']) ?>" 
+                                       placeholder="Categoría del material"
+                                       required>
+                            </div>
+                        </div>
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="precio_metro" class="form-label">Precio por Metro</label>
-                        <input type="number" class="form-control" id="precio_metro" name="precio_metro" 
-                               value="<?= htmlspecialchars($material['precio_metro']) ?>" step="0.01" min="0" required>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="precio_metro" class="form-label required-field">
+                                    <i class="fas fa-dollar-sign"></i>
+                                    Precio por Metro
+                                </label>
+                                <input type="number" class="form-control" id="precio_metro" name="precio_metro" 
+                                       value="<?= htmlspecialchars($material['precio_metro']) ?>" 
+                                       placeholder="0.00"
+                                       step="0.01" min="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="stock_material" class="form-label required-field">
+                                    <i class="fas fa-boxes"></i>
+                                    Stock Disponible (metros)
+                                </label>
+                                <input type="number" class="form-control" id="stock_material" name="stock_material" 
+                                       value="<?= htmlspecialchars($material['stock_material']) ?>" 
+                                       placeholder="0.0"
+                                       step="0.1" min="0" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="proveedor_material" class="form-label required-field">
+                                <i class="fas fa-truck"></i>
+                                Proveedor
+                            </label>
+                            <input type="text" class="form-control" id="proveedor_material" name="proveedor_material" 
+                                   value="<?= htmlspecialchars($material['proveedor_material']) ?>" 
+                                   placeholder="Nombre del proveedor"
+                                   required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="descripcion_material" class="form-label">
+                                <i class="fas fa-align-left"></i>
+                                Descripción
+                            </label>
+                            <textarea class="form-control" id="descripcion_material" name="descripcion_material" 
+                                      rows="4" placeholder="Descripción opcional del material..."><?= htmlspecialchars($material['descripcion_material']) ?></textarea>
+                            <div class="form-text text-muted mt-1">
+                                <i class="fas fa-info-circle"></i>
+                                Campo opcional para información adicional del material.
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <label for="stock_material" class="form-label">Stock Disponible (metros)</label>
-                        <input type="number" class="form-control" id="stock_material" name="stock_material" 
-                               value="<?= htmlspecialchars($material['stock_material']) ?>" step="0.1" min="0" required>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="index.php" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Actualizar Material
+                        </button>
                     </div>
-                </div>
-
-                <div class="mb-3">
-                    <label for="proveedor_material" class="form-label">Proveedor</label>
-                    <input type="text" class="form-control" id="proveedor_material" name="proveedor_material" 
-                           value="<?= htmlspecialchars($material['proveedor_material']) ?>" required>
-                </div>
-
-                <div class="mb-4">
-                    <label for="descripcion_material" class="form-label">Descripción (Opcional)</label>
-                    <textarea class="form-control" id="descripcion_material" name="descripcion_material" rows="4"><?= htmlspecialchars($material['descripcion_material']) ?></textarea>
-                </div>
-
-                <div class="d-flex justify-content-end gap-2">
-                    <a href="index.php" class="btn btn-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Actualizar Material
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-
+<?php include '../../includes/footer.php'; ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Validación del formulario
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const nombre = document.getElementById('nombre_material').value.trim();
+            const categoria = document.getElementById('categoria_material').value.trim();
+            const precio = document.getElementById('precio_metro').value.trim();
+            const stock = document.getElementById('stock_material').value.trim();
+            const proveedor = document.getElementById('proveedor_material').value.trim();
+            
+            if (!nombre || !categoria || !precio || !stock || !proveedor) {
+                e.preventDefault();
+                alert('Por favor complete todos los campos requeridos (*)');
+                return false;
+            }
+            
+            // Validación de números positivos
+            if (parseFloat(precio) < 0 || parseFloat(stock) < 0) {
+                e.preventDefault();
+                alert('El precio y stock deben ser valores positivos');
+                return false;
+            }
+        });
+
+        // Efectos visuales para los campos
+        const inputs = document.querySelectorAll('.form-control');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+    </script>
 </body>
 </html>

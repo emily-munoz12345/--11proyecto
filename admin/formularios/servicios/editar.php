@@ -5,17 +5,13 @@ ini_set('display_errors', 1);
 require_once __DIR__ . '/../../../php/conexion.php';
 require_once __DIR__ . '/../../../php/auth.php';
 
+// Verificar permisos
 if (!isAdmin() && !isSeller()) {
     header('Location: ../dashboard.php');
     exit;
 }
 
-// Inicializar variables de sesión para mensajes
-if (!isset($_SESSION['mensaje'])) {
-    $_SESSION['mensaje'] = '';
-    $_SESSION['tipo_mensaje'] = '';
-}
-
+// Obtener ID del servicio
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if ($id <= 0) {
@@ -23,48 +19,19 @@ if ($id <= 0) {
     exit;
 }
 
-// Obtener información del servicio
-$servicio = null;
-if ($id > 0) {
-    try {
-        $stmt = $conex->prepare("SELECT * FROM servicios WHERE id_servicio = ?");
-        $stmt->execute([$id]);
-        $servicio = $stmt->fetch(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        $_SESSION['mensaje'] = 'Error al obtener el servicio: ' . $e->getMessage();
-        $_SESSION['tipo_mensaje'] = 'danger';
+// Obtener datos del servicio
+try {
+    $stmt = $conex->prepare("SELECT * FROM servicios WHERE id_servicio = ?");
+    $stmt->execute([$id]);
+    $servicio = $stmt->fetch();
+    
+    if (!$servicio) {
+        header('Location: index.php?error=Servicio no encontrado');
+        exit;
     }
-}
-
-// Si no se encuentra el servicio, redirigir
-if (!$servicio) {
-    $_SESSION['mensaje'] = 'Servicio no encontrado';
-    $_SESSION['tipo_mensaje'] = 'danger';
-    header('Location: index.php');
+} catch (PDOException $e) {
+    header('Location: index.php?error=Error al obtener servicio');
     exit;
-}
-
-// Procesar el formulario cuando se envía
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nombre = $_POST['nombre'] ?? '';
-    $precio = $_POST['precio'] ?? '';
-    $tiempo = $_POST['tiempo'] ?? '';
-    $categoria = $_POST['categoria'] ?? '';
-    $descripcion = $_POST['descripcion'] ?? '';
-
-    try {
-        $stmt = $conex->prepare("UPDATE servicios SET nombre_servicio = ?, precio_servicio = ?, tiempo_estimado = ?, categoria_servicio = ?, descripcion_servicio = ? WHERE id_servicio = ?");
-        
-        if ($stmt->execute([$nombre, $precio, $tiempo, $categoria, $descripcion, $id])) {
-            $_SESSION['mensaje'] = 'Servicio actualizado correctamente';
-            $_SESSION['tipo_mensaje'] = 'success';
-            header('Location: index.php');
-            exit;
-        }
-    } catch (PDOException $e) {
-        $_SESSION['mensaje'] = 'Error al actualizar el servicio: ' . $e->getMessage();
-        $_SESSION['tipo_mensaje'] = 'danger';
-    }
 }
 
 require_once __DIR__ . '/../../includes/head.php';
@@ -74,11 +41,8 @@ $title = 'Editar Servicio | Nacional Tapizados';
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?></title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <?php require_once __DIR__ . '/../../includes/head.php'; ?>
+    <title>Editar Servicio</title>
     <style>
         :root {
             --primary-color: rgba(140, 74, 63, 0.8);
@@ -86,8 +50,9 @@ $title = 'Editar Servicio | Nacional Tapizados';
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -106,13 +71,13 @@ $title = 'Editar Servicio | Nacional Tapizados';
         }
 
         .main-container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 2rem auto;
             padding: 2rem;
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -132,6 +97,7 @@ $title = 'Editar Servicio | Nacional Tapizados';
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -139,33 +105,44 @@ $title = 'Editar Servicio | Nacional Tapizados';
             color: var(--primary-color);
         }
 
-        /* Estilos para formulario */
-        .form-container {
+        .card {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-body {
+            padding: 2rem;
         }
 
         .form-label {
             font-weight: 500;
             color: var(--text-color);
             margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .form-control {
-            background-color: rgba(255, 255, 255, 0.1);
+        .form-label i {
+            color: var(--primary-color);
+            width: 16px;
+        }
+
+        .form-control, .form-select {
+            background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            padding: 0.75rem;
-            border-radius: 8px;
+            backdrop-filter: blur(5px);
             transition: all 0.3s ease;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
         }
 
-        .form-control:focus {
-            background-color: rgba(255, 255, 255, 0.15);
+        .form-control:focus, .form-select:focus {
+            background-color: rgba(0, 0, 0, 0.7);
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
             color: var(--text-color);
@@ -176,11 +153,10 @@ $title = 'Editar Servicio | Nacional Tapizados';
         }
 
         textarea.form-control {
-            min-height: 120px;
             resize: vertical;
+            min-height: 100px;
         }
 
-        /* Estilos para botones */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -192,12 +168,7 @@ $title = 'Editar Servicio | Nacional Tapizados';
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
-            font-size: 1rem;
             gap: 0.5rem;
-        }
-
-        .btn i {
-            font-size: 1rem;
         }
 
         .btn-primary {
@@ -207,6 +178,7 @@ $title = 'Editar Servicio | Nacional Tapizados';
 
         .btn-primary:hover {
             background-color: var(--primary-hover);
+            transform: translateY(-2px);
         }
 
         .btn-secondary {
@@ -216,9 +188,9 @@ $title = 'Editar Servicio | Nacional Tapizados';
 
         .btn-secondary:hover {
             background-color: rgba(108, 117, 125, 1);
+            transform: translateY(-2px);
         }
 
-        /* Estilos para alertas */
         .alert {
             padding: 1rem;
             border-radius: 8px;
@@ -227,18 +199,49 @@ $title = 'Editar Servicio | Nacional Tapizados';
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
+            border-left: 4px solid var(--danger-color);
+            background-color: rgba(220, 53, 69, 0.2);
+            color: var(--text-color);
         }
 
         .alert-success {
             background-color: rgba(25, 135, 84, 0.2);
             border-left: 4px solid var(--success-color);
-            color: white;
         }
 
-        .alert-danger {
-            background-color: rgba(220, 53, 69, 0.2);
-            border-left: 4px solid var(--danger-color);
-            color: white;
+        .alert-warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .alert-info {
+            background-color: rgba(13, 202, 240, 0.2);
+            border-left: 4px solid var(--info-color);
+        }
+
+        .required-field::after {
+            content: " *";
+            color: var(--danger-color);
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .form-section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-section-title i {
+            color: var(--primary-color);
         }
 
         /* Responsive */
@@ -252,87 +255,207 @@ $title = 'Editar Servicio | Nacional Tapizados';
                 flex-direction: column;
                 align-items: flex-start;
             }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .card-body {
+                padding: 1.5rem;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .d-md-flex {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .form-section-title {
+                font-size: 1.1rem;
+            }
+            
+            .row {
+                margin-left: -0.5rem;
+                margin-right: -0.5rem;
+            }
+            
+            .col-md-6 {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
         }
     </style>
 </head>
-
 <body>
     <div class="main-container">
-        <!-- Encabezado -->
         <div class="header-section">
-            <h1 class="page-title">
-                <i class="fas fa-edit"></i> Editar Servicio
-            </h1>
-            <div class="d-flex gap-2">
-                <a href="index.php" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver
-                </a>
-            </div>
+            <h1 class="page-title"><i class="fas fa-edit"></i>Editar Servicio</h1>
+            <a href="index.php" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver
+            </a>
         </div>
-
-        <!-- Mensajes -->
-        <?php if (!empty($_SESSION['mensaje'])): ?>
-            <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
+        
+        <?php if (isset($_GET['error'])): ?>
+            <div class="alert alert-danger">
                 <div>
-                    <i class="fas fa-<?=
-                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : 'exclamation-triangle'
-                                        ?> me-2"></i>
-                    <?= $_SESSION['mensaje'] ?>
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <?= htmlspecialchars($_GET['error']) ?>
                 </div>
                 <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
             </div>
-            <?php
-            $_SESSION['mensaje'] = '';
-            $_SESSION['tipo_mensaje'] = '';
-            ?>
         <?php endif; ?>
 
-        <!-- Formulario -->
-        <div class="form-container">
-            <form method="POST">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="nombre" class="form-label">Nombre del Servicio *</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" 
-                               value="<?= htmlspecialchars($servicio['nombre_servicio']) ?>" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="categoria" class="form-label">Categoría *</label>
-                        <input type="text" class="form-control" id="categoria" name="categoria" 
-                               value="<?= htmlspecialchars($servicio['categoria_servicio']) ?>" required>
-                    </div>
+        <?php if (isset($_GET['success'])): ?>
+            <div class="alert alert-success">
+                <div>
+                    <i class="fas fa-check-circle me-2"></i>
+                    <?= htmlspecialchars($_GET['success']) ?>
                 </div>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+            </div>
+        <?php endif; ?>
+        
+        <div class="card">
+            <div class="card-body">
+                <form action="procesar.php" method="POST">
+                    <input type="hidden" name="accion" value="editar">
+                    <input type="hidden" name="id" value="<?= $servicio['id_servicio'] ?>">
+                    
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-tools"></i>
+                            Información del Servicio
+                        </h3>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="nombre_servicio" class="form-label required-field">
+                                    <i class="fas fa-tag"></i>
+                                    Nombre del Servicio
+                                </label>
+                                <input type="text" class="form-control" id="nombre_servicio" name="nombre_servicio" 
+                                       value="<?= htmlspecialchars($servicio['nombre_servicio']) ?>" 
+                                       placeholder="Ingrese el nombre del servicio"
+                                       required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="categoria_servicio" class="form-label required-field">
+                                    <i class="fas fa-folder"></i>
+                                    Categoría
+                                </label>
+                                <select class="form-select" id="categoria_servicio" name="categoria_servicio" required>
+                                    <option value="">Seleccione una categoría</option>
+                                    <option value="Tapicería" <?= $servicio['categoria_servicio'] == 'Tapicería' ? 'selected' : '' ?>>Tapicería</option>
+                                    <option value="Interior" <?= $servicio['categoria_servicio'] == 'Interior' ? 'selected' : '' ?>>Interior</option>
+                                    <option value="Reparación" <?= $servicio['categoria_servicio'] == 'Reparación' ? 'selected' : '' ?>>Reparación</option>
+                                    <option value="Mantenimiento" <?= $servicio['categoria_servicio'] == 'Mantenimiento' ? 'selected' : '' ?>>Mantenimiento</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="precio_servicio" class="form-label required-field">
+                                    <i class="fas fa-dollar-sign"></i>
+                                    Precio
+                                </label>
+<input type="number" class="form-control" id="precio_servicio" name="precio_servicio" 
+       value="<?= number_format($servicio['precio_servicio'], 2, '.', '') ?>" 
+       step="0.01" min="0.01" 
+       placeholder="0.00"
+       required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="tiempo_estimado" class="form-label required-field">
+                                    <i class="fas fa-clock"></i>
+                                    Tiempo Estimado
+                                </label>
+                                <input type="text" class="form-control" id="tiempo_estimado" name="tiempo_estimado" 
+                                       value="<?= htmlspecialchars($servicio['tiempo_estimado']) ?>" 
+                                       placeholder="Ej: 2 días, 1 semana"
+                                       required>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="precio" class="form-label">Precio ($) *</label>
-                        <input type="number" class="form-control" id="precio" name="precio" 
-                               value="<?= htmlspecialchars($servicio['precio_servicio']) ?>" min="0" step="1000" required>
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-align-left"></i>
+                            Descripción del Servicio
+                        </h3>
+                        
+                        <div class="mb-3">
+                            <label for="descripcion_servicio" class="form-label required-field">
+                                <i class="fas fa-file-alt"></i>
+                                Descripción
+                            </label>
+                            <textarea class="form-control" id="descripcion_servicio" name="descripcion_servicio" rows="4" 
+                                      placeholder="Describa detalladamente el servicio..." required><?= 
+                                htmlspecialchars($servicio['descripcion_servicio']) 
+                            ?></textarea>
+                            <div class="form-text text-muted mt-1">
+                                <i class="fas fa-info-circle"></i>
+                                Describa detalladamente en qué consiste el servicio.
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <label for="tiempo" class="form-label">Tiempo Estimado *</label>
-                        <input type="text" class="form-control" id="tiempo" name="tiempo" 
-                               value="<?= htmlspecialchars($servicio['tiempo_estimado']) ?>" required>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="index.php" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Guardar Cambios
+                        </button>
                     </div>
-                </div>
-
-                <div class="mb-4">
-                    <label for="descripcion" class="form-label">Descripción Completa *</label>
-                    <textarea class="form-control" id="descripcion" name="descripcion" rows="4" required><?= 
-                        htmlspecialchars($servicio['descripcion_servicio']) 
-                    ?></textarea>
-                </div>
-
-                <div class="d-flex justify-content-end gap-2">
-                    <a href="index.php" class="btn btn-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Actualizar Servicio
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 
+    <?php include '../../includes/footer.php'; ?>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Validación del formulario
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const nombre = document.getElementById('nombre_servicio').value.trim();
+            const categoria = document.getElementById('categoria_servicio').value;
+            const precio = document.getElementById('precio_servicio').value.trim();
+            const tiempo = document.getElementById('tiempo_estimado').value.trim();
+            const descripcion = document.getElementById('descripcion_servicio').value.trim();
+            
+            if (!nombre || !categoria || !precio || !tiempo || !descripcion) {
+                e.preventDefault();
+                alert('Por favor complete todos los campos requeridos (*)');
+                return false;
+            }
+            
+            // Validación de precio
+            if (parseFloat(precio) <= 0) {
+                e.preventDefault();
+                alert('El precio debe ser mayor a 0');
+                document.getElementById('precio_servicio').focus();
+                return false;
+            }
+        });
+
+        // Efectos visuales para los campos
+        const inputs = document.querySelectorAll('.form-control, .form-select');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+    </script>
 </body>
 </html>

@@ -5,8 +5,8 @@ ini_set('display_errors', 1);
 
 // Configuración de rutas
 define('ROOT_PATH', dirname(__DIR__, 3));
-require_once __DIR__ . '/../../../php/conexion.php';
-require_once __DIR__ . '/../../../php/auth.php';
+require_once __DIR__ . '/../../php/conexion.php';
+require_once __DIR__ . '/../../php/auth.php';
 
 // Verificar permisos (solo Admin)
 if (!isAdmin()) {
@@ -22,10 +22,40 @@ if (!isset($_SESSION['mensaje'])) {
 
 // Procesar parámetros de búsqueda
 $tipoFiltro = $_GET['tipo'] ?? 'all';
-$fechaFiltro = $_GET['fecha'] ?? 'all';
 $buscarTexto = $_GET['buscar'] ?? '';
 
-// Construir consulta base con filtros
+// Obtener estadísticas de la papelera
+$statsQuery = "
+    SELECT 
+        COUNT(*) as total_elementos,
+        MAX(fecha_eliminacion) as ultima_eliminacion,
+        COUNT(DISTINCT tabla) as tipos_diferentes
+    FROM registro_eliminaciones 
+    WHERE accion = 'ELIMINACION'
+";
+
+$stats = $conex->query($statsQuery)->fetch(PDO::FETCH_ASSOC);
+
+// FUNCIÓN AUXILIAR: Obtener nombre de columna ID según tabla
+function getColumnName($tabla) {
+    $columnMap = [
+        'clientes' => 'id_cliente',
+        'vehiculos' => 'id_vehiculo',
+        'materiales' => 'id_material',
+        'servicios' => 'id_servicio',
+        'cotizaciones' => 'id_cotizacion',
+        'trabajos' => 'id_trabajos',
+        'mensajes_contacto' => 'id_mensaje',
+        'usuarios' => 'id_usuario',
+        'roles' => 'id_rol',
+        'cliente_vehiculo' => 'id_cliente',
+        'cotizacion_servicios' => 'id_cotizacion'
+    ];
+    
+    return $columnMap[$tabla] ?? 'id';
+}
+
+// Construir consulta base para obtener registros eliminados
 $query = "
     SELECT 
         re.*,
@@ -35,10 +65,11 @@ $query = "
             WHEN re.tabla = 'vehiculos' THEN (SELECT CONCAT(marca_vehiculo, ' ', modelo_vehiculo) FROM vehiculos WHERE id_vehiculo = re.id_registro)
             WHEN re.tabla = 'materiales' THEN (SELECT nombre_material FROM materiales WHERE id_material = re.id_registro)
             WHEN re.tabla = 'servicios' THEN (SELECT nombre_servicio FROM servicios WHERE id_servicio = re.id_registro)
-            WHEN re.tabla = 'usuarios' THEN (SELECT nombre_completo FROM usuarios WHERE id_usuario = re.id_registro)
             WHEN re.tabla = 'cotizaciones' THEN (SELECT CONCAT('Cotización #', id_cotizacion) FROM cotizaciones WHERE id_cotizacion = re.id_registro)
             WHEN re.tabla = 'trabajos' THEN (SELECT CONCAT('Trabajo #', id_trabajos) FROM trabajos WHERE id_trabajos = re.id_registro)
             WHEN re.tabla = 'mensajes_contacto' THEN (SELECT CONCAT('Mensaje: ', asunto) FROM mensajes_contacto WHERE id_mensaje = re.id_registro)
+            WHEN re.tabla = 'usuarios' THEN (SELECT nombre_completo FROM usuarios WHERE id_usuario = re.id_registro)
+            WHEN re.tabla = 'roles' THEN (SELECT nombre_rol FROM roles WHERE id_rol = re.id_registro)
             ELSE 'Elemento'
         END as nombre_elemento
     FROM registro_eliminaciones re
@@ -55,29 +86,16 @@ if ($tipoFiltro !== 'all') {
     $params[] = $tipoFiltro;
 }
 
-// Filtro por fecha
-if ($fechaFiltro !== 'all') {
-    switch ($fechaFiltro) {
-        case 'today':
-            $query .= " AND DATE(re.fecha_eliminacion) = CURDATE()";
-            break;
-        case 'week':
-            $query .= " AND re.fecha_eliminacion >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
-            break;
-        case 'month':
-            $query .= " AND re.fecha_eliminacion >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
-            break;
-    }
-}
-
 // Filtro por texto de búsqueda
 if (!empty($buscarTexto)) {
     $query .= " AND (
         re.datos LIKE ? OR 
         u.nombre_completo LIKE ? OR
-        re.id_registro LIKE ?
+        re.id_registro LIKE ? OR
+        re.tabla LIKE ?
     )";
     $searchTerm = "%$buscarTexto%";
+    $params[] = $searchTerm;
     $params[] = $searchTerm;
     $params[] = $searchTerm;
     $params[] = $searchTerm;
@@ -101,32 +119,22 @@ try {
 if (isset($_POST['restaurar']) && is_numeric($_POST['id']) && !empty($_POST['tabla'])) {
     $id = $_POST['id'];
     $tabla = $_POST['tabla'];
+    $id_column = getColumnName($tabla);
     
     try {
-        // Verificar que el elemento existe y está eliminado
-        $checkStmt = $conex->prepare("SELECT activo FROM $tabla WHERE id_" . substr($tabla, 0, -1) . " = ?");
-        $checkStmt->execute([$id]);
-        $elemento = $checkStmt->fetch();
+        // Establecer usuario actual para el trigger
+        $conex->query("CALL SetUsuarioActual(" . $_SESSION['user_id'] . ")");
         
-        if ($elemento && $elemento['activo'] == 0) {
-            // Establecer usuario actual para el trigger
-            $conex->query("CALL SetUsuarioActual(" . $_SESSION['user_id'] . ")");
-            
-            // Restaurar elemento
-            $id_column = 'id_' . substr($tabla, 0, -1);
-            $sql = "UPDATE $tabla SET activo = 1 WHERE $id_column = ?";
-            $stmt = $conex->prepare($sql);
-            $stmt->execute([$id]);
-            
-            // Limpiar usuario actual
-            $conex->query("CALL LimpiarUsuarioActual()");
-            
-            $_SESSION['mensaje'] = "Elemento restaurado correctamente";
-            $_SESSION['tipo_mensaje'] = 'success';
-        } else {
-            $_SESSION['mensaje'] = "El elemento no existe o ya fue restaurado";
-            $_SESSION['tipo_mensaje'] = 'warning';
-        }
+        // Restaurar elemento (activarlo)
+        $sql = "UPDATE $tabla SET activo = 1 WHERE $id_column = ?";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute([$id]);
+        
+        // Limpiar usuario actual
+        $conex->query("CALL LimpiarUsuarioActual()");
+        
+        $_SESSION['mensaje'] = "Elemento restaurado correctamente";
+        $_SESSION['tipo_mensaje'] = 'success';
         
         header('Location: papelera.php?' . http_build_query($_GET));
         exit;
@@ -136,72 +144,25 @@ if (isset($_POST['restaurar']) && is_numeric($_POST['id']) && !empty($_POST['tab
     }
 }
 
-// Procesar eliminación permanente
+// Procesar eliminación permanente individual
 if (isset($_POST['eliminar_permanentemente']) && is_numeric($_POST['id']) && !empty($_POST['tabla'])) {
     $id = $_POST['id'];
     $tabla = $_POST['tabla'];
-    $id_column = 'id_' . substr($tabla, 0, -1);
+    $id_column = getColumnName($tabla);
     
     try {
-        // Eliminar permanentemente según la tabla
-        switch($tabla) {
-            case 'clientes':
-                // Verificar si hay relaciones antes de eliminar
-                $checkRelations = $conex->prepare("
-                    SELECT COUNT(*) as count FROM cotizaciones WHERE id_cliente = ?
-                    UNION ALL
-                    SELECT COUNT(*) FROM cliente_vehiculo WHERE id_cliente = ?
-                ");
-                $checkRelations->execute([$id, $id]);
-                $relations = $checkRelations->fetchAll();
-                
-                if ($relations[0]['count'] > 0 || $relations[1]['count'] > 0) {
-                    $_SESSION['mensaje'] = "No se puede eliminar el cliente porque tiene cotizaciones o vehículos asociados";
-                    $_SESSION['tipo_mensaje'] = 'warning';
-                } else {
-                    $sql = "DELETE FROM $tabla WHERE $id_column = ?";
-                    $stmt = $conex->prepare($sql);
-                    $stmt->execute([$id]);
-                    $_SESSION['mensaje'] = "Cliente eliminado permanentemente";
-                    $_SESSION['tipo_mensaje'] = 'success';
-                }
-                break;
-                
-            case 'vehiculos':
-                $checkRelations = $conex->prepare("
-                    SELECT COUNT(*) as count FROM cotizaciones WHERE id_vehiculo = ?
-                    UNION ALL
-                    SELECT COUNT(*) FROM cliente_vehiculo WHERE id_vehiculo = ?
-                ");
-                $checkRelations->execute([$id, $id]);
-                $relations = $checkRelations->fetchAll();
-                
-                if ($relations[0]['count'] > 0 || $relations[1]['count'] > 0) {
-                    $_SESSION['mensaje'] = "No se puede eliminar el vehículo porque tiene cotizaciones o clientes asociados";
-                    $_SESSION['tipo_mensaje'] = 'warning';
-                } else {
-                    $sql = "DELETE FROM $tabla WHERE $id_column = ?";
-                    $stmt = $conex->prepare($sql);
-                    $stmt->execute([$id]);
-                    $_SESSION['mensaje'] = "Vehículo eliminado permanentemente";
-                    $_SESSION['tipo_mensaje'] = 'success';
-                }
-                break;
-                
-            default:
-                $sql = "DELETE FROM $tabla WHERE $id_column = ?";
-                $stmt = $conex->prepare($sql);
-                $stmt->execute([$id]);
-                $_SESSION['mensaje'] = "Elemento eliminado permanentemente";
-                $_SESSION['tipo_mensaje'] = 'success';
-        }
+        // Eliminar permanentemente de la tabla original
+        $sql = "DELETE FROM $tabla WHERE $id_column = ?";
+        $stmt = $conex->prepare($sql);
+        $stmt->execute([$id]);
         
-        // Eliminar el registro de eliminaciones si se eliminó correctamente
-        if ($_SESSION['tipo_mensaje'] === 'success') {
-            $deleteRegistro = "DELETE FROM registro_eliminaciones WHERE tabla = ? AND id_registro = ? AND accion = 'ELIMINACION'";
-            $stmt2 = $conex->prepare($deleteRegistro);
-            $stmt2->execute([$tabla, $id]);
-        }
+        // Eliminar el registro de eliminaciones
+        $deleteRegistro = "DELETE FROM registro_eliminaciones WHERE tabla = ? AND id_registro = ? AND accion = 'ELIMINACION'";
+        $stmt2 = $conex->prepare($deleteRegistro);
+        $stmt2->execute([$tabla, $id]);
+        
+        $_SESSION['mensaje'] = "Elemento eliminado permanentemente";
+        $_SESSION['tipo_mensaje'] = 'success';
         
         header('Location: papelera.php?' . http_build_query($_GET));
         exit;
@@ -214,61 +175,20 @@ if (isset($_POST['eliminar_permanentemente']) && is_numeric($_POST['id']) && !em
 // Procesar vaciar papelera
 if (isset($_POST['vaciar_papelera'])) {
     try {
-        $successCount = 0;
-        $errorCount = 0;
-        
         // Eliminar permanentemente todos los elementos en papelera
-        $tablas = ['clientes', 'vehiculos', 'materiales', 'servicios', 'usuarios', 'cotizaciones', 'trabajos', 'mensajes_contacto'];
+        $tablas = ['clientes', 'vehiculos', 'materiales', 'servicios', 'cotizaciones', 'trabajos', 'mensajes_contacto', 'usuarios', 'roles'];
         
         foreach ($tablas as $tabla) {
-            try {
-                $id_column = 'id_' . substr($tabla, 0, -1);
-                
-                // Para clientes y vehículos, verificar relaciones primero
-                if ($tabla === 'clientes' || $tabla === 'vehiculos') {
-                    $elements = $conex->query("SELECT $id_column FROM $tabla WHERE activo = 0")->fetchAll();
-                    
-                    foreach ($elements as $element) {
-                        $elementId = $element[$id_column];
-                        
-                        if ($tabla === 'clientes') {
-                            $check = $conex->prepare("SELECT COUNT(*) as count FROM cotizaciones WHERE id_cliente = ?");
-                            $check->execute([$elementId]);
-                            $hasRelations = $check->fetch()['count'] > 0;
-                        } else {
-                            $check = $conex->prepare("SELECT COUNT(*) as count FROM cotizaciones WHERE id_vehiculo = ?");
-                            $check->execute([$elementId]);
-                            $hasRelations = $check->fetch()['count'] > 0;
-                        }
-                        
-                        if (!$hasRelations) {
-                            $deleteStmt = $conex->prepare("DELETE FROM $tabla WHERE $id_column = ?");
-                            $deleteStmt->execute([$elementId]);
-                            $successCount++;
-                        } else {
-                            $errorCount++;
-                        }
-                    }
-                } else {
-                    $deleteStmt = $conex->prepare("DELETE FROM $tabla WHERE activo = 0");
-                    $deleteStmt->execute();
-                    $successCount += $deleteStmt->rowCount();
-                }
-            } catch (Exception $e) {
-                $errorCount++;
-            }
+            $id_column = getColumnName($tabla);
+            $sql = "DELETE FROM $tabla WHERE activo = 0";
+            $conex->exec($sql);
         }
         
         // Limpiar todos los registros de eliminaciones
         $conex->exec("DELETE FROM registro_eliminaciones WHERE accion = 'ELIMINACION'");
         
-        if ($errorCount > 0) {
-            $_SESSION['mensaje'] = "Papelera vaciada parcialmente. $successCount elementos eliminados, $errorCount no se pudieron eliminar por relaciones existentes.";
-            $_SESSION['tipo_mensaje'] = 'warning';
-        } else {
-            $_SESSION['mensaje'] = "Papelera vaciada correctamente. $successCount elementos eliminados.";
-            $_SESSION['tipo_mensaje'] = 'success';
-        }
+        $_SESSION['mensaje'] = "Papelera vaciada correctamente";
+        $_SESSION['tipo_mensaje'] = 'success';
         
         header('Location: papelera.php');
         exit;
@@ -283,7 +203,7 @@ if (isset($_POST['vaciar_papelera'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Papelera | Nacional Tapizados</title>
+    <title>Gestión de Papelera</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -348,6 +268,46 @@ if (isset($_POST['vaciar_papelera'])) {
             color: var(--primary-color);
         }
 
+        /* Estadísticas */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background-color: var(--bg-transparent-light);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            background-color: rgba(140, 74, 63, 0.3);
+        }
+
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card p {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0;
+            color: var(--text-color);
+        }
+
         /* Estilos para tablas */
         .table-container {
             overflow-x: auto;
@@ -361,11 +321,10 @@ if (isset($_POST['vaciar_papelera'])) {
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1000px;
+            min-width: 800px;
         }
 
-        th,
-        td {
+        th, td {
             padding: 1rem;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
@@ -379,9 +338,6 @@ if (isset($_POST['vaciar_papelera'])) {
             font-size: 0.8rem;
             letter-spacing: 0.5px;
             color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
         }
 
         tr:hover {
@@ -449,15 +405,6 @@ if (isset($_POST['vaciar_papelera'])) {
             background-color: rgba(25, 135, 84, 1);
         }
 
-        .btn-warning {
-            background-color: var(--warning-color);
-            color: black;
-        }
-
-        .btn-warning:hover {
-            background-color: rgba(255, 193, 7, 1);
-        }
-
         /* Estilos para alertas */
         .alert {
             padding: 1rem;
@@ -501,15 +448,6 @@ if (isset($_POST['vaciar_papelera'])) {
         .deleted-item:hover {
             background-color: rgba(220, 53, 69, 0.2);
         }
-        
-        .deleted-badge {
-            background-color: var(--danger-color);
-            color: white;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            margin-left: 0.5rem;
-        }
 
         /* Badges para tipos de elementos */
         .badge {
@@ -536,10 +474,6 @@ if (isset($_POST['vaciar_papelera'])) {
             background-color: var(--success-color);
         }
 
-        .badge-usuario {
-            background-color: var(--secondary-color);
-        }
-
         .badge-cotizacion {
             background-color: #6f42c1;
         }
@@ -550,6 +484,14 @@ if (isset($_POST['vaciar_papelera'])) {
 
         .badge-mensaje {
             background-color: #20c997;
+        }
+
+        .badge-usuario {
+            background-color: #e83e8c;
+        }
+
+        .badge-rol {
+            background-color: #6c757d;
         }
 
         /* Formularios */
@@ -571,16 +513,6 @@ if (isset($_POST['vaciar_papelera'])) {
             color: var(--text-muted);
         }
 
-        /* Contador de resultados */
-        .results-count {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             .main-container {
@@ -596,6 +528,19 @@ if (isset($_POST['vaciar_papelera'])) {
             .page-title {
                 font-size: 1.5rem;
             }
+            
+            .btn-sm {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.75rem;
+            }
+            
+            table {
+                min-width: 600px;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -607,13 +552,7 @@ if (isset($_POST['vaciar_papelera'])) {
                 <i class="fas fa-trash"></i> Sistema de Papelera
             </h1>
             <div class="d-flex gap-2 align-items-center">
-                <?php if (!empty($registrosEliminaciones)): ?>
-                    <span class="results-count">
-                        <i class="fas fa-list"></i> 
-                        <?= count($registrosEliminaciones) ?> resultado(s)
-                    </span>
-                <?php endif; ?>
-                <a href="../../dashboard.php" class="btn btn-secondary">
+                <a href="../dashboard.php" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Volver al Dashboard
                 </a>
             </div>
@@ -624,11 +563,13 @@ if (isset($_POST['vaciar_papelera'])) {
             <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
                 <div>
                     <i class="fas fa-<?=
-                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : ($_SESSION['tipo_mensaje'] === 'danger' ? 'times-circle' : ($_SESSION['tipo_mensaje'] === 'warning' ? 'exclamation-triangle' : 'info-circle'))
+                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : 
+                                        ($_SESSION['tipo_mensaje'] === 'danger' ? 'times-circle' : 
+                                        ($_SESSION['tipo_mensaje'] === 'warning' ? 'exclamation-triangle' : 'info-circle'))
                                         ?> me-2"></i>
                     <?= $_SESSION['mensaje'] ?>
                 </div>
-                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+                <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.style.display='none'"></button>
             </div>
             <?php
             $_SESSION['mensaje'] = '';
@@ -636,48 +577,58 @@ if (isset($_POST['vaciar_papelera'])) {
             ?>
         <?php endif; ?>
 
+        <!-- Estadísticas -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>Total en Papelera</h3>
+                <p><?= $stats['total_elementos'] ?? 0 ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Tipos Diferentes</h3>
+                <p><?= $stats['tipos_diferentes'] ?? 0 ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Última Eliminación</h3>
+                <p><?= $stats['ultima_eliminacion'] ? date('d/m/Y H:i', strtotime($stats['ultima_eliminacion'])) : 'N/A' ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Mostrando</h3>
+                <p><?= count($registrosEliminaciones) ?></p>
+            </div>
+        </div>
+
         <!-- Filtros -->
         <div class="card mb-4" style="background-color: var(--bg-transparent-light); border: 1px solid var(--border-color);">
             <div class="card-header" style="background-color: var(--primary-color); border-bottom: 1px solid var(--border-color);">
                 <h5 class="m-0"><i class="fas fa-filter me-2"></i>Filtros de Búsqueda</h5>
             </div>
             <div class="card-body">
-                <form method="get" class="row">
-                    <div class="col-md-3 mb-3">
+                <form method="get" id="filterForm" class="row">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label">Tipo de Elemento</label>
-                        <select class="form-select" name="tipo">
+                        <select class="form-select" name="tipo" id="tipoFilter">
                             <option value="all">Todos los tipos</option>
                             <option value="clientes" <?= $tipoFiltro == 'clientes' ? 'selected' : '' ?>>Clientes</option>
                             <option value="vehiculos" <?= $tipoFiltro == 'vehiculos' ? 'selected' : '' ?>>Vehículos</option>
                             <option value="materiales" <?= $tipoFiltro == 'materiales' ? 'selected' : '' ?>>Materiales</option>
                             <option value="servicios" <?= $tipoFiltro == 'servicios' ? 'selected' : '' ?>>Servicios</option>
-                            <option value="usuarios" <?= $tipoFiltro == 'usuarios' ? 'selected' : '' ?>>Usuarios</option>
                             <option value="cotizaciones" <?= $tipoFiltro == 'cotizaciones' ? 'selected' : '' ?>>Cotizaciones</option>
                             <option value="trabajos" <?= $tipoFiltro == 'trabajos' ? 'selected' : '' ?>>Trabajos</option>
                             <option value="mensajes_contacto" <?= $tipoFiltro == 'mensajes_contacto' ? 'selected' : '' ?>>Mensajes</option>
+                            <option value="usuarios" <?= $tipoFiltro == 'usuarios' ? 'selected' : '' ?>>Usuarios</option>
+                            <option value="roles" <?= $tipoFiltro == 'roles' ? 'selected' : '' ?>>Roles</option>
                         </select>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Fecha de Eliminación</label>
-                        <select class="form-select" name="fecha">
-                            <option value="all">Todas las fechas</option>
-                            <option value="today" <?= $fechaFiltro == 'today' ? 'selected' : '' ?>>Hoy</option>
-                            <option value="week" <?= $fechaFiltro == 'week' ? 'selected' : '' ?>>Esta semana</option>
-                            <option value="month" <?= $fechaFiltro == 'month' ? 'selected' : '' ?>>Este mes</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label">Buscar en contenido</label>
-                        <input type="text" class="form-control" name="buscar" placeholder="Buscar en datos, usuario o ID..." value="<?= htmlspecialchars($buscarTexto) ?>">
+                        <input type="text" class="form-control" name="buscar" id="buscarFilter" 
+                               placeholder="Buscar en datos, usuario o ID..." value="<?= htmlspecialchars($buscarTexto) ?>">
                         <div class="form-text text-light">Busca en datos del elemento, nombre del usuario o ID</div>
                     </div>
                     <div class="col-md-2 mb-3 d-flex align-items-end">
                         <div class="w-100">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-search"></i> Buscar
-                            </button>
-                            <?php if ($tipoFiltro !== 'all' || $fechaFiltro !== 'all' || !empty($buscarTexto)): ?>
-                                <a href="papelera.php" class="btn btn-secondary w-100 mt-2">
+                            <?php if ($tipoFiltro !== 'all' || !empty($buscarTexto)): ?>
+                                <a href="papelera.php" class="btn btn-secondary w-100">
                                     <i class="fas fa-times"></i> Limpiar
                                 </a>
                             <?php endif; ?>
@@ -709,7 +660,6 @@ if (isset($_POST['vaciar_papelera'])) {
                                 <tr>
                                     <th>Elemento</th>
                                     <th>Tipo</th>
-                                    <th>Información</th>
                                     <th>Eliminado por</th>
                                     <th>Fecha de Eliminación</th>
                                     <th>Acciones</th>
@@ -718,20 +668,20 @@ if (isset($_POST['vaciar_papelera'])) {
                             <tbody>
                                 <?php foreach ($registrosEliminaciones as $registro): 
                                     // Determinar clase del badge según la tabla
-                                    $badgeClass = 'badge-' . strtolower($registro['tabla']);
-                                    $tipoTexto = ucfirst($registro['tabla']);
+                                    $badgeClass = 'badge-' . str_replace('_', '', $registro['tabla']);
+                                    $tipoTexto = ucfirst(str_replace('_', ' ', $registro['tabla']));
                                 ?>
                                     <tr class="deleted-item">
                                         <td>
                                             <?= htmlspecialchars($registro['nombre_elemento'] ?? 'Elemento #' . $registro['id_registro']) ?>
+                                            <?php if (!empty($registro['datos'])): ?>
+                                                <br><small class="text-muted"><?= htmlspecialchars($registro['datos']) ?></small>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <span class="badge <?= $badgeClass ?>">
                                                 <?= $tipoTexto ?>
                                             </span>
-                                        </td>
-                                        <td>
-                                            <?= htmlspecialchars($registro['datos'] ?? 'Sin información adicional') ?>
                                         </td>
                                         <td>
                                             <?= htmlspecialchars($registro['usuario_responsable'] ?? 'Sistema') ?>
@@ -745,11 +695,11 @@ if (isset($_POST['vaciar_papelera'])) {
                                                     <i class="fas fa-undo"></i> Restaurar
                                                 </button>
                                             </form>
-                                            <form method="post" class="d-inline" onsubmit="return confirm('¿ESTÁ SEGURO? Esta acción eliminará permanentemente este elemento y no se podrá recuperar.')">
+                                            <form method="post" class="d-inline" onsubmit="return confirm('¿Eliminar PERMANENTEMENTE este elemento? Esta acción no se puede deshacer.')">
                                                 <input type="hidden" name="id" value="<?= $registro['id_registro'] ?>">
                                                 <input type="hidden" name="tabla" value="<?= $registro['tabla'] ?>">
                                                 <button type="submit" name="eliminar_permanentemente" class="btn btn-danger btn-sm">
-                                                    <i class="fas fa-trash"></i> Eliminar
+                                                    <i class="fas fa-times"></i> Eliminar
                                                 </button>
                                             </form>
                                         </td>
@@ -759,14 +709,13 @@ if (isset($_POST['vaciar_papelera'])) {
                         </table>
                     </div>
                 <?php else: ?>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <?php if ($tipoFiltro !== 'all' || $fechaFiltro !== 'all' || !empty($buscarTexto)): ?>
-                            No se encontraron resultados con los filtros aplicados.
-                            <a href="papelera.php" class="alert-link text-light">Ver todos los registros</a>
-                        <?php else: ?>
-                            No hay registros de eliminación en la papelera.
-                        <?php endif; ?>
+                    <div class="text-center py-5">
+                        <i class="fas fa-trash fa-4x mb-3" style="color: var(--text-muted);"></i>
+                        <h4 style="color: var(--text-muted);">La papelera está vacía</h4>
+                        <p style="color: var(--text-muted);">No hay elementos eliminados que mostrar.</p>
+                        <a href="papelera.php" class="btn btn-primary mt-3">
+                            <i class="fas fa-refresh"></i> Mostrar todo
+                        </a>
                     </div>
                 <?php endif; ?>
             </div>
@@ -775,22 +724,37 @@ if (isset($_POST['vaciar_papelera'])) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Auto-submit del formulario cuando cambian los selects
         document.addEventListener('DOMContentLoaded', function() {
-            const tipoSelect = document.querySelector('select[name="tipo"]');
-            const fechaSelect = document.querySelector('select[name="fecha"]');
-            
-            if (tipoSelect) {
-                tipoSelect.addEventListener('change', function() {
-                    this.form.submit();
-                });
-            }
-            
-            if (fechaSelect) {
-                fechaSelect.addEventListener('change', function() {
-                    this.form.submit();
-                });
-            }
+            const tipoFilter = document.getElementById('tipoFilter');
+            const buscarFilter = document.getElementById('buscarFilter');
+            const filterForm = document.getElementById('filterForm');
+
+            // Auto-submit cuando cambian los filtros
+            tipoFilter.addEventListener('change', function() {
+                filterForm.submit();
+            });
+
+            // Búsqueda automática con debounce
+            let searchTimeout;
+            buscarFilter.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function() {
+                    filterForm.submit();
+                }, 500);
+            });
+
+            // Auto-ocultar mensajes después de 5 segundos
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    if (alert.style.display !== 'none') {
+                        alert.style.opacity = '0';
+                        setTimeout(function() {
+                            alert.style.display = 'none';
+                        }, 300);
+                    }
+                }, 5000);
+            });
         });
     </script>
 </body>

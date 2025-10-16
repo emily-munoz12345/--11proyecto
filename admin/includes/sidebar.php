@@ -177,7 +177,7 @@ if (in_array('buzon', $userMenuItems)) {
             <!-- Papelera -->
             <?php if (in_array('papelera', $userMenuItems)): ?>
             <li class="nav-item">
-                <a class="nav-link" href="/--11proyecto/admin/formularios/papelera/papelera.php">
+                <a class="nav-link" href="/--11proyecto/admin/formularios/papelera.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
                         <path d="M3 6h18"></path>
                         <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
@@ -191,7 +191,7 @@ if (in_array('buzon', $userMenuItems)) {
             <!-- Buzón de Entrada -->
             <?php if (in_array('buzon', $userMenuItems)): ?>
             <li class="nav-item">
-                <a class="nav-link" href="/--11proyecto/admin/mensajes_contacto.php">
+                <a class="nav-link" href="/--11proyecto/admin/formularios/buzon.php">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                         <polyline points="22,6 12,13 2,6"></polyline>

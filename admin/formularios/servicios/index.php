@@ -1,10 +1,14 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Configuración de rutas
+define('ROOT_PATH', dirname(__DIR__, 3));
 require_once __DIR__ . '/../../../php/conexion.php';
 require_once __DIR__ . '/../../../php/auth.php';
 
+// Verificar permisos (solo Admin y Vendedor)
 if (!isAdmin() && !isSeller()) {
     header('Location: ../dashboard.php');
     exit;
@@ -16,24 +20,18 @@ if (!isset($_SESSION['mensaje'])) {
     $_SESSION['tipo_mensaje'] = '';
 }
 
-// Procesar eliminación
+// Procesar eliminación a papelera (NO verifica asociaciones)
 if (isset($_GET['eliminar'])) {
     $id = intval($_GET['eliminar']);
     try {
-        // Verificar si el servicio está asociado a cotizaciones
-        $stmt = $conex->prepare("SELECT COUNT(*) FROM cotizacion_servicios WHERE id_servicio = ?");
-        $stmt->execute([$id]);
-        $tieneCotizaciones = $stmt->fetchColumn();
-        
-        if ($tieneCotizaciones > 0) {
-            $_SESSION['mensaje'] = 'No se puede eliminar: servicio está asociado a cotizaciones';
-            $_SESSION['tipo_mensaje'] = 'danger';
+        // Eliminación lógica (soft delete) - SIN verificar cotizaciones
+        $stmt = $conex->prepare("UPDATE servicios SET activo = 0, fecha_eliminacion = NOW() WHERE id_servicio = ?");
+        if ($stmt->execute([$id])) {
+            $_SESSION['mensaje'] = 'Servicio movido a la papelera correctamente';
+            $_SESSION['tipo_mensaje'] = 'success';
         } else {
-            $stmt = $conex->prepare("DELETE FROM servicios WHERE id_servicio = ?");
-            if ($stmt->execute([$id])) {
-                $_SESSION['mensaje'] = 'Servicio eliminado correctamente';
-                $_SESSION['tipo_mensaje'] = 'success';
-            }
+            $_SESSION['mensaje'] = 'Error al mover a la papelera';
+            $_SESSION['tipo_mensaje'] = 'danger';
         }
     } catch (PDOException $e) {
         $_SESSION['mensaje'] = 'Error al eliminar: ' . $e->getMessage();
@@ -43,28 +41,36 @@ if (isset($_GET['eliminar'])) {
     exit;
 }
 
+// Obtener estadísticas generales
+$stats = $conex->query("SELECT 
+    COUNT(*) as total_servicios,
+    MAX(fecha_registro) as ultimo_registro,
+    (SELECT COUNT(*) FROM servicios WHERE DATE(fecha_registro) = CURDATE() AND activo = 1) as registros_hoy,
+    (SELECT COUNT(*) FROM servicios WHERE activo = 0) as en_papelera
+FROM servicios WHERE activo = 1")->fetch(PDO::FETCH_ASSOC);
+
 // Búsqueda y paginación
 $busqueda = $_GET['busqueda'] ?? '';
 $pagina = max(1, intval($_GET['pagina'] ?? 1));
 $porPagina = 10;
 
-$sql = "SELECT * FROM servicios";
+$sql = "SELECT * FROM servicios WHERE activo = 1";
 $params = [];
 $where = '';
 
 if (!empty($busqueda)) {
-    $where = " WHERE nombre_servicio LIKE ? OR descripcion_servicio LIKE ? OR categoria_servicio LIKE ?";
+    $where = " AND (nombre_servicio LIKE ? OR descripcion_servicio LIKE ? OR categoria_servicio LIKE ?)";
     $params = ["%$busqueda%", "%$busqueda%", "%$busqueda%"];
 }
 
 // Contar total para paginación
-$sqlCount = "SELECT COUNT(*) FROM servicios $where";
+$sqlCount = "SELECT COUNT(*) FROM servicios WHERE activo = 1 $where";
 $stmt = $conex->prepare($sqlCount);
 $stmt->execute($params);
 $totalServicios = $stmt->fetchColumn();
 $totalPaginas = ceil($totalServicios / $porPagina);
 
-// Obtener servicios
+// Obtener servicios activos
 $offset = ($pagina - 1) * $porPagina;
 $sql .= " $where ORDER BY nombre_servicio ASC LIMIT $offset, $porPagina";
 
@@ -76,69 +82,45 @@ if (!empty($busqueda)) {
 }
 $servicios = $stmt->fetchAll();
 
-// Obtener servicios recientes (últimos 4)
-$serviciosRecientes = $conex->query("SELECT * FROM servicios ORDER BY id_servicio DESC LIMIT 4")->fetchAll();
+// Obtener servicios recientes (últimos 4 activos)
+$serviciosRecientes = $conex->query("SELECT * FROM servicios WHERE activo = 1 ORDER BY id_servicio DESC LIMIT 4")->fetchAll();
 
-// Obtener todos los servicios para la pestaña de búsqueda
-$todosServicios = $conex->query("SELECT * FROM servicios ORDER BY nombre_servicio ASC")->fetchAll();
+// Obtener todos los servicios activos para la pestaña de búsqueda
+$todosServicios = $conex->query("SELECT * FROM servicios WHERE activo = 1 ORDER BY nombre_servicio ASC")->fetchAll();
 
-// Procesar solicitud para cargar detalles de servicio
-if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
-    $idServicio = $_GET['cargar_detalles'];
-    
-    // Obtener información del servicio
-    $stmt = $conex->prepare("SELECT * FROM servicios WHERE id_servicio = ?");
-    $stmt->execute([$idServicio]);
-    $servicio = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($servicio) {
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">ID</div>';
-        echo '<div class="detail-value">' . $servicio['id_servicio'] . '</div>';
-        echo '</div>';
-        
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">Nombre</div>';
-        echo '<div class="detail-value">' . htmlspecialchars($servicio['nombre_servicio']) . '</div>';
-        echo '</div>';
-        
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">Precio</div>';
-        echo '<div class="detail-value">$' . number_format($servicio['precio_servicio'], 0, ',', '.') . '</div>';
-        echo '</div>';
-        
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">Tiempo Estimado</div>';
-        echo '<div class="detail-value">' . htmlspecialchars($servicio['tiempo_estimado']) . '</div>';
-        echo '</div>';
-        
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">Categoría</div>';
-        echo '<div class="detail-value">' . htmlspecialchars($servicio['categoria_servicio']) . '</div>';
-        echo '</div>';
-        
-        if (!empty($servicio['descripcion_servicio'])) {
-            echo '<div class="notes-section">';
-            echo '<div class="detail-label">Descripción</div>';
-            echo '<div class="detail-value">' . nl2br(htmlspecialchars($servicio['descripcion_servicio'])) . '</div>';
-            echo '</div>';
-        }
-    } else {
-        echo '<div class="alert alert-danger">Servicio no encontrado</div>';
+// Obtener servicios en la papelera (eliminados)
+$serviciosPapelera = $conex->query("SELECT * FROM servicios WHERE activo = 0 ORDER BY fecha_eliminacion DESC")->fetchAll();
+
+// Procesar búsqueda si es una solicitud AJAX
+if (isset($_GET['ajax'])) {
+    header('Content-Type: application/json');
+
+    if (!isset($_GET['q']) || strlen($_GET['q']) < 2) {
+        echo json_encode([]);
+        exit;
     }
+
+    $searchTerm = '%' . $_GET['q'] . '%';
+    $stmt = $conex->prepare("SELECT * FROM servicios 
+                            WHERE activo = 1 
+                            AND (nombre_servicio LIKE :search 
+                            OR descripcion_servicio LIKE :search 
+                            OR categoria_servicio LIKE :search)
+                            ORDER BY nombre_servicio ASC 
+                            LIMIT 10");
+    $stmt->bindParam(':search', $searchTerm);
+    $stmt->execute();
+
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
     exit;
 }
-
-require_once __DIR__ . '/../../includes/head.php';
-$title = 'Gestión de Servicios | Nacional Tapizados';
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?></title>
+    <title>Gestión de Servicios</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -148,8 +130,9 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -174,7 +157,7 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -194,6 +177,7 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -241,7 +225,7 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             padding: 1rem;
             border-radius: 8px;
             border: none;
-            background-color: var(--bg-transparent-light);
+            background-color: var(--bg-input);
             color: var(--text-color);
             font-size: 1rem;
             backdrop-filter: blur(5px);
@@ -252,11 +236,56 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
         .search-input:focus {
             outline: none;
             box-shadow: 0 0 0 2px var(--primary-color);
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(0, 0, 0, 0.7);
         }
 
         .search-input::placeholder {
             color: var(--text-muted);
+        }
+
+        .search-results {
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+            background-color: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .search-result-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .search-result-item:hover {
+            background-color: var(--primary-color);
+        }
+
+        .search-service-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .search-service-info {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .search-service-date {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
         }
 
         /* Estilos para la lista de servicios */
@@ -264,7 +293,7 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border-color);
             overflow: hidden;
         }
@@ -281,12 +310,13 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
         }
 
         .service-item:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(140, 74, 63, 0.3);
         }
 
         .service-name {
             font-weight: 500;
             font-size: 1.1rem;
+            color: var(--text-color);
         }
 
         .service-description {
@@ -299,11 +329,191 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             margin-left: 1rem;
             opacity: 0.7;
             transition: all 0.3s ease;
+            color: var(--text-color);
         }
 
         .service-item:hover .service-arrow {
             opacity: 1;
             transform: translateX(3px);
+        }
+
+        /* Estilos para acciones en la lista */
+        .service-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Estilos para botones */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            gap: 0.5rem;
+        }
+
+        .btn i {
+            font-size: 0.9rem;
+        }
+
+        .btn-sm {
+            padding: 0.35rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(108, 117, 125, 1);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: rgba(220, 53, 69, 1);
+        }
+
+        .btn-info {
+            background-color: var(--info-color);
+            color: white;
+        }
+
+        .btn-info:hover {
+            background-color: rgba(13, 202, 240, 1);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: rgba(25, 135, 84, 1);
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: black;
+        }
+
+        .btn-warning:hover {
+            background-color: rgba(255, 193, 7, 1);
+        }
+
+        /* Estilos para tarjetas de resumen */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background-color: var(--bg-transparent-light);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            background-color: rgba(140, 74, 63, 0.3);
+        }
+
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card p {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0;
+            color: var(--text-color);
+        }
+
+        /* Estilos para alertas */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            border-left: 4px solid var(--info-color);
+            background-color: rgba(13, 202, 240, 0.2);
+            color: var(--text-color);
+        }
+
+        .alert-success {
+            background-color: rgba(25, 135, 84, 0.2);
+            border-left: 4px solid var(--success-color);
+        }
+
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .alert-warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .alert-info {
+            background-color: rgba(13, 202, 240, 0.2);
+            border-left: 4px solid var(--info-color);
+        }
+
+        /* Estilos para elementos eliminados */
+        .deleted-item {
+            opacity: 0.8;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        
+        .deleted-item:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+        }
+        
+        .deleted-badge {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
         }
 
         /* Estilos para tarjetas de servicios */
@@ -326,7 +536,8 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
 
         .service-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            background-color: rgba(140, 74, 63, 0.2);
         }
 
         .service-card-header {
@@ -340,6 +551,7 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             margin: 0;
             font-size: 1.25rem;
             font-weight: 600;
+            color: var(--text-color);
         }
 
         .service-card-badge {
@@ -361,6 +573,7 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             gap: 0.75rem;
             margin-bottom: 0.75rem;
             font-size: 0.95rem;
+            color: var(--text-color);
         }
 
         .service-card-detail i {
@@ -385,120 +598,6 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             color: var(--text-color);
         }
 
-        /* Estilos para tarjetas flotantes */
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-        }
-
-        .floating-card {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 700px;
-            max-height: 90vh;
-            background-color: rgba(50, 50, 50, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            z-index: 1001;
-            animation: fadeInUp 0.4s ease;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translate(-50%, -40%);
-            }
-            to {
-                opacity: 1;
-                transform: translate(-50%, -50%);
-            }
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-            position: relative;
-        }
-
-        .card-title {
-            margin: 0;
-            font-size: 1.8rem;
-            color: #fff;
-        }
-
-        .close-card {
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            transition: all 0.3s ease;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .close-card:hover {
-            color: white;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .card-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .detail-item {
-            margin-bottom: 1rem;
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 1rem;
-            border-radius: 8px;
-        }
-
-        .detail-label {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 0.25rem;
-        }
-
-        .detail-value {
-            font-size: 1.1rem;
-            word-break: break-word;
-            color: #fff;
-        }
-
-        .notes-section {
-            grid-column: 1 / -1;
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-        }
-
         /* Nueva tarjeta flotante para opciones */
         .options-floating-card {
             display: none;
@@ -507,11 +606,11 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             left: 50%;
             transform: translate(-50%, -50%);
             width: 300px;
-            background-color: rgba(50, 50, 50, 0.95);
+            background-color: rgba(40, 40, 40, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 12px;
             padding: 0;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
             z-index: 1001;
             animation: fadeInUp 0.4s ease;
             overflow: hidden;
@@ -588,39 +687,28 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             background-color: rgba(255, 255, 255, 0.1);
         }
 
-        /* Estilos para alertas */
-        .alert {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* Estilos para tarjetas flotantes */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
             backdrop-filter: blur(5px);
         }
 
-        .alert-success {
-            background-color: rgba(25, 135, 84, 0.2);
-            border-left: 4px solid var(--success-color);
-            color: white;
-        }
-
-        .alert-danger {
-            background-color: rgba(220, 53, 69, 0.2);
-            border-left: 4px solid var(--danger-color);
-            color: white;
-        }
-
-        .alert-warning {
-            background-color: rgba(255, 193, 7, 0.2);
-            border-left: 4px solid var(--warning-color);
-            color: white;
-        }
-
-        .alert-info {
-            background-color: rgba(13, 202, 240, 0.2);
-            border-left: 4px solid var(--info-color);
-            color: white;
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
         }
 
         /* Responsive */
@@ -652,21 +740,16 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
                 width: 90%;
                 max-width: 300px;
             }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 576px) {
             .btn {
                 width: 100%;
                 justify-content: center;
-            }
-
-            .floating-card {
-                width: 95%;
-                padding: 1.5rem;
-            }
-
-            .card-content {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -706,6 +789,26 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             ?>
         <?php endif; ?>
 
+        <!-- Estadísticas rápidas -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>Total de Servicios</h3>
+                <p><?= $stats['total_servicios'] ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Último Registro</h3>
+                <p><?= $stats['ultimo_registro'] ? date('d/m/Y', strtotime($stats['ultimo_registro'])) : 'N/A' ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Registros Hoy</h3>
+                <p><?= $stats['registros_hoy'] ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>En Papelera</h3>
+                <p><?= $stats['en_papelera'] ?></p>
+            </div>
+        </div>
+
         <!-- Pestañas de navegación -->
         <ul class="nav nav-tabs" id="serviceTabs" role="tablist">
             <li class="nav-item" role="presentation">
@@ -718,6 +821,11 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
                     <i class="fas fa-clock"></i> Recientes
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="delete-tab" data-bs-toggle="tab" data-bs-target="#delete" type="button" role="tab">
+                    <i class="fas fa-trash-alt"></i> Papelera
+                </button>
+            </li>
         </ul>
 
         <!-- Contenido de las pestañas -->
@@ -726,20 +834,11 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
             <div class="tab-pane fade show active" id="search" role="tabpanel">
                 <!-- Buscador -->
                 <div class="search-container">
-                    <form class="row g-3">
-                        <div class="col-md-8">
-                            <input type="text" class="search-input" name="busqueda" value="<?= htmlspecialchars($busqueda) ?>" 
-                                placeholder="Buscar por nombre, descripción o categoría" autocomplete="off">
-                        </div>
-                        <div class="col-md-4">
-                            <button class="btn btn-primary w-100" type="submit">
-                                <i class="fas fa-search me-1"></i> Buscar
-                            </button>
-                        </div>
-                    </form>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Buscar servicio por nombre, descripción o categoría..." autocomplete="off">
+                    <div class="search-results" id="searchResults"></div>
                 </div>
 
-                <!-- Resultados iniciales (todos los servicios) -->
+                <!-- Resultados iniciales (todos los servicios activos) -->
                 <div class="service-list" id="allServicesList">
                     <?php foreach ($todosServicios as $servicio): ?>
                         <div class="service-item" data-service-id="<?= $servicio['id_servicio'] ?>" onclick="showOptionsCard(<?= $servicio['id_servicio'] ?>, '<?= htmlspecialchars(addslashes($servicio['nombre_servicio'])) ?>')">
@@ -764,25 +863,19 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
                         <ul class="pagination justify-content-center">
                             <?php if ($pagina > 1): ?>
                                 <li class="page-item">
-                                    <a class="page-link" href="?pagina=<?= $pagina-1 ?>&busqueda=<?= urlencode($busqueda) ?>">
-                                        <i class="fas fa-chevron-left"></i>
-                                    </a>
+                                    <a class="page-link" href="?pagina=<?= $pagina-1 ?>&busqueda=<?= urlencode($busqueda) ?>">Anterior</a>
                                 </li>
                             <?php endif; ?>
-                            
+
                             <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
                                 <li class="page-item <?= $i == $pagina ? 'active' : '' ?>">
-                                    <a class="page-link" href="?pagina=<?= $i ?>&busqueda=<?= urlencode($busqueda) ?>">
-                                        <?= $i ?>
-                                    </a>
+                                    <a class="page-link" href="?pagina=<?= $i ?>&busqueda=<?= urlencode($busqueda) ?>"><?= $i ?></a>
                                 </li>
                             <?php endfor; ?>
-                            
+
                             <?php if ($pagina < $totalPaginas): ?>
                                 <li class="page-item">
-                                    <a class="page-link" href="?pagina=<?= $pagina+1 ?>&busqueda=<?= urlencode($busqueda) ?>">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </a>
+                                    <a class="page-link" href="?pagina=<?= $pagina+1 ?>&busqueda=<?= urlencode($busqueda) ?>">Siguiente</a>
                                 </li>
                             <?php endif; ?>
                         </ul>
@@ -792,23 +885,14 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
 
             <!-- Pestaña de servicios recientes -->
             <div class="tab-pane fade" id="recent" role="tabpanel">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Vista de servicios recientemente agregados.
-                </div>
-                
                 <div class="service-cards">
                     <?php foreach ($serviciosRecientes as $servicio): ?>
                         <div class="service-card" onclick="showOptionsCard(<?= $servicio['id_servicio'] ?>, '<?= htmlspecialchars(addslashes($servicio['nombre_servicio'])) ?>')">
                             <div class="service-card-header">
                                 <h3 class="service-card-title"><?= htmlspecialchars($servicio['nombre_servicio']) ?></h3>
-                                <span class="service-card-badge">ID: <?= $servicio['id_servicio'] ?></span>
+                                <span class="service-card-badge"><?= htmlspecialchars($servicio['categoria_servicio']) ?></span>
                             </div>
                             <div class="service-card-body">
-                                <div class="service-card-detail">
-                                    <i class="fas fa-tag"></i>
-                                    <span><?= htmlspecialchars($servicio['categoria_servicio']) ?></span>
-                                </div>
                                 <div class="service-card-detail">
                                     <i class="fas fa-dollar-sign"></i>
                                     <span>$<?= number_format($servicio['precio_servicio'], 0, ',', '.') ?></span>
@@ -817,6 +901,12 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
                                     <i class="fas fa-clock"></i>
                                     <span><?= htmlspecialchars($servicio['tiempo_estimado']) ?></span>
                                 </div>
+                                <?php if (!empty($servicio['descripcion_servicio'])): ?>
+                                    <div class="service-card-detail">
+                                        <i class="fas fa-file-alt"></i>
+                                        <span><?= htmlspecialchars(substr($servicio['descripcion_servicio'], 0, 100)) . (strlen($servicio['descripcion_servicio']) > 100 ? '...' : '') ?></span>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                             <div class="service-arrow-card">
                                 <i class="fas fa-chevron-right"></i>
@@ -825,133 +915,219 @@ $title = 'Gestión de Servicios | Nacional Tapizados';
                     <?php endforeach; ?>
                 </div>
             </div>
+
+            <!-- Pestaña de papelera -->
+            <div class="tab-pane fade" id="delete" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <?php if (isAdmin() && !empty($serviciosPapelera)): ?>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="vaciarPapelera()">
+                            <i class="fas fa-broom me-1"></i> Vaciar papelera
+                        </button>
+                    <?php endif; ?>
+                </div>
+                
+                <?php if (!empty($serviciosPapelera)): ?>
+                    <div class="service-list">
+                        <?php foreach ($serviciosPapelera as $servicio): ?>
+                            <div class="service-item deleted-item">
+                                <div class="service-info">
+                                    <div class="service-name"><?= htmlspecialchars($servicio['nombre_servicio']) ?></div>
+                                    <div class="service-description">
+                                        <?= htmlspecialchars($servicio['categoria_servicio']) ?> · 
+                                        $<?= number_format($servicio['precio_servicio'], 0, ',', '.') ?> · 
+                                        <?= htmlspecialchars($servicio['tiempo_estimado']) ?>
+                                        <br>
+                                        <small>Eliminado: <?= $servicio['fecha_eliminacion'] ? date('d/m/Y H:i', strtotime($servicio['fecha_eliminacion'])) : 'Fecha no disponible' ?></small>
+                                    </div>
+                                </div>
+                                <div class="service-actions">
+                                    <a href="restaurar.php?id=<?= $servicio['id_servicio'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar servicio <?= htmlspecialchars(addslashes($servicio['nombre_servicio'])) ?>?')">
+                                        <i class="fas fa-undo"></i> Restaurar
+                                    </a>
+                                    <?php if (isAdmin()): ?>
+                                    <a href="eliminar_permanentemente.php?id=<?= $servicio['id_servicio'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente el servicio <?= htmlspecialchars(addslashes($servicio['nombre_servicio'])) ?> y no se podrá recuperar.')">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="text-center py-5">
+                        <i class="fas fa-trash-alt fa-3x mb-3" style="color: var(--text-muted);"></i>
+                        <h4 style="color: var(--text-muted);">La papelera está vacía</h4>
+                        <p style="color: var(--text-muted);">No hay servicios eliminados</p>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
+
+    <!-- Overlay para tarjetas flotantes -->
+    <div class="overlay" id="overlay" onclick="hideOptionsCard()"></div>
 
     <!-- Tarjeta flotante para opciones -->
-    <div class="overlay" id="optionsOverlay" onclick="hideOptionsCard()"></div>
     <div class="options-floating-card" id="optionsCard">
+        <button class="option-close" onclick="hideOptionsCard()">
+            <i class="fas fa-times"></i>
+        </button>
         <div class="options-card-header">
-            <h2 class="options-card-title" id="optionsServiceName">Opciones del Servicio</h2>
-            <button class="option-close" onclick="hideOptionsCard()">
-                <i class="fas fa-times"></i>
-            </button>
+            <h3 class="options-card-title" id="optionsCardTitle">Opciones</h3>
         </div>
-        <div class="options-card-body" id="optionsCardContent">
-            <!-- El contenido se cargará dinámicamente -->
-        </div>
-    </div>
-
-    <!-- Tarjeta flotante para detalles del servicio -->
-    <div class="overlay" id="detailOverlay" onclick="hideDetailCard()"></div>
-    <div class="floating-card" id="detailCard">
-        <div class="card-header">
-            <h2 class="card-title" id="detailServiceName">Detalles del Servicio</h2>
-            <button class="close-card" onclick="hideDetailCard()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="card-content" id="detailCardContent">
-            <!-- El contenido se cargará dinámicamente -->
+        <div class="options-card-body">
+            <a href="#" class="option-item" id="viewOption">
+                <i class="fas fa-eye"></i> Ver Detalles
+            </a>
+            <a href="#" class="option-item" id="editOption">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="#" class="option-item" id="deleteOption">
+                <i class="fas fa-trash-alt"></i> Mover a Papelera
+            </a>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Variables globales
+        let currentServiceId = null;
+
         // Mostrar tarjeta de opciones
         function showOptionsCard(serviceId, serviceName) {
-            // Actualizar el nombre del servicio en la cabecera
-            document.getElementById('optionsServiceName').textContent = serviceName;
+            currentServiceId = serviceId;
             
-            // Crear el contenido de las opciones
-            const optionsContent = `
-                <div class="option-item" onclick="showServiceDetails(${serviceId}, '${serviceName.replace(/'/g, "\\'")}')">
-                    <i class="fas fa-eye"></i>
-                    <span>Ver detalles</span>
-                </div>
-                <div class="option-item" onclick="window.location.href='editar.php?id=${serviceId}'">
-                    <i class="fas fa-edit"></i>
-                    <span>Editar servicio</span>
-                </div>
-                <div class="option-item" onclick="if(confirm('¿Estás seguro de eliminar este servicio?')) window.location.href='index.php?eliminar=${serviceId}'">
-                    <i class="fas fa-trash"></i>
-                    <span>Eliminar servicio</span>
-                </div>
-            `;
+            // Actualizar título
+            document.getElementById('optionsCardTitle').textContent = serviceName;
             
-            document.getElementById('optionsCardContent').innerHTML = optionsContent;
+            // Actualizar enlaces
+            document.getElementById('viewOption').href = `ver.php?id=${serviceId}`;
+            document.getElementById('editOption').href = `editar.php?id=${serviceId}`;
+            document.getElementById('deleteOption').href = `index.php?eliminar=${serviceId}`;
             
-            // Mostrar overlay y tarjeta de opciones
-            document.getElementById('optionsOverlay').style.display = 'block';
+            // Mostrar tarjeta y overlay
             document.getElementById('optionsCard').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
         }
 
         // Ocultar tarjeta de opciones
         function hideOptionsCard() {
-            document.getElementById('optionsOverlay').style.display = 'none';
             document.getElementById('optionsCard').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+            currentServiceId = null;
         }
 
-        // Mostrar detalles del servicio
-        function showServiceDetails(serviceId, serviceName) {
-            // Ocultar la tarjeta de opciones primero
-            hideOptionsCard();
+        // Búsqueda en tiempo real - CORREGIDA
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const query = this.value.trim();
+            const resultsContainer = document.getElementById('searchResults');
+            const allServicesList = document.getElementById('allServicesList');
             
-            // Actualizar el nombre del servicio en la cabecera
-            document.getElementById('detailServiceName').textContent = serviceName;
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                allServicesList.style.display = 'block';
+                return;
+            }
             
-            // Mostrar loading
-            document.getElementById('detailCardContent').innerHTML = `
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
-                    <p class="mt-2">Cargando detalles del servicio...</p>
-                </div>
-            `;
+            // Ocultar lista completa mientras se busca
+            allServicesList.style.display = 'none';
             
-            // Mostrar overlay y tarjeta de detalles
-            document.getElementById('detailOverlay').style.display = 'block';
-            document.getElementById('detailCard').style.display = 'block';
-            
-            // Cargar detalles via AJAX
-            fetch(`?cargar_detalles=${serviceId}`)
-                .then(response => response.text())
+            fetch(`index.php?ajax=1&q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
                 .then(data => {
-                    document.getElementById('detailCardContent').innerHTML = data;
+                    resultsContainer.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        resultsContainer.style.display = 'none';
+                        allServicesList.style.display = 'block';
+                        return;
+                    }
+                    
+                    data.forEach(service => {
+                        const resultItem = document.createElement('div');
+                        resultItem.className = 'search-result-item';
+                        resultItem.innerHTML = `
+                            <div>
+                                <div class="search-service-name">${escapeHtml(service.nombre_servicio)}</div>
+                                <div class="search-service-info">
+                                    ${escapeHtml(service.categoria_servicio)} · 
+                                    $${formatPrice(service.precio_servicio)} · 
+                                    ${escapeHtml(service.tiempo_estimado)}
+                                </div>
+                            </div>
+                            <div class="search-service-date">
+                                ${formatDate(service.fecha_registro)}
+                            </div>
+                        `;
+                        resultItem.addEventListener('click', () => {
+                            showOptionsCard(service.id_servicio, service.nombre_servicio);
+                            resultsContainer.style.display = 'none';
+                            document.getElementById('searchInput').value = '';
+                            allServicesList.style.display = 'block';
+                        });
+                        resultsContainer.appendChild(resultItem);
+                    });
+                    
+                    resultsContainer.style.display = 'block';
                 })
                 .catch(error => {
-                    document.getElementById('detailCardContent').innerHTML = `
-                        <div class="alert alert-danger"> 
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error al cargar los detalles del servicio.
-                        </div>
-                    `;
+                    console.error('Error en la búsqueda:', error);
+                    resultsContainer.style.display = 'none';
+                    allServicesList.style.display = 'block';
                 });
+        });
+
+        // Ocultar resultados al hacer clic fuera y restaurar lista
+        document.addEventListener('click', function(e) {
+            const searchContainer = document.querySelector('.search-container');
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            const allServicesList = document.getElementById('allServicesList');
+            
+            if (!searchContainer.contains(e.target)) {
+                searchResults.style.display = 'none';
+                if (searchInput.value.trim() === '') {
+                    allServicesList.style.display = 'block';
+                }
+            }
+        });
+
+        // Restaurar lista cuando se borra la búsqueda
+        document.getElementById('searchInput').addEventListener('keyup', function(e) {
+            if (this.value.trim() === '') {
+                document.getElementById('searchResults').style.display = 'none';
+                document.getElementById('allServicesList').style.display = 'block';
+            }
+        });
+
+        // Función para vaciar la papelera (solo admin)
+        function vaciarPapelera() {
+            if (confirm('¿ESTÁS SEGURO DE QUE QUIERES VACIAR LA PAPELERA? Esta acción eliminará permanentemente todos los servicios en la papelera y no se podrán recuperar.')) {
+                window.location.href = 'vaciar_papelera.php';
+            }
         }
 
-        // Ocultar tarjeta de detalles
-        function hideDetailCard() {
-            document.getElementById('detailOverlay').style.display = 'none';
-            document.getElementById('detailCard').style.display = 'none';
+        // Funciones auxiliares
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatPrice(price) {
+            return parseFloat(price).toLocaleString('es-CO');
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-CO');
         }
 
         // Cerrar con tecla ESC
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 hideOptionsCard();
-                hideDetailCard();
             }
-        });
-
-        // Inicializar pestañas de Bootstrap
-        const tabElms = document.querySelectorAll('button[data-bs-toggle="tab"]');
-        tabElms.forEach(tabEl => {
-            tabEl.addEventListener('click', function(event) {
-                event.preventDefault();
-                const tab = new bootstrap.Tab(this);
-                tab.show();
-            });
         });
     </script>
 </body>

@@ -17,47 +17,29 @@ if (!isset($_SESSION['mensaje'])) {
     $_SESSION['tipo_mensaje'] = '';
 }
 
-// Procesar eliminación
+// Procesar eliminación (REDIRIGIR AL NUEVO SISTEMA DE PAPELERA)
 if (isset($_GET['eliminar'])) {
     $id = intval($_GET['eliminar']);
-    try {
-        // Verificar si el material está asociado a algún trabajo
-        $stmt = $conex->prepare("SELECT COUNT(*) FROM trabajo_materiales WHERE id_material = ?");
-        $stmt->execute([$id]);
-        $tieneTrabajos = $stmt->fetchColumn();
-        
-        if ($tieneTrabajos > 0) {
-            $_SESSION['mensaje'] = 'No se puede eliminar: material está asociado a trabajos';
-            $_SESSION['tipo_mensaje'] = 'danger';
-        } else {
-            $stmt = $conex->prepare("DELETE FROM materiales WHERE id_material = ?");
-            if ($stmt->execute([$id])) {
-                $_SESSION['mensaje'] = 'Material eliminado correctamente';
-                $_SESSION['tipo_mensaje'] = 'success';
-            }
-        }
-    } catch (PDOException $e) {
-        $_SESSION['mensaje'] = 'Error al eliminar: ' . $e->getMessage();
-        $_SESSION['tipo_mensaje'] = 'danger';
-    }
-    header('Location: index.php');
+    // Redirigir al sistema de papelera
+    header("Location: eliminar.php?id=$id");
     exit;
 }
 
-// Obtener estadísticas generales
+// Obtener estadísticas generales (simplificadas como en el archivo de clientes)
 $stats = $conex->query("SELECT 
     COUNT(*) as total_materiales,
     MAX(fecha_registro) as ultimo_registro,
-    (SELECT COUNT(*) FROM materiales WHERE DATE(fecha_registro) = CURDATE()) as registros_hoy,
-    SUM(stock_material) as stock_total,
-    AVG(precio_metro) as precio_promedio
-FROM materiales")->fetch(PDO::FETCH_ASSOC);
+    (SELECT COUNT(*) FROM materiales WHERE DATE(fecha_registro) = CURDATE()) as registros_hoy
+FROM materiales WHERE activo = 1")->fetch(PDO::FETCH_ASSOC);
 
 // Obtener los 4 materiales más recientes
-$materialesRecientes = $conex->query("SELECT * FROM materiales ORDER BY id_material DESC LIMIT 4")->fetchAll();
+$materialesRecientes = $conex->query("SELECT * FROM materiales WHERE activo = 1 ORDER BY id_material DESC LIMIT 4")->fetchAll();
 
 // Obtener todos los materiales para las pestañas
-$todosMateriales = $conex->query("SELECT * FROM materiales ORDER BY nombre_material ASC")->fetchAll();
+$todosMateriales = $conex->query("SELECT * FROM materiales WHERE activo = 1 ORDER BY nombre_material ASC")->fetchAll();
+
+// Obtener materiales eliminados para la papelera
+$materialesEliminados = $conex->query("SELECT * FROM materiales WHERE activo = 0 ORDER BY fecha_eliminacion DESC")->fetchAll();
 
 // Procesar búsqueda si es una solicitud AJAX
 if (isset($_GET['ajax'])) {
@@ -70,7 +52,7 @@ if (isset($_GET['ajax'])) {
 
     $searchTerm = '%' . $_GET['q'] . '%';
     $stmt = $conex->prepare("SELECT * FROM materiales 
-                            WHERE (nombre_material LIKE :search 
+                            WHERE activo = 1 AND (nombre_material LIKE :search 
                             OR categoria_material LIKE :search 
                             OR proveedor_material LIKE :search)
                             ORDER BY nombre_material ASC 
@@ -139,7 +121,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Materiales | Nacional Tapizados</title>
+    <title>Gestión de Materiales</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -693,6 +675,38 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             backdrop-filter: blur(5px);
         }
 
+        /* Estilos para elementos en papelera (actualizados según el segundo archivo) */
+        .deleted-item {
+            opacity: 0.8;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        
+        .deleted-item:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+        }
+        
+        .deleted-badge {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+        
+        .days-left {
+            font-size: 0.8rem;
+            color: var(--warning-color);
+            margin-top: 0.25rem;
+        }
+
+        /* Estilos para acciones en la lista */
+        .material-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -775,23 +789,23 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             ?>
         <?php endif; ?>
 
-        <!-- Estadísticas rápidas -->
+        <!-- Estadísticas rápidas (simplificadas) -->
         <div class="summary-cards">
             <div class="summary-card">
                 <h3>Total de Materiales</h3>
                 <p><?= $stats['total_materiales'] ?></p>
             </div>
             <div class="summary-card">
-                <h3>Stock Total</h3>
-                <p><?= number_format($stats['stock_total'], 0, ',', '.') ?> m</p>
-            </div>
-            <div class="summary-card">
-                <h3>Precio Promedio</h3>
-                <p>$<?= number_format($stats['precio_promedio'], 0, ',', '.') ?></p>
-            </div>
-            <div class="summary-card">
                 <h3>Último Registro</h3>
                 <p><?= $stats['ultimo_registro'] ? date('d/m/Y', strtotime($stats['ultimo_registro'])) : 'N/A' ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Registros Hoy</h3>
+                <p><?= $stats['registros_hoy'] ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>En Papelera</h3>
+                <p><?= count($materialesEliminados) ?></p>
             </div>
         </div>
 
@@ -805,6 +819,11 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab">
                     <i class="fas fa-clock"></i> Recientes
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="delete-tab" data-bs-toggle="tab" data-bs-target="#delete" type="button" role="tab">
+                    <i class="fas fa-trash-alt"></i> Papelera
                 </button>
             </li>
         </ul>
@@ -872,6 +891,52 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
                     <?php endforeach; ?>
                 </div>
             </div>
+
+<!-- Pestaña de papelera -->
+<div class="tab-pane fade" id="delete" role="tabpanel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <?php if (isAdmin() && !empty($materialesEliminados)): ?>
+            <button type="button" class="btn btn-outline-warning btn-sm" onclick="vaciarPapelera()">
+                <i class="fas fa-broom me-1"></i> Vaciar papelera
+            </button>
+        <?php endif; ?>
+    </div>
+    
+    <?php if (!empty($materialesEliminados)): ?>
+        <div class="material-list">
+            <?php foreach ($materialesEliminados as $material): ?>
+                <div class="material-item deleted-item">
+                    <div class="material-info">
+                        <div class="material-name"><?= htmlspecialchars($material['nombre_material']) ?></div>
+                        <div class="material-description">
+                            <?= htmlspecialchars($material['categoria_material']) ?> · 
+                            $<?= number_format($material['precio_metro'], 0, ',', '.') ?> · 
+                            Stock: <?= htmlspecialchars($material['stock_material']) ?> m
+                            <br>
+                            <small>Eliminado: <?= $material['fecha_eliminacion'] ? date('d/m/Y H:i', strtotime($material['fecha_eliminacion'])) : 'Fecha no disponible' ?></small>
+                        </div>
+                    </div>
+                    <div class="material-actions">
+                        <a href="restaurar.php?id=<?= $material['id_material'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar el material <?= htmlspecialchars(addslashes($material['nombre_material'])) ?>?')">
+                            <i class="fas fa-undo"></i> Restaurar
+                        </a>
+                        <?php if (isAdmin()): ?>
+                        <a href="eliminar_permanentemente.php?id=<?= $material['id_material'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente el material <?= htmlspecialchars(addslashes($material['nombre_material'])) ?> y no se podrá recuperar.')">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php else: ?>
+        <div class="text-center py-5">
+            <i class="fas fa-trash-alt fa-3x mb-3" style="color: var(--text-muted);"></i>
+            <h4 style="color: var(--text-muted);">La papelera está vacía</h4>
+            <p style="color: var(--text-muted);">No hay Materiales eliminados</p>
+        </div>
+    <?php endif; ?>
+</div>
         </div>
     </div>
 
@@ -885,14 +950,14 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             <h3 class="options-card-title" id="optionsCardTitle">Opciones</h3>
         </div>
         <div class="options-card-body">
-            <a href="#" class="option-item" id="viewOption">
+            <a href="#" class="option-item" id="viewDetailsOption">
                 <i class="fas fa-eye"></i> Ver Detalles
             </a>
-            <a href="#" class="option-item" id="editOption">
-                <i class="fas fa-edit"></i> Editar
+            <a href="#" class="option-item" id="editMaterialOption">
+                <i class="fas fa-edit"></i> Editar Material
             </a>
-            <a href="#" class="option-item" id="deleteOption">
-                <i class="fas fa-trash-alt"></i> Eliminar
+            <a href="#" class="option-item" id="deleteMaterialOption">
+                <i class="fas fa-trash"></i> Mover a Papelera
             </a>
         </div>
     </div>
@@ -912,94 +977,94 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             document.getElementById('optionsCardTitle').textContent = materialName;
             
             // Actualizar enlaces
-            document.getElementById('viewOption').href = `ver.php?id=${materialId}`;
-            document.getElementById('editOption').href = `editar.php?id=${materialId}`;
-            document.getElementById('deleteOption').href = `index.php?eliminar=${materialId}`;
+            document.getElementById('viewDetailsOption').href = `ver.php?id=${materialId}`;
+            document.getElementById('editMaterialOption').href = `editar.php?id=${materialId}`;
+            document.getElementById('deleteMaterialOption').href = `eliminar.php?id=${materialId}`;
             
-            // Mostrar overlay y tarjeta
-            document.getElementById('overlay').style.display = 'block';
+            // Mostrar tarjeta y overlay
             document.getElementById('optionsCard').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
         }
 
         // Cerrar tarjeta de opciones
         function closeOptionsCard() {
-            document.getElementById('overlay').style.display = 'none';
             document.getElementById('optionsCard').style.display = 'none';
-            currentMaterialId = null;
-            currentMaterialName = null;
+            document.getElementById('overlay').style.display = 'none';
         }
 
         // Event listeners para cerrar tarjeta
         document.getElementById('closeOptionsCard').addEventListener('click', closeOptionsCard);
         document.getElementById('overlay').addEventListener('click', closeOptionsCard);
 
-        // Búsqueda en tiempo real
-        document.getElementById('searchInput').addEventListener('input', function() {
-            const query = this.value.trim();
-            const resultsContainer = document.getElementById('searchResults');
-            const allMaterialsList = document.getElementById('allMaterialsList');
-            
-            if (query.length < 2) {
-                resultsContainer.style.display = 'none';
-                allMaterialsList.style.display = 'block';
-                return;
+        // Función para vaciar papelera
+        function vaciarPapelera() {
+            if (confirm('¿Estás seguro de que deseas vaciar la papelera?\\n\\nSe eliminarán permanentemente todos los materiales en la papelera.\\n\\n⚠️ Esta acción NO se puede deshacer.')) {
+                window.location.href = 'vaciar_papelera.php';
             }
-            
-            allMaterialsList.style.display = 'none';
-            
-            fetch(`?ajax=1&q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    resultsContainer.innerHTML = '';
+        }
+
+        // Búsqueda en tiempo real
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            const allMaterialsList = document.getElementById('allMaterialsList');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const query = this.value.trim();
                     
-                    if (data.length === 0) {
-                        resultsContainer.innerHTML = '<div class="search-result-item">No se encontraron materiales</div>';
-                        resultsContainer.style.display = 'block';
+                    if (query.length < 2) {
+                        searchResults.style.display = 'none';
+                        allMaterialsList.style.display = 'block';
                         return;
                     }
-                    
-                    data.forEach(material => {
-                        const item = document.createElement('div');
-                        item.className = 'search-result-item';
-                        item.innerHTML = `
-                            <div>
-                                <div class="search-material-name">${material.nombre_material}</div>
-                                <div class="search-material-info">${material.categoria_material} · Stock: ${material.stock_material} m</div>
-                                <div class="search-material-price">$${new Intl.NumberFormat().format(material.precio_metro)} por metro</div>
-                            </div>
-                            <div class="material-arrow">
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
-                        `;
-                        item.addEventListener('click', () => {
-                            showOptionsCard(material.id_material, material.nombre_material);
-                            resultsContainer.style.display = 'none';
-                            document.getElementById('searchInput').value = '';
-                            allMaterialsList.style.display = 'block';
+
+                    fetch(`?ajax=1&q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            searchResults.innerHTML = '';
+                            
+                            if (data.length === 0) {
+                                searchResults.innerHTML = '<div class="search-result-item">No se encontraron materiales</div>';
+                            } else {
+                                data.forEach(material => {
+                                    const resultItem = document.createElement('div');
+                                    resultItem.className = 'search-result-item';
+                                    resultItem.innerHTML = `
+                                        <div>
+                                            <div class="search-material-name">${material.nombre_material}</div>
+                                            <div class="search-material-info">
+                                                ${material.categoria_material} · 
+                                                $${parseInt(material.precio_metro).toLocaleString()} · 
+                                                Stock: ${material.stock_material} m
+                                            </div>
+                                        </div>
+                                        <div class="search-material-price">
+                                            ID: ${material.id_material}
+                                        </div>
+                                    `;
+                                    resultItem.addEventListener('click', function() {
+                                        showOptionsCard(material.id_material, material.nombre_material);
+                                    });
+                                    searchResults.appendChild(resultItem);
+                                });
+                            }
+                            
+                            searchResults.style.display = 'block';
+                            allMaterialsList.style.display = 'none';
+                        })
+                        .catch(error => {
+                            console.error('Error en la búsqueda:', error);
                         });
-                        resultsContainer.appendChild(item);
-                    });
-                    
-                    resultsContainer.style.display = 'block';
-                })
-                .catch(error => {
-                    console.error('Error en la búsqueda:', error);
-                    resultsContainer.innerHTML = '<div class="search-result-item">Error en la búsqueda</div>';
-                    resultsContainer.style.display = 'block';
                 });
-        });
 
-        // Cerrar resultados al hacer clic fuera
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.search-container')) {
-                document.getElementById('searchResults').style.display = 'none';
-            }
-        });
-
-        // Confirmación para eliminar
-        document.getElementById('deleteOption').addEventListener('click', function(e) {
-            if (!confirm(`¿Estás seguro de que deseas eliminar el material "${currentMaterialName}"?`)) {
-                e.preventDefault();
+                // Ocultar resultados al hacer clic fuera
+                document.addEventListener('click', function(e) {
+                    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                        searchResults.style.display = 'none';
+                        allMaterialsList.style.display = 'block';
+                    }
+                });
             }
         });
     </script>

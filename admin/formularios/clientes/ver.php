@@ -72,7 +72,7 @@ if (!isset($_SESSION['mensaje'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalles del Cliente </title>
+    <title>Detalles del Cliente</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -103,7 +103,7 @@ if (!isset($_SESSION['mensaje'])) {
         }
 
         .main-container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 2rem auto;
             padding: 2rem;
             background-color: var(--bg-transparent);
@@ -137,7 +137,54 @@ if (!isset($_SESSION['mensaje'])) {
             color: var(--primary-color);
         }
 
-        /* Estilos para botones */
+        .card {
+            background-color: var(--bg-transparent-light);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .info-row {
+            display: flex;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--text-color);
+            width: 40%;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .info-value {
+            color: var(--text-color);
+            width: 60%;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .badge {
+            padding: 0.5rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
         .btn {
             display: inline-flex;
             align-items: center;
@@ -170,22 +217,15 @@ if (!isset($_SESSION['mensaje'])) {
             background-color: rgba(108, 117, 125, 1);
         }
 
-        .btn-danger {
-            background-color: var(--danger-color);
+        .btn-outline-secondary {
+            background-color: transparent;
+            border: 1px solid var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: var(--secondary-color);
             color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: rgba(220, 53, 69, 1);
-        }
-
-        .btn-info {
-            background-color: var(--info-color);
-            color: white;
-        }
-
-        .btn-info:hover {
-            background-color: rgba(13, 202, 240, 1);
         }
 
         .btn-success {
@@ -206,7 +246,24 @@ if (!isset($_SESSION['mensaje'])) {
             background-color: rgba(255, 193, 7, 1);
         }
 
-        /* Estilos para alertas */
+        .btn-info {
+            background-color: var(--info-color);
+            color: white;
+        }
+
+        .btn-info:hover {
+            background-color: rgba(13, 202, 240, 1);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: rgba(220, 53, 69, 1);
+        }
+
         .alert {
             padding: 1rem;
             border-radius: 8px;
@@ -220,177 +277,8 @@ if (!isset($_SESSION['mensaje'])) {
             color: var(--text-color);
         }
 
-        .alert-success {
-            background-color: rgba(25, 135, 84, 0.2);
-            border-left: 4px solid var(--success-color);
-        }
-
-        .alert-danger {
-            background-color: rgba(220, 53, 69, 0.2);
-            border-left: 4px solid var(--danger-color);
-        }
-
-        .alert-warning {
-            background-color: rgba(255, 193, 7, 0.2);
-            border-left: 4px solid var(--warning-color);
-        }
-
-        .alert-info {
-            background-color: rgba(13, 202, 240, 0.2);
-            border-left: 4px solid var(--info-color);
-        }
-
-        /* Estilos para tarjetas de información */
-        .info-card {
-            background-color: var(--bg-transparent-light);
-            backdrop-filter: blur(8px);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .info-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .info-card-title {
-            margin: 0;
-            font-size: 1.8rem;
-            font-weight: 600;
+        .alert strong {
             color: var(--text-color);
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .detail-item {
-            margin-bottom: 1.5rem;
-            background-color: rgba(255, 255, 255, 0.08);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-
-        .detail-item:hover {
-            background-color: rgba(140, 74, 63, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .detail-label {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .detail-value {
-            font-size: 1.1rem;
-            word-break: break-word;
-            color: var(--text-color);
-            font-weight: 500;
-        }
-
-        .notes-section {
-            background-color: rgba(0, 0, 0, 0.3);
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            grid-column: 1 / -1;
-            border: 1px solid var(--border-color);
-        }
-
-        /* Estilos para historial de ediciones */
-        .history-section {
-            margin-top: 2rem;
-        }
-
-        .history-item {
-            background-color: rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid var(--info-color);
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-
-        .history-item:hover {
-            background-color: rgba(13, 202, 240, 0.1);
-            transform: translateX(5px);
-        }
-        
-        .edit-field {
-            font-weight: bold;
-            color: var(--info-color);
-        }
-        
-        .edit-old-value, .edit-new-value {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            margin: 0.25rem 0;
-            display: inline-block;
-        }
-        
-        .edit-old-value {
-            background-color: rgba(220, 53, 69, 0.2);
-            text-decoration: line-through;
-        }
-        
-        .edit-new-value {
-            background-color: rgba(25, 135, 84, 0.2);
-        }
-        
-        .edit-meta {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-top: 0.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .no-history {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-muted);
-            font-style: italic;
-            background-color: rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-
-        /* Badge styles */
-        .badge {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            background-color: var(--primary-color);
-        }
-
-        .bg-success {
-            background-color: var(--success-color) !important;
-        }
-
-        .bg-danger {
-            background-color: var(--danger-color) !important;
-        }
-
-        .bg-primary {
-            background-color: var(--primary-color) !important;
         }
 
         /* Responsive */
@@ -405,54 +293,41 @@ if (!isset($_SESSION['mensaje'])) {
                 align-items: flex-start;
             }
 
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .edit-meta {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
-            }
-
-            .info-card {
-                padding: 1.5rem;
-            }
-
-            .info-card-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-
-            .info-card-title {
-                font-size: 1.5rem;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .btn {
-                width: 100%;
-                justify-content: center;
-                margin-bottom: 0.5rem;
-            }
-            
-            .button-group {
-                display: flex;
-                flex-direction: column;
-                width: 100%;
-            }
-
             .page-title {
                 font-size: 1.5rem;
             }
 
-            .info-card-title {
-                font-size: 1.5rem;
+            .info-row {
+                flex-direction: column;
             }
 
-            .detail-item {
-                padding: 1rem;
+            .info-label, .info-value {
+                width: 100%;
+            }
+
+            .info-label {
+                margin-bottom: 0.5rem;
+            }
+
+            .btn-group {
+                width: 100%;
+                justify-content: center;
+                margin-top: 1rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .card-body {
+                padding: 1.5rem;
+            }
+
+            .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .d-md-flex {
+                flex-direction: column;
             }
         }
     </style>   
@@ -460,7 +335,7 @@ if (!isset($_SESSION['mensaje'])) {
 
 <body>
     <div class="main-container">
-        <!-- Encabezado -->
+                <!-- Encabezado -->
         <div class="header-section">
             <h1 class="page-title">
                 <i class="fas fa-user"></i> Detalles del Cliente
@@ -493,83 +368,63 @@ if (!isset($_SESSION['mensaje'])) {
         <?php endif; ?>
 
         <!-- Información del cliente -->
-        <div class="info-card">
-            <div class="info-card-header">
-                <h2 class="info-card-title"><?= htmlspecialchars($cliente['nombre_cliente']) ?></h2>
-                <span class="badge bg-<?= $cliente['activo'] == 1 ? 'success' : 'danger' ?>">
-                    <?= $cliente['activo'] == 1 ? 'Activo' : 'Eliminado' ?>
-                </span>
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Cliente</h5>
             </div>
-            
-            <div class="info-grid">
-                <div class="detail-item">
-                    <div class="detail-label">ID del Cliente</div>
-                    <div class="detail-value">#<?= $cliente['id_cliente'] ?></div>
+            <div class="card-body">
+                <div class="info-row">
+                    <div class="info-label">ID del Cliente:</div>
+                    <div class="info-value">#<?= $cliente['id_cliente'] ?></div>
                 </div>
-                
-                <div class="detail-item">
-                    <div class="detail-label">Teléfono</div>
-                    <div class="detail-value">
-                        <i class="fas fa-phone me-2 text-primary"></i>
-                        <?= htmlspecialchars($cliente['telefono_cliente']) ?>
-                    </div>
+                <div class="info-row">
+                    <div class="info-label">Nombre:</div>
+                    <div class="info-value"><?= htmlspecialchars($cliente['nombre_cliente']) ?></div>
                 </div>
-                
-                <div class="detail-item">
-                    <div class="detail-label">Correo Electrónico</div>
-                    <div class="detail-value">
-                        <i class="fas fa-envelope me-2 text-primary"></i>
-                        <?= htmlspecialchars($cliente['correo_cliente']) ?>
-                    </div>
+                <div class="info-row">
+                    <div class="info-label">Teléfono:</div>
+                    <div class="info-value"><?= htmlspecialchars($cliente['telefono_cliente']) ?></div>
                 </div>
-                
-                <div class="detail-item">
-                    <div class="detail-label">Fecha de Registro</div>
-                    <div class="detail-value">
-                        <i class="fas fa-calendar me-2 text-primary"></i>
-                        <?= date('d/m/Y H:i', strtotime($cliente['fecha_registro'])) ?>
-                    </div>
+                <div class="info-row">
+                    <div class="info-label">Correo Electrónico:</div>
+                    <div class="info-value"><?= htmlspecialchars($cliente['correo_cliente']) ?></div>
                 </div>
-                
-                <?php if (!empty($cliente['fecha_actualizacion']) && $cliente['fecha_actualizacion'] != $cliente['fecha_registro']): ?>
-                <div class="detail-item">
-                    <div class="detail-label">Última Actualización</div>
-                    <div class="detail-value">
-                        <i class="fas fa-sync me-2 text-primary"></i>
-                        <?= date('d/m/Y H:i', strtotime($cliente['fecha_actualizacion'])) ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-                
-                <?php if (!empty($cliente['fecha_eliminacion'])): ?>
-                <div class="detail-item">
-                    <div class="detail-label">Fecha de Eliminación</div>
-                    <div class="detail-value">
-                        <i class="fas fa-trash me-2 text-primary"></i>
-                        <?= date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-                
                 <?php if (!empty($cliente['direccion_cliente'])): ?>
-                <div class="detail-item">
-                    <div class="detail-label">Dirección</div>
-                    <div class="detail-value">
-                        <i class="fas fa-map-marker-alt me-2 text-primary"></i>
-                        <?= htmlspecialchars($cliente['direccion_cliente']) ?>
-                    </div>
+                <div class="info-row">
+                    <div class="info-label">Dirección:</div>
+                    <div class="info-value"><?= htmlspecialchars($cliente['direccion_cliente']) ?></div>
                 </div>
                 <?php endif; ?>
-                
+                <div class="info-row">
+                    <div class="info-label">Fecha de Registro:</div>
+                    <div class="info-value"><?= date('d/m/Y H:i', strtotime($cliente['fecha_registro'])) ?></div>
+                </div>
+                <?php if (!empty($cliente['fecha_actualizacion']) && $cliente['fecha_actualizacion'] != $cliente['fecha_registro']): ?>
+                <div class="info-row">
+                    <div class="info-label">Última Actualización:</div>
+                    <div class="info-value"><?= date('d/m/Y H:i', strtotime($cliente['fecha_actualizacion'])) ?></div>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($cliente['fecha_eliminacion'])): ?>
+                <div class="info-row">
+                    <div class="info-label">Fecha de Eliminación:</div>
+                    <div class="info-value"><?= date('d/m/Y H:i', strtotime($cliente['fecha_eliminacion'])) ?></div>
+                </div>
+                <?php endif; ?>
                 <?php if (!empty($cliente['notas_cliente'])): ?>
-                <div class="notes-section">
-                    <div class="detail-label">
-                        <i class="fas fa-sticky-note me-2"></i>
-                        Notas Adicionales
-                    </div>
-                    <div class="detail-value mt-2"><?= nl2br(htmlspecialchars($cliente['notas_cliente'])) ?></div>
+                <div class="info-row">
+                    <div class="info-label">Notas:</div>
+                    <div class="info-value"><?= nl2br(htmlspecialchars($cliente['notas_cliente'])) ?></div>
                 </div>
                 <?php endif; ?>
+                <div class="info-row">
+                    <div class="info-label">Estado:</div>
+                    <div class="info-value">
+                        <span class="badge bg-<?= $cliente['activo'] == 1 ? 'success' : 'danger' ?>">
+                            <?= $cliente['activo'] == 1 ? 'Activo' : 'Eliminado' ?>
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

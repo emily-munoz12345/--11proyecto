@@ -30,7 +30,8 @@ $stats = $conex->query("SELECT
      FROM vehiculos 
      WHERE activo = 1 
      ORDER BY id_vehiculo DESC 
-     LIMIT 1) as ultima_fecha
+     LIMIT 1) as ultima_fecha,
+    (SELECT COUNT(*) FROM vehiculos WHERE activo = 0) as en_papelera
 FROM vehiculos WHERE activo = 1")->fetch(PDO::FETCH_ASSOC);
 
 // Formatear la última fecha
@@ -294,6 +295,31 @@ $title = 'Gestión de Vehículos';
         .vehicle-item:hover .vehicle-arrow {
             opacity: 1;
             transform: translateX(3px);
+        }
+
+        /* Estilos para elementos eliminados */
+        .deleted-item {
+            opacity: 0.8;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        
+        .deleted-item:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+        }
+        
+        .deleted-badge {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+        
+        .days-left {
+            font-size: 0.8rem;
+            color: var(--warning-color);
+            margin-top: 0.25rem;
         }
 
         /* Estilos para tarjetas de resumen */
@@ -698,6 +724,25 @@ $title = 'Gestión de Vehículos';
             ?>
         <?php endif; ?>
 
+        <!-- Mensajes adicionales -->
+        <?php if (isset($_SESSION['mensaje_adicional'])): ?>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <?= $_SESSION['mensaje_adicional'] ?>
+                <?php if (isset($_SESSION['errores']) && !empty($_SESSION['errores'])): ?>
+                    <ul class="mb-0 mt-2">
+                        <?php foreach ($_SESSION['errores'] as $error): ?>
+                            <li><?= htmlspecialchars($error) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
+            <?php
+            unset($_SESSION['mensaje_adicional']);
+            unset($_SESSION['errores']);
+            ?>
+        <?php endif; ?>
+
         <!-- Tarjetas de resumen -->
         <div class="summary-cards">
             <div class="summary-card">
@@ -711,6 +756,10 @@ $title = 'Gestión de Vehículos';
             <div class="summary-card">
                 <h3>Registros Hoy</h3>
                 <p><?= $stats['registros_hoy'] ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>En Papelera</h3>
+                <p><?= $stats['en_papelera'] ?></p>
             </div>
         </div>
 
@@ -800,16 +849,20 @@ $title = 'Gestión de Vehículos';
                 </div>
             </div>
 
-            <!-- Pestaña de eliminación -->
+            <!-- Pestaña de papelera -->
             <div class="tab-pane fade" id="delete" role="tabpanel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <?php if (isAdmin() && !empty($vehiculosEliminados)): ?>
+            <button type="button" class="btn btn-outline-warning btn-sm" onclick="vaciarPapelera()">
+                <i class="fas fa-broom me-1"></i> Vaciar papelera
+            </button>
+        <?php endif; ?>
+    </div>
+                
                 <?php if (count($vehiculosEliminados) > 0): ?>
-                   <!-- <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Vehículos eliminados recientemente.
-                    </div>-->
                     <div class="vehicle-list">
                         <?php foreach ($vehiculosEliminados as $vehiculo): ?>
-                            <div class="vehicle-item">
+                            <div class="vehicle-item deleted-item">
                                 <div class="vehicle-info">
                                     <div class="vehicle-name"><?= htmlspecialchars($vehiculo['marca_vehiculo'] . ' ' . $vehiculo['modelo_vehiculo']) ?></div>
                                     <div class="vehicle-description">
@@ -832,12 +885,13 @@ $title = 'Gestión de Vehículos';
                             </div>
                         <?php endforeach; ?>
                     </div>
-                <?php else: ?>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        No hay vehículos eliminados.
-                    </div>
-                <?php endif; ?>
+    <?php else: ?>
+        <div class="text-center py-5">
+            <i class="fas fa-trash-alt fa-3x mb-3" style="color: var(--text-muted);"></i>
+            <h4 style="color: var(--text-muted);">La papelera está vacía</h4>
+            <p style="color: var(--text-muted);">No hay Vehículos eliminados</p>
+        </div>
+    <?php endif; ?>
             </div>
         </div>
     </div>
@@ -878,7 +932,7 @@ $title = 'Gestión de Vehículos';
                 </div>
                 <div class="option-item" onclick="window.location.href='editar.php?id=${id}'">
                     <i class="fas fa-edit"></i>
-                    <span>Editar vehículo</span>
+                    <span>Editar</span>
                 </div>
                 <div class="option-item" onclick="if(confirm('¿Estás seguro de mover este vehículo a la papelera?')) window.location.href='eliminar.php?id=${id}'">
                     <i class="fas fa-trash"></i>
@@ -898,6 +952,13 @@ $title = 'Gestión de Vehículos';
             document.getElementById('overlay').style.display = 'none';
             document.getElementById('optionsCard').style.display = 'none';
             currentVehicleId = null;
+        }
+
+        // Función para vaciar papelera
+        function vaciarPapelera() {
+            if (confirm('¿Estás seguro de que deseas vaciar la papelera?\n\nSe eliminarán permanentemente todos los vehículos en la papelera.\n\n⚠️ Esta acción NO se puede deshacer.')) {
+                window.location.href = 'vaciar_papelera.php';
+            }
         }
 
         // Búsqueda en tiempo real

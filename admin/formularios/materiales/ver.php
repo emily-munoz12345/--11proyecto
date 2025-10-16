@@ -1,81 +1,78 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Configuración de rutas
+define('ROOT_PATH', dirname(__DIR__, 3));
 require_once __DIR__ . '/../../../php/conexion.php';
 require_once __DIR__ . '/../../../php/auth.php';
 
-if (!isAdmin() && !isSeller() && !isTechnician()) {
+// Verificar permisos (solo Admin y Vendedor)
+if (!isAdmin() && !isSeller()) {
     header('Location: ../dashboard.php');
     exit;
 }
 
-$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-
-if ($id <= 0) {
+// Verificar que se haya proporcionado un ID válido
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    $_SESSION['mensaje'] = 'ID de material no válido';
+    $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: index.php');
     exit;
 }
 
-try {
-    // Obtener datos del vehículo
-    $sql = "SELECT v.*, 
-                   c.nombre_cliente, c.telefono_cliente, c.correo_cliente,
-                   COUNT(cot.id_cotizacion) as total_cotizaciones
-            FROM vehiculos v
-            LEFT JOIN cliente_vehiculo cv ON v.id_vehiculo = cv.id_vehiculo
-            LEFT JOIN clientes c ON cv.id_cliente = c.id_cliente
-            LEFT JOIN cotizaciones cot ON v.id_vehiculo = cot.id_vehiculo
-            WHERE v.id_vehiculo = ? AND v.activo = 1
-            GROUP BY v.id_vehiculo";
-    $stmt = $conex->prepare($sql);
-    $stmt->execute([$id]);
-    $vehiculo = $stmt->fetch();
+$id_material = $_GET['id'];
 
-    if (!$vehiculo) {
-        header('Location: index.php?error=Vehículo no encontrado');
-        exit;
-    }
+// Obtener información del material
+$stmt = $conex->prepare("SELECT * FROM materiales WHERE id_material = ?");
+$stmt->execute([$id_material]);
+$material = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Obtener historial de cotizaciones del vehículo
-    $sqlCotizaciones = "SELECT c.id_cotizacion, c.fecha_cotizacion, c.total_cotizacion, 
-                                c.estado_cotizacion, u.nombre_completo as vendedor
-                        FROM cotizaciones c
-                        JOIN usuarios u ON c.id_usuario = u.id_usuario
-                        WHERE c.id_vehiculo = ? AND c.activo = 1
-                        ORDER BY c.fecha_cotizacion DESC";
-    $stmtCotizaciones = $conex->prepare($sqlCotizaciones);
-    $stmtCotizaciones->execute([$id]);
-    $cotizaciones = $stmtCotizaciones->fetchAll();
-
-    // Obtener historial de trabajos del vehículo
-    $sqlTrabajos = "SELECT t.id_trabajos, t.fecha_inicio, t.fecha_fin, t.estado,
-                           c.id_cotizacion, c.total_cotizacion
-                    FROM trabajos t
-                    JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
-                    WHERE c.id_vehiculo = ? AND t.activo = 1
-                    ORDER BY t.fecha_inicio DESC";
-    $stmtTrabajos = $conex->prepare($sqlTrabajos);
-    $stmtTrabajos->execute([$id]);
-    $trabajos = $stmtTrabajos->fetchAll();
-
-} catch (PDOException $e) {
-    error_log("Error al obtener vehículo: " . $e->getMessage());
-    header('Location: index.php?error=Error al obtener vehículo');
+// Verificar si el material existe
+if (!$material) {
+    $_SESSION['mensaje'] = 'Material no encontrado';
+    $_SESSION['tipo_mensaje'] = 'danger';
+    header('Location: index.php');
     exit;
 }
 
-require_once __DIR__ . '/../../includes/head.php';
-$title = 'Detalles del Vehículo';
-?>
+// Verificar si existe la tabla registro_eliminaciones antes de usarla
+$tablaExiste = false;
+try {
+    $result = $conex->query("SELECT 1 FROM registro_eliminaciones LIMIT 1");
+    $tablaExiste = true;
+} catch (Exception $e) {
+    $tablaExiste = false;
+}
 
+// Obtener historial de ediciones si la tabla existe
+$historialEdiciones = [];
+if ($tablaExiste) {
+    $stmt = $conex->prepare("
+        SELECT re.*, u.nombre_completo as editor 
+        FROM registro_eliminaciones re 
+        LEFT JOIN usuarios u ON re.eliminado_por = u.id_usuario 
+        WHERE re.tabla = 'materiales' AND re.id_registro = ? AND re.accion = 'MODIFICACION'
+        ORDER BY re.fecha_eliminacion DESC
+    ");
+    $stmt->execute([$id_material]);
+    $historialEdiciones = $stmt->fetchAll();
+}
+
+// Inicializar variables de sesión para mensajes
+if (!isset($_SESSION['mensaje'])) {
+    $_SESSION['mensaje'] = '';
+    $_SESSION['tipo_mensaje'] = '';
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?></title>
+    <title>Detalles del Material</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -188,39 +185,6 @@ $title = 'Detalles del Vehículo';
             font-weight: 500;
         }
 
-        .table {
-            --bs-table-bg: transparent;
-            --bs-table-color: var(--text-color);
-            --bs-table-border-color: var(--border-color);
-            width: 100%;
-        }
-
-        .table th {
-            background-color: rgba(140, 74, 63, 0.4);
-            color: var(--text-color);
-            font-weight: 600;
-            border-color: var(--border-color);
-        }
-
-        .table td, .table th {
-            padding: 0.75rem;
-            border-color: var(--border-color);
-            color: var(--text-color);
-        }
-
-        .table tbody tr {
-            background-color: rgba(0, 0, 0, 0.2);
-        }
-
-        .table tbody tr:nth-child(even) {
-            background-color: rgba(0, 0, 0, 0.3);
-        }
-
-        .table tfoot th {
-            background-color: rgba(140, 74, 63, 0.3);
-            font-weight: 600;
-        }
-
         .btn {
             display: inline-flex;
             align-items: center;
@@ -317,33 +281,6 @@ $title = 'Detalles del Vehículo';
             color: var(--text-color);
         }
 
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .stat-card {
-            background-color: var(--bg-transparent-light);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-            border: 1px solid var(--border-color);
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             .main-container {
@@ -377,10 +314,6 @@ $title = 'Detalles del Vehículo';
                 justify-content: center;
                 margin-top: 1rem;
             }
-
-            .stats-container {
-                grid-template-columns: 1fr;
-            }
         }
 
         @media (max-width: 576px) {
@@ -402,67 +335,138 @@ $title = 'Detalles del Vehículo';
 
 <body>
     <div class="main-container">
-     <!-- Encabezado -->
+        <!-- Encabezado -->
         <div class="header-section">
             <h1 class="page-title">
-                <i class="fas fa-car"></i> Detalles del Vehiculo
+                <i class="fas fa-box"></i> Detalles del Material
             </h1>
             <div class="d-flex gap-2 flex-wrap button-group">
                 <a href="index.php" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-1"></i> Volver
                 </a>
-                <a href="editar.php?id=<?= $vehiculo['id_vehiculo'] ?>" class="btn btn-primary">
+                <a href="editar.php?id=<?= $material['id_material'] ?>" class="btn btn-primary">
                     <i class="fas fa-edit me-1"></i> Editar
                 </a>
             </div>
         </div>
 
-        <!-- Información General del Vehículo -->
+        <!-- Mensajes -->
+        <?php if (!empty($_SESSION['mensaje'])): ?>
+            <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
+                <div>
+                    <i class="fas fa-<?=
+                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : ($_SESSION['tipo_mensaje'] === 'danger' ? 'times-circle' : ($_SESSION['tipo_mensaje'] === 'warning' ? 'exclamation-triangle' : 'info-circle'))
+                                        ?> me-2"></i>
+                    <?= $_SESSION['mensaje'] ?>
+                </div>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+            </div>
+            <?php
+            $_SESSION['mensaje'] = '';
+            $_SESSION['tipo_mensaje'] = '';
+            ?>
+        <?php endif; ?>
+
+        <!-- Información del material -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Vehículo</h5>
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Material</h5>
             </div>
             <div class="card-body">
                 <div class="info-row">
-                    <div class="info-label">Marca:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['marca_vehiculo']) ?></div>
+                    <div class="info-label">ID del Material:</div>
+                    <div class="info-value">#<?= $material['id_material'] ?></div>
                 </div>
                 <div class="info-row">
-                    <div class="info-label">Modelo:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['modelo_vehiculo']) ?></div>
+                    <div class="info-label">Nombre:</div>
+                    <div class="info-value"><?= htmlspecialchars($material['nombre_material']) ?></div>
                 </div>
                 <div class="info-row">
-                    <div class="info-label">Placa:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['placa_vehiculo']) ?></div>
-                </div>
-                <?php if (!empty($vehiculo['nombre_cliente'])): ?>
-                <div class="info-row">
-                    <div class="info-label">Propietario:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['nombre_cliente']) ?></div>
+                    <div class="info-label">Descripción:</div>
+                    <div class="info-value"><?= htmlspecialchars($material['descripcion_material']) ?></div>
                 </div>
                 <div class="info-row">
-                    <div class="info-label">Teléfono Propietario:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['telefono_cliente']) ?></div>
+                    <div class="info-label">Precio por Metro:</div>
+                    <div class="info-value">$<?= number_format($material['precio_metro'], 2) ?></div>
                 </div>
                 <div class="info-row">
-                    <div class="info-label">Correo Propietario:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['correo_cliente']) ?></div>
+                    <div class="info-label">Stock Disponible:</div>
+                    <div class="info-value"><?= $material['stock_material'] ?> metros</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Categoría:</div>
+                    <div class="info-value"><?= htmlspecialchars($material['categoria_material']) ?></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Proveedor:</div>
+                    <div class="info-value"><?= htmlspecialchars($material['proveedor_material']) ?></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Fecha de Registro:</div>
+                    <div class="info-value"><?= date('d/m/Y H:i', strtotime($material['fecha_registro'])) ?></div>
+                </div>
+                <?php if (!empty($material['fecha_actualizacion']) && $material['fecha_actualizacion'] != $material['fecha_registro']): ?>
+                <div class="info-row">
+                    <div class="info-label">Última Actualización:</div>
+                    <div class="info-value"><?= date('d/m/Y H:i', strtotime($material['fecha_actualizacion'])) ?></div>
                 </div>
                 <?php endif; ?>
-                <?php if (!empty($vehiculo['notas_vehiculo'])): ?>
+                <?php if (!empty($material['fecha_eliminacion'])): ?>
                 <div class="info-row">
-                    <div class="info-label">Notas:</div>
-                    <div class="info-value"><?= nl2br(htmlspecialchars($vehiculo['notas_vehiculo'])) ?></div>
+                    <div class="info-label">Fecha de Eliminación:</div>
+                    <div class="info-value"><?= date('d/m/Y H:i', strtotime($material['fecha_eliminacion'])) ?></div>
                 </div>
                 <?php endif; ?>
                 <div class="info-row">
                     <div class="info-label">Estado:</div>
                     <div class="info-value">
-                        <span class="badge bg-success">Activo</span>
+                        <span class="badge bg-<?= $material['activo'] == 1 ? 'success' : 'danger' ?>">
+                            <?= $material['activo'] == 1 ? 'Activo' : 'Eliminado' ?>
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Historial de Ediciones -->
+        <?php if (!empty($historialEdiciones)): ?>
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Historial de Ediciones</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Editor</th>
+                                <th>Cambios</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($historialEdiciones as $edicion): ?>
+                            <tr>
+                                <td><?= date('d/m/Y H:i', strtotime($edicion['fecha_eliminacion'])) ?></td>
+                                <td><?= htmlspecialchars($edicion['editor'] ?? 'Sistema') ?></td>
+                                <td>
+                                    <?php if (!empty($edicion['datos_anteriores']) && !empty($edicion['datos_nuevos'])): ?>
+                                        <small>Se realizaron modificaciones en los datos del material</small>
+                                    <?php else: ?>
+                                        <small>Modificación registrada</small>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

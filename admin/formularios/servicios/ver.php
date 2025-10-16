@@ -1,81 +1,55 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Configuración de rutas
+define('ROOT_PATH', dirname(__DIR__, 3));
 require_once __DIR__ . '/../../../php/conexion.php';
 require_once __DIR__ . '/../../../php/auth.php';
 
-if (!isAdmin() && !isSeller() && !isTechnician()) {
+// Verificar permisos (solo Admin y Vendedor)
+if (!isAdmin() && !isSeller()) {
     header('Location: ../dashboard.php');
     exit;
 }
 
-$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-
-if ($id <= 0) {
+// Verificar que se haya proporcionado un ID válido
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    $_SESSION['mensaje'] = 'ID de servicio no válido';
+    $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: index.php');
     exit;
 }
 
-try {
-    // Obtener datos del vehículo
-    $sql = "SELECT v.*, 
-                   c.nombre_cliente, c.telefono_cliente, c.correo_cliente,
-                   COUNT(cot.id_cotizacion) as total_cotizaciones
-            FROM vehiculos v
-            LEFT JOIN cliente_vehiculo cv ON v.id_vehiculo = cv.id_vehiculo
-            LEFT JOIN clientes c ON cv.id_cliente = c.id_cliente
-            LEFT JOIN cotizaciones cot ON v.id_vehiculo = cot.id_vehiculo
-            WHERE v.id_vehiculo = ? AND v.activo = 1
-            GROUP BY v.id_vehiculo";
-    $stmt = $conex->prepare($sql);
-    $stmt->execute([$id]);
-    $vehiculo = $stmt->fetch();
+$id_servicio = $_GET['id'];
 
-    if (!$vehiculo) {
-        header('Location: index.php?error=Vehículo no encontrado');
-        exit;
-    }
+// Obtener información del servicio
+$stmt = $conex->prepare("SELECT * FROM servicios WHERE id_servicio = ?");
+$stmt->execute([$id_servicio]);
+$servicio = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Obtener historial de cotizaciones del vehículo
-    $sqlCotizaciones = "SELECT c.id_cotizacion, c.fecha_cotizacion, c.total_cotizacion, 
-                                c.estado_cotizacion, u.nombre_completo as vendedor
-                        FROM cotizaciones c
-                        JOIN usuarios u ON c.id_usuario = u.id_usuario
-                        WHERE c.id_vehiculo = ? AND c.activo = 1
-                        ORDER BY c.fecha_cotizacion DESC";
-    $stmtCotizaciones = $conex->prepare($sqlCotizaciones);
-    $stmtCotizaciones->execute([$id]);
-    $cotizaciones = $stmtCotizaciones->fetchAll();
-
-    // Obtener historial de trabajos del vehículo
-    $sqlTrabajos = "SELECT t.id_trabajos, t.fecha_inicio, t.fecha_fin, t.estado,
-                           c.id_cotizacion, c.total_cotizacion
-                    FROM trabajos t
-                    JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
-                    WHERE c.id_vehiculo = ? AND t.activo = 1
-                    ORDER BY t.fecha_inicio DESC";
-    $stmtTrabajos = $conex->prepare($sqlTrabajos);
-    $stmtTrabajos->execute([$id]);
-    $trabajos = $stmtTrabajos->fetchAll();
-
-} catch (PDOException $e) {
-    error_log("Error al obtener vehículo: " . $e->getMessage());
-    header('Location: index.php?error=Error al obtener vehículo');
+// Verificar si el servicio existe
+if (!$servicio) {
+    $_SESSION['mensaje'] = 'Servicio no encontrado';
+    $_SESSION['tipo_mensaje'] = 'danger';
+    header('Location: index.php');
     exit;
 }
 
-require_once __DIR__ . '/../../includes/head.php';
-$title = 'Detalles del Vehículo';
+// Inicializar variables de sesión para mensajes
+if (!isset($_SESSION['mensaje'])) {
+    $_SESSION['mensaje'] = '';
+    $_SESSION['tipo_mensaje'] = '';
+}
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?></title>
+    <title>Detalles del Servicio</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -188,39 +162,6 @@ $title = 'Detalles del Vehículo';
             font-weight: 500;
         }
 
-        .table {
-            --bs-table-bg: transparent;
-            --bs-table-color: var(--text-color);
-            --bs-table-border-color: var(--border-color);
-            width: 100%;
-        }
-
-        .table th {
-            background-color: rgba(140, 74, 63, 0.4);
-            color: var(--text-color);
-            font-weight: 600;
-            border-color: var(--border-color);
-        }
-
-        .table td, .table th {
-            padding: 0.75rem;
-            border-color: var(--border-color);
-            color: var(--text-color);
-        }
-
-        .table tbody tr {
-            background-color: rgba(0, 0, 0, 0.2);
-        }
-
-        .table tbody tr:nth-child(even) {
-            background-color: rgba(0, 0, 0, 0.3);
-        }
-
-        .table tfoot th {
-            background-color: rgba(140, 74, 63, 0.3);
-            font-weight: 600;
-        }
-
         .btn {
             display: inline-flex;
             align-items: center;
@@ -317,33 +258,6 @@ $title = 'Detalles del Vehículo';
             color: var(--text-color);
         }
 
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .stat-card {
-            background-color: var(--bg-transparent-light);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-            border: 1px solid var(--border-color);
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             .main-container {
@@ -377,10 +291,6 @@ $title = 'Detalles del Vehículo';
                 justify-content: center;
                 margin-top: 1rem;
             }
-
-            .stats-container {
-                grid-template-columns: 1fr;
-            }
         }
 
         @media (max-width: 576px) {
@@ -402,67 +312,122 @@ $title = 'Detalles del Vehículo';
 
 <body>
     <div class="main-container">
-     <!-- Encabezado -->
+        <!-- Encabezado -->
         <div class="header-section">
             <h1 class="page-title">
-                <i class="fas fa-car"></i> Detalles del Vehiculo
+                <i class="fas fa-eye"></i> Detalles del Servicio
             </h1>
             <div class="d-flex gap-2 flex-wrap button-group">
                 <a href="index.php" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-1"></i> Volver
                 </a>
-                <a href="editar.php?id=<?= $vehiculo['id_vehiculo'] ?>" class="btn btn-primary">
+                <a href="editar.php?id=<?= $servicio['id_servicio'] ?>" class="btn btn-primary">
                     <i class="fas fa-edit me-1"></i> Editar
                 </a>
             </div>
         </div>
 
-        <!-- Información General del Vehículo -->
+        <!-- Mensajes -->
+        <?php if (!empty($_SESSION['mensaje'])): ?>
+            <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
+                <div>
+                    <i class="fas fa-<?=
+                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : ($_SESSION['tipo_mensaje'] === 'danger' ? 'times-circle' : ($_SESSION['tipo_mensaje'] === 'warning' ? 'exclamation-triangle' : 'info-circle'))
+                                        ?> me-2"></i>
+                    <?= $_SESSION['mensaje'] ?>
+                </div>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+            </div>
+            <?php
+            $_SESSION['mensaje'] = '';
+            $_SESSION['tipo_mensaje'] = '';
+            ?>
+        <?php endif; ?>
+
+        <!-- Información del servicio -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Vehículo</h5>
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Servicio</h5>
             </div>
             <div class="card-body">
                 <div class="info-row">
-                    <div class="info-label">Marca:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['marca_vehiculo']) ?></div>
+                    <div class="info-label">ID del Servicio:</div>
+                    <div class="info-value">#<?= htmlspecialchars($servicio['id_servicio']) ?></div>
                 </div>
                 <div class="info-row">
-                    <div class="info-label">Modelo:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['modelo_vehiculo']) ?></div>
+                    <div class="info-label">Nombre del Servicio:</div>
+                    <div class="info-value"><?= htmlspecialchars($servicio['nombre_servicio']) ?></div>
                 </div>
                 <div class="info-row">
-                    <div class="info-label">Placa:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['placa_vehiculo']) ?></div>
-                </div>
-                <?php if (!empty($vehiculo['nombre_cliente'])): ?>
-                <div class="info-row">
-                    <div class="info-label">Propietario:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['nombre_cliente']) ?></div>
+                    <div class="info-label">Categoría:</div>
+                    <div class="info-value">
+                        <span class="badge bg-primary"><?= htmlspecialchars($servicio['categoria_servicio']) ?></span>
+                    </div>
                 </div>
                 <div class="info-row">
-                    <div class="info-label">Teléfono Propietario:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['telefono_cliente']) ?></div>
+                    <div class="info-label">Precio:</div>
+                    <div class="info-value">
+                        <strong>$<?= number_format($servicio['precio_servicio'], 2) ?></strong>
+                    </div>
                 </div>
                 <div class="info-row">
-                    <div class="info-label">Correo Propietario:</div>
-                    <div class="info-value"><?= htmlspecialchars($vehiculo['correo_cliente']) ?></div>
+                    <div class="info-label">Tiempo Estimado:</div>
+                    <div class="info-value">
+                        <i class="fas fa-clock me-1"></i><?= htmlspecialchars($servicio['tiempo_estimado']) ?>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Descripción:</div>
+                    <div class="info-value"><?= nl2br(htmlspecialchars($servicio['descripcion_servicio'])) ?></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Fecha de Creación:</div>
+                    <div class="info-value">
+                        <i class="fas fa-calendar me-1"></i><?= date('d/m/Y H:i', strtotime($servicio['fecha_registro'])) ?>
+                    </div>
+                </div>
+                <?php if (!empty($servicio['fecha_actualizacion']) && $servicio['fecha_actualizacion'] != $servicio['fecha_registro']): ?>
+                <div class="info-row">
+                    <div class="info-label">Última Actualización:</div>
+                    <div class="info-value">
+                        <i class="fas fa-sync-alt me-1"></i><?= date('d/m/Y H:i', strtotime($servicio['fecha_actualizacion'])) ?>
+                    </div>
                 </div>
                 <?php endif; ?>
-                <?php if (!empty($vehiculo['notas_vehiculo'])): ?>
+                <?php if (!empty($servicio['fecha_eliminacion'])): ?>
                 <div class="info-row">
-                    <div class="info-label">Notas:</div>
-                    <div class="info-value"><?= nl2br(htmlspecialchars($vehiculo['notas_vehiculo'])) ?></div>
+                    <div class="info-label">Fecha de Eliminación:</div>
+                    <div class="info-value"><?= date('d/m/Y H:i', strtotime($servicio['fecha_eliminacion'])) ?></div>
                 </div>
                 <?php endif; ?>
                 <div class="info-row">
                     <div class="info-label">Estado:</div>
                     <div class="info-value">
-                        <span class="badge bg-success">Activo</span>
+                        <span class="badge bg-<?= $servicio['activo'] == 1 ? 'success' : 'danger' ?>">
+                            <?= $servicio['activo'] == 1 ? 'Activo' : 'Eliminado' ?>
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function confirmarEliminacion(id) {
+            if (confirm('¿Está seguro de que desea eliminar este servicio? Esta acción no se puede deshacer.')) {
+                window.location.href = 'procesar.php?accion=eliminar&id=' + id;
+            }
+        }
+
+        // Auto-ocultar alertas después de 5 segundos
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.display = 'none';
+            });
+        }, 5000);
+    </script>
 </body>
+
 </html>
