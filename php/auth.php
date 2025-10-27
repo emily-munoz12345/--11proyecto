@@ -62,4 +62,8 @@ function logout() {
     }
     session_destroy();
 }
+
+function getUserEmail() {
+    return $_SESSION['usuario_correo'] ?? '';
+}
 ?>
