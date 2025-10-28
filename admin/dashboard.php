@@ -355,6 +355,7 @@ foreach ($userCards as $card) {
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -419,40 +420,36 @@ foreach ($userCards as $card) {
                         <span class="user-role-badge">Panel Administrativo</span>
                     </div>
                     <div class="dashboard-header-right">
-                        <!-- Menú de usuario estilo ASOS -->
                         <div class="user-dropdown">
                             <button class="user-dropdown-toggle">
                                 <i class="fas fa-user-circle"></i>
+                                <a href="perfil/perfil.php" class="btn btn-secondary">
                                 <span class="username"><?= htmlspecialchars($userName) ?></span>
-                                <i class="fas fa-chevron-down dropdown-arrow"></i>
+                                </a>
                             </button>
-                            <div class="user-dropdown-menu">
-                                <a href="perfil/perfil.php" class="dropdown-item">Mi perfil</a>
-                                <a href="../php/logout.php" class="dropdown-item logout">Cerrar sesión</a>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Sección de Bienvenida -->
         <div class="row justify-content-center mt-4">
             <div class="col-12 col-lg-10">
                 <div class="welcome-section">
                     <h1 class="brand-title">MSkingCars</h1>
                     <p class="welcome-message">
-                        Sistema integral de gestión para tapicería automotriz. 
-                        Administra clientes, vehículos, cotizaciones y trabajos de manera eficiente 
+                        Sistema integral de gestión para tapicería automotriz.
+                        Administra clientes, vehículos, cotizaciones y trabajos de manera eficiente
                         desde una única plataforma.
                     </p>
-                    
+
                     <div class="user-welcome">
                         <h3 class="welcome-title">¡Bienvenido, <?= htmlspecialchars($userName) ?>!</h3>
                         <p class="welcome-role"> <?= htmlspecialchars($userRole) ?></p>
                         <p class="welcome-text">
-                            Estás accediendo al sistema administrativo de MSkingCars. 
-                            Desde aquí podrás gestionar toda la información relacionada con los servicios 
+                            Estás accediendo al sistema administrativo de MSkingCars.
+                            Desde aquí podrás gestionar toda la información relacionada con los servicios
                             de tapicería automotriz, clientes, inventario y más.
                         </p>
                     </div>
@@ -589,9 +586,9 @@ foreach ($userCards as $card) {
         document.querySelector('.user-dropdown-toggle').addEventListener('click', function() {
             const dropdownMenu = document.querySelector('.user-dropdown-menu');
             const arrow = document.querySelector('.dropdown-arrow');
-            
+
             dropdownMenu.classList.toggle('show');
-            
+
             if (dropdownMenu.classList.contains('show')) {
                 arrow.style.transform = 'rotate(180deg)';
             } else {
@@ -604,7 +601,7 @@ foreach ($userCards as $card) {
             const dropdown = document.querySelector('.user-dropdown');
             const dropdownMenu = document.querySelector('.user-dropdown-menu');
             const arrow = document.querySelector('.dropdown-arrow');
-            
+
             if (!dropdown.contains(event.target)) {
                 dropdownMenu.classList.remove('show');
                 arrow.style.transform = 'rotate(0deg)';

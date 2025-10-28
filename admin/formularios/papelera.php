@@ -553,7 +553,7 @@ if (isset($_POST['vaciar_papelera'])) {
             </h1>
             <div class="d-flex gap-2 align-items-center">
                 <a href="../dashboard.php" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                    <i class="fas fa-arrow-left"></i> Volver al Inicio
                 </a>
             </div>
         </div>

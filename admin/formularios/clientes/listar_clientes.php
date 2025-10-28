@@ -23,9 +23,9 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
-            --bg-input: rgba(0, 0, 0, 0.4);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -52,7 +52,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -72,6 +72,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -114,14 +115,20 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
         }
 
         .summary-card {
-            background-color: var(--primary-color);
+            background-color: var(--bg-transparent-light);
             border-radius: 10px;
             padding: 1.5rem;
             min-width: 200px;
             text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(8px);
             border: 1px solid var(--border-color);
+            transition: transform 0.3s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            background-color: rgba(140, 74, 63, 0.3);
         }
 
         .summary-card h3 {
@@ -130,7 +137,8 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: var(--text-color);
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
         }
 
         .summary-card p {
@@ -156,6 +164,13 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             color: var(--text-color);
             font-size: 1rem;
             backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-color);
+            background-color: rgba(0, 0, 0, 0.7);
         }
 
         .search-input::placeholder {
@@ -184,7 +199,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border-color);
             overflow: hidden;
             /* Se eliminó max-height y overflow-y para quitar la barra de desplazamiento */
@@ -201,7 +216,7 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
         }
 
         .client-item:hover {
-            background-color: var(--bg-transparent);
+            background-color: rgba(140, 74, 63, 0.3);
         }
 
         .client-item:last-child {
@@ -258,11 +273,11 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
             width: 90%;
             max-width: 700px;
             max-height: 90vh;
-            background-color: rgba(50, 50, 50, 0.95);
+            background-color: rgba(40, 40, 40, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 12px;
             padding: 2rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
             z-index: 1001;
             animation: fadeInUp 0.4s ease;
             overflow-y: auto;

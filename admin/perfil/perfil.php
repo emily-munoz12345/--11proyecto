@@ -10,6 +10,17 @@ require_once __DIR__ . '/../../php/auth.php';
 
 $usuario_id = getUserId();
 
+// MOSTRAR MENSAJES DE ÉXITO O ERROR
+if (isset($_SESSION['mensaje_exito'])) {
+    $mensaje_exito = $_SESSION['mensaje_exito'];
+    unset($_SESSION['mensaje_exito']);
+}
+
+if (isset($_SESSION['errores_perfil'])) {
+    $errores_perfil = $_SESSION['errores_perfil'];
+    unset($_SESSION['errores_perfil']);
+}
+
 // Obtener datos del usuario
 $stmt = $conex->prepare("SELECT u.*, r.nombre_rol 
                         FROM usuarios u 
@@ -33,14 +44,99 @@ $stmt_trabajos = $conex->prepare("SELECT COUNT(*) as total
                                 WHERE c.id_usuario = ? AND t.activo = 1");
 $stmt_trabajos->execute([$usuario_id]);
 $total_trabajos = $stmt_trabajos->fetchColumn();
+
+// Procesar búsqueda de cotizaciones si es una solicitud AJAX
+if (isset($_GET['ajax_cotizaciones'])) {
+    header('Content-Type: application/json');
+
+    if (!isset($_GET['q']) || strlen($_GET['q']) < 2) {
+        echo json_encode([]);
+        exit;
+    }
+
+    $searchTerm = '%' . $_GET['q'] . '%';
+    $stmt = $conex->prepare("
+        SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo
+        FROM cotizaciones c
+        INNER JOIN clientes cl ON c.id_cliente = cl.id_cliente
+        INNER JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+        WHERE c.id_usuario = ? AND c.activo = 1 
+        AND (cl.nombre_cliente LIKE :search 
+        OR v.marca_vehiculo LIKE :search 
+        OR v.modelo_vehiculo LIKE :search
+        OR v.placa_vehiculo LIKE :search
+        OR c.estado_cotizacion LIKE :search)
+        ORDER BY c.fecha_cotizacion DESC
+        LIMIT 10
+    ");
+    $stmt->bindParam(':search', $searchTerm);
+    $stmt->execute([$usuario_id]);
+
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit;
+}
+
+// Procesar búsqueda de trabajos si es una solicitud AJAX
+if (isset($_GET['ajax_trabajos'])) {
+    header('Content-Type: application/json');
+
+    if (!isset($_GET['q']) || strlen($_GET['q']) < 2) {
+        echo json_encode([]);
+        exit;
+    }
+
+    $searchTerm = '%' . $_GET['q'] . '%';
+    $stmt = $conex->prepare("
+        SELECT t.*, c.id_cotizacion, cl.nombre_cliente
+        FROM trabajos t
+        INNER JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
+        INNER JOIN clientes cl ON c.id_cliente = cl.id_cliente
+        WHERE c.id_usuario = ? AND t.activo = 1
+        AND (cl.nombre_cliente LIKE :search 
+        OR t.estado LIKE :search
+        OR t.notas LIKE :search)
+        ORDER BY t.fecha_inicio DESC
+        LIMIT 10
+    ");
+    $stmt->bindParam(':search', $searchTerm);
+    $stmt->execute([$usuario_id]);
+
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit;
+}
+
+// Obtener todas las cotizaciones para mostrar inicialmente
+$stmt_cotizaciones_all = $conex->prepare("
+    SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo
+    FROM cotizaciones c
+    INNER JOIN clientes cl ON c.id_cliente = cl.id_cliente
+    INNER JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+    WHERE c.id_usuario = ? AND c.activo = 1
+    ORDER BY c.fecha_cotizacion DESC
+");
+$stmt_cotizaciones_all->execute([$usuario_id]);
+$todas_cotizaciones = $stmt_cotizaciones_all->fetchAll();
+
+// Obtener todas los trabajos para mostrar inicialmente
+$stmt_trabajos_all = $conex->prepare("
+    SELECT t.*, c.id_cotizacion, cl.nombre_cliente
+    FROM trabajos t
+    INNER JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
+    INNER JOIN clientes cl ON c.id_cliente = cl.id_cliente
+    WHERE c.id_usuario = ? AND t.activo = 1
+    ORDER BY t.fecha_inicio DESC
+");
+$stmt_trabajos_all->execute([$usuario_id]);
+$todos_trabajos = $stmt_trabajos_all->fetchAll();
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil - Sistema de Tapicería</title>
+    <title>Mi Perfil</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -140,7 +236,6 @@ $total_trabajos = $stmt_trabajos->fetchColumn();
             backdrop-filter: blur(8px);
             border-radius: 12px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             margin-bottom: 2rem;
             overflow: hidden;
         }
@@ -231,59 +326,127 @@ $total_trabajos = $stmt_trabajos->fetchColumn();
             color: var(--text-muted);
         }
 
-        /* Grupo de contraseña con botón de visibilidad */
-        .password-group {
+        /* Estilos para el buscador */
+        .search-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--bg-input);
+            color: var(--text-color);
+            font-size: 1rem;
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-color);
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-results {
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+            background-color: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .search-result-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             position: relative;
         }
 
-        .password-toggle {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
+        .search-result-item:hover {
+            background-color: var(--primary-color);
+        }
+
+        .search-client-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .search-client-info {
+            font-size: 0.9rem;
             color: var(--text-muted);
-            cursor: pointer;
-            padding: 5px;
-            transition: color 0.3s ease;
         }
 
-        .password-toggle:hover {
-            color: var(--text-color);
+        .search-client-date {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
         }
 
-        /* Estilos para tablas */
-        .table {
+        /* Estilos para la lista de clientes */
+        .client-list {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
-            border-radius: 8px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
             overflow: hidden;
-            margin-bottom: 0;
         }
 
-        .table th {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 1rem;
-            font-weight: 600;
-        }
-
-        .table td {
-            background-color: transparent;
-            color: var(--text-color);
+        .client-item {
+            padding: 1.2rem;
             border-bottom: 1px solid var(--border-color);
-            padding: 1rem;
-            vertical-align: middle;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
         }
 
-        .table-striped tbody tr:nth-of-type(odd) {
-            background-color: rgba(255, 255, 255, 0.05);
+        .client-item:hover {
+            background-color: rgba(140, 74, 63, 0.3);
         }
 
-        .table-hover tbody tr:hover {
-            background-color: rgba(140, 74, 63, 0.2);
+        .client-name {
+            font-weight: 500;
+            font-size: 1.1rem;
+            color: var(--text-color);
+        }
+
+        .client-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+        }
+
+        .client-arrow {
+            margin-left: 1rem;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            color: var(--text-color);
+        }
+
+        .client-item:hover .client-arrow {
+            opacity: 1;
+            transform: translateX(3px);
         }
 
         /* Estilos para botones */
@@ -347,6 +510,15 @@ $total_trabajos = $stmt_trabajos->fetchColumn();
             background-color: rgba(13, 202, 240, 1);
         }
 
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: black;
+        }
+
+        .btn-warning:hover {
+            background-color: rgba(255, 193, 7, 1);
+        }
+
         .btn-outline-primary {
             background-color: transparent;
             border: 1px solid var(--primary-color);
@@ -355,17 +527,6 @@ $total_trabajos = $stmt_trabajos->fetchColumn();
 
         .btn-outline-primary:hover {
             background-color: var(--primary-color);
-            color: white;
-        }
-
-        .btn-outline-info {
-            background-color: transparent;
-            border: 1px solid var(--info-color);
-            color: var(--info-color);
-        }
-
-        .btn-outline-info:hover {
-            background-color: var(--info-color);
             color: white;
         }
 
@@ -508,6 +669,120 @@ $total_trabajos = $stmt_trabajos->fetchColumn();
             color: var(--danger-color);
         }
 
+        /* Nueva tarjeta flotante para opciones */
+        .options-floating-card {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background-color: rgba(40, 40, 40, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            z-index: 1001;
+            animation: fadeInUp 0.4s ease;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .options-card-header {
+            background-color: var(--primary-color);
+            padding: 1.2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .options-card-title {
+            margin: 0;
+            font-size: 1.2rem;
+            color: white;
+            font-weight: 500;
+        }
+
+        .options-card-body {
+            padding: 1.5rem;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.8rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            color: var(--text-color);
+            text-decoration: none;
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .option-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .option-item:hover {
+            background-color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .option-item i {
+            margin-right: 0.8rem;
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .option-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-close:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para tarjetas flotantes */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .main-container {
@@ -547,11 +822,16 @@ $total_trabajos = $stmt_trabajos->fetchColumn();
             .btn-group .btn {
                 margin-bottom: 0.25rem;
             }
+
+            .options-floating-card {
+                width: 90%;
+                max-width: 300px;
+            }
         }
     </style>
 </head>
+
 <body>
-    <?php include '../includes/head.php'; ?>
 
     <div class="main-container">
         <!-- Encabezado -->
@@ -560,11 +840,33 @@ $total_trabajos = $stmt_trabajos->fetchColumn();
                 <i class="fas fa-user"></i> Mi Perfil
             </h1>
             <div class="d-flex gap-2">
-                <a href="../../dashboard.php" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                <a href="../dashboard.php" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver al Inicio
+                </a>
+                <a href="cambiar_contrasena.php" class="btn btn-warning">
+                    <i class="fas fa-key"></i> Cambiar Contraseña
                 </a>
             </div>
         </div>
+
+        <!-- MOSTRAR MENSAJES -->
+        <?php if (isset($mensaje_exito)): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <?php echo htmlspecialchars($mensaje_exito); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($errores_perfil)): ?>
+            <?php foreach ($errores_perfil as $error): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <?php echo htmlspecialchars($error); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
 
         <!-- Header del perfil -->
         <div class="profile-header">
@@ -643,23 +945,23 @@ $total_trabajos = $stmt_trabajos->fetchColumn();
                                     <i class="fas fa-user"></i>
                                     Información Personal
                                 </h3>
-                                
+
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="nombre_completo" class="form-label required-field">
                                             <i class="fas fa-user"></i>
                                             Nombre Completo
                                         </label>
-                                        <input type="text" class="form-control" id="nombre_completo" name="nombre_completo" 
-                                               value="<?php echo htmlspecialchars($usuario['nombre_completo']); ?>" required>
+                                        <input type="text" class="form-control" id="nombre_completo" name="nombre_completo"
+                                            value="<?php echo htmlspecialchars($usuario['nombre_completo']); ?>" required>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="correo_usuario" class="form-label required-field">
                                             <i class="fas fa-envelope"></i>
                                             Correo Electrónico
                                         </label>
-                                        <input type="email" class="form-control" id="correo_usuario" name="correo_usuario" 
-                                               value="<?php echo htmlspecialchars($usuario['correo_usuario']); ?>" required>
+                                        <input type="email" class="form-control" id="correo_usuario" name="correo_usuario"
+                                            value="<?php echo htmlspecialchars($usuario['correo_usuario']); ?>" required>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -668,86 +970,16 @@ $total_trabajos = $stmt_trabajos->fetchColumn();
                                             <i class="fas fa-phone"></i>
                                             Teléfono
                                         </label>
-                                        <input type="text" class="form-control" id="telefono_usuario" name="telefono_usuario" 
-                                               value="<?php echo htmlspecialchars($usuario['telefono_usuario']); ?>" required>
+                                        <input type="text" class="form-control" id="telefono_usuario" name="telefono_usuario"
+                                            value="<?php echo htmlspecialchars($usuario['telefono_usuario']); ?>" required>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="username_usuario" class="form-label required-field">
                                             <i class="fas fa-user-circle"></i>
                                             Nombre de Usuario
                                         </label>
-                                        <input type="text" class="form-control" id="username_usuario" name="username_usuario" 
-                                               value="<?php echo htmlspecialchars($usuario['username_usuario']); ?>" required>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Sección de Cambio de Contraseña Mejorada -->
-                            <div class="form-section">
-                                <h3 class="form-section-title">
-                                    <i class="fas fa-lock"></i>
-                                    Cambiar Contraseña
-                                </h3>
-                                
-                                <div class="password-section">
-                                    <div class="alert alert-warning-custom">
-                                        <small>
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            Solo complete los campos de contraseña si desea cambiar la contraseña actual.
-                                        </small>
-                                    </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="contrasena_actual" class="form-label">
-                                                <i class="fas fa-key"></i>
-                                                Contraseña Actual
-                                            </label>
-                                            <div class="password-group">
-                                                <input type="password" class="form-control" id="contrasena_actual" name="contrasena_actual" 
-                                                       placeholder="Ingrese su contraseña actual">
-                                                <button type="button" class="password-toggle" onclick="togglePassword('contrasena_actual')">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label for="nueva_contrasena" class="form-label">
-                                                <i class="fas fa-lock"></i>
-                                                Nueva Contraseña
-                                            </label>
-                                            <div class="password-group">
-                                                <input type="password" class="form-control" id="nueva_contrasena" name="nueva_contrasena" 
-                                                       placeholder="Ingrese nueva contraseña">
-                                                <button type="button" class="password-toggle" onclick="togglePassword('nueva_contrasena')">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </div>
-                                            <small class="text-muted">Mínimo 8 caracteres</small>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="confirmar_contrasena" class="form-label">
-                                                <i class="fas fa-lock"></i>
-                                                Confirmar Nueva Contraseña
-                                            </label>
-                                            <div class="password-group">
-                                                <input type="password" class="form-control" id="confirmar_contrasena" name="confirmar_contrasena" 
-                                                       placeholder="Confirme la nueva contraseña">
-                                                <button type="button" class="password-toggle" onclick="togglePassword('confirmar_contrasena')">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6 mb-3 d-flex align-items-end">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="mostrar_contrasenas">
-                                                <label class="form-check-label" for="mostrar_contrasenas">
-                                                    Mostrar todas las contraseñas
-                                                </label>
-                                            </div>
-                                        </div>
+                                        <input type="text" class="form-control" id="username_usuario" name="username_usuario"
+                                            value="<?php echo htmlspecialchars($usuario['username_usuario']); ?>" required>
                                     </div>
                                 </div>
                             </div>
@@ -767,217 +999,390 @@ $total_trabajos = $stmt_trabajos->fetchColumn();
 
             <!-- Pestaña Mis Cotizaciones -->
             <div class="tab-pane fade" id="quotations" role="tabpanel">
-                <div class="profile-card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-file-invoice-dollar me-2"></i>Mis Cotizaciones
-                        </h5>
-                        <div>
-                            <span class="badge bg-primary me-2"><?php echo $total_cotizaciones; ?> cotizaciones</span>
-                            <a href="exportar_cotizaciones_excel.php?usuario_id=<?php echo $usuario_id; ?>" class="btn btn-success btn-sm">
-                                <i class="fas fa-download me-1"></i> Exportar Excel
-                            </a>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Cliente</th>
-                                        <th>Vehículo</th>
-                                        <th>Total</th>
-                                        <th>Estado</th>
-                                        <th>Fecha</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $stmt_cotizaciones = $conex->prepare("
-                                        SELECT c.*, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo
-                                        FROM cotizaciones c
-                                        INNER JOIN clientes cl ON c.id_cliente = cl.id_cliente
-                                        INNER JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
-                                        WHERE c.id_usuario = ? AND c.activo = 1
-                                        ORDER BY c.fecha_cotizacion DESC
-                                        LIMIT 10
-                                    ");
-                                    $stmt_cotizaciones->execute([$usuario_id]);
-                                    $cotizaciones = $stmt_cotizaciones->fetchAll();
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>Mis Cotizaciones
+                    </h4>
+                    <a href="exportar_cotizaciones_exel.php" class="btn btn-success">
+                        <i class="fas fa-download me-1"></i> Exportar Excel
+                    </a>
+                </div>
 
-                                    if (count($cotizaciones) > 0) {
-                                        foreach ($cotizaciones as $cotizacion) {
-                                            $badge_class = [
-                                                'Pendiente' => 'bg-warning',
-                                                'Aprobado' => 'bg-success',
-                                                'Rechazada' => 'bg-danger',
-                                                'Completada' => 'bg-info'
-                                            ][$cotizacion['estado_cotizacion']] ?? 'bg-secondary';
-                                    ?>
-                                    <tr>
-                                        <td>#<?php echo $cotizacion['id_cotizacion']; ?></td>
-                                        <td><?php echo htmlspecialchars($cotizacion['nombre_cliente']); ?></td>
-                                        <td><?php echo htmlspecialchars($cotizacion['marca_vehiculo'] . ' ' . $cotizacion['modelo_vehiculo']); ?></td>
-                                        <td>$<?php echo number_format($cotizacion['total_cotizacion'], 2); ?></td>
-                                        <td>
-                                            <span class="badge <?php echo $badge_class; ?>">
-                                                <?php echo $cotizacion['estado_cotizacion']; ?>
-                                            </span>
-                                        </td>
-                                        <td><?php echo date('d/m/Y', strtotime($cotizacion['fecha_cotizacion'])); ?></td>
-                                        <td>
-                                            <div class="btn-group" role="group">
-                                                <a href="ver_cotizacion.php?id=<?php echo $cotizacion['id_cotizacion']; ?>" 
-                                                   class="btn btn-sm btn-outline-primary" title="Ver">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="editar_cotizacion.php?id=<?php echo $cotizacion['id_cotizacion']; ?>" 
-                                                   class="btn btn-sm btn-outline-info" title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <?php
-                                        }
-                                    } else {
-                                    ?>
-                                    <tr>
-                                        <td colspan="7" class="text-center text-muted py-4">
-                                            <i class="fas fa-file-invoice-dollar fa-3x mb-3"></i>
-                                            <p>No has realizado ninguna cotización aún.</p>
-                                        </td>
-                                    </tr>
-                                    <?php } ?>
-                                </tbody>
-                            </table>
+                <!-- Sistema de Búsqueda -->
+                <div class="search-container">
+                    <input type="text" class="search-input" id="searchCotizaciones"
+                        placeholder="Buscar cotizaciones por cliente, vehículo, placa o estado...">
+                    <div class="search-results" id="searchResultsCotizaciones"></div>
+                </div>
+
+                <!-- Lista de Cotizaciones -->
+                <div class="client-list" id="allCotizacionesList">
+                    <?php if (empty($todas_cotizaciones)): ?>
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-invoice-dollar fa-3x mb-3" style="color: var(--text-muted);"></i>
+                            <h4 style="color: var(--text-muted);">No hay cotizaciones</h4>
+                            <p style="color: var(--text-muted);">No has realizado ninguna cotización aún.</p>
                         </div>
-                        <?php if ($total_cotizaciones > 10) { ?>
-                        <div class="text-center mt-3">
-                            <a href="mis_cotizaciones.php" class="btn btn-outline-primary">
-                                Ver todas las cotizaciones
-                            </a>
-                        </div>
-                        <?php } ?>
-                    </div>
+                    <?php else: ?>
+                        <?php foreach ($todas_cotizaciones as $cotizacion): ?>
+                            <div class="client-item" onclick="showOptions('cotizacion', <?php echo $cotizacion['id_cotizacion']; ?>, '<?php echo htmlspecialchars(addslashes($cotizacion['nombre_cliente'])); ?>')">
+                                <div class="client-info">
+                                    <div class="client-name">
+                                        <?php echo htmlspecialchars($cotizacion['nombre_cliente']); ?>
+                                        <span class="badge <?php
+                                                            switch ($cotizacion['estado_cotizacion']) {
+                                                                case 'Pendiente':
+                                                                    echo 'bg-warning';
+                                                                    break;
+                                                                case 'Aprobado':
+                                                                    echo 'bg-success';
+                                                                    break;
+                                                                case 'Rechazada':
+                                                                    echo 'bg-danger';
+                                                                    break;
+                                                                case 'Completada':
+                                                                    echo 'bg-info';
+                                                                    break;
+                                                                default:
+                                                                    echo 'bg-secondary';
+                                                            }
+                                                            ?> ms-2">
+                                            <?php echo $cotizacion['estado_cotizacion']; ?>
+                                        </span>
+                                    </div>
+                                    <div class="client-description">
+                                        <i class="fas fa-car me-1"></i>
+                                        <?php echo htmlspecialchars($cotizacion['marca_vehiculo'] . ' ' . $cotizacion['modelo_vehiculo']); ?>
+                                        ·
+                                        <i class="fas fa-tag me-1"></i>
+                                        <?php echo htmlspecialchars($cotizacion['placa_vehiculo']); ?>
+                                        ·
+                                        <i class="fas fa-dollar-sign me-1"></i>
+                                        $<?php echo number_format($cotizacion['total_cotizacion'], 2); ?>
+                                        ·
+                                        <i class="fas fa-calendar me-1"></i>
+                                        <?php echo date('d/m/Y', strtotime($cotizacion['fecha_cotizacion'])); ?>
+                                    </div>
+                                </div>
+                                <div class="client-arrow">
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <!-- Pestaña Mis Trabajos -->
             <div class="tab-pane fade" id="jobs" role="tabpanel">
-                <div class="profile-card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-tools me-2"></i>Mis Trabajos
-                        </h5>
-                        <div>
-                            <span class="badge bg-success me-2"><?php echo $total_trabajos; ?> trabajos</span>
-                            <a href="exportar_trabajos_excel.php?usuario_id=<?php echo $usuario_id; ?>" class="btn btn-success btn-sm">
-                                <i class="fas fa-download me-1"></i> Exportar Excel
-                            </a>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Cotización</th>
-                                        <th>Cliente</th>
-                                        <th>Fecha Inicio</th>
-                                        <th>Fecha Fin</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $stmt_trabajos = $conex->prepare("
-                                        SELECT t.*, c.id_cotizacion, cl.nombre_cliente
-                                        FROM trabajos t
-                                        INNER JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
-                                        INNER JOIN clientes cl ON c.id_cliente = cl.id_cliente
-                                        WHERE c.id_usuario = ? AND t.activo = 1
-                                        ORDER BY t.fecha_inicio DESC
-                                        LIMIT 10
-                                    ");
-                                    $stmt_trabajos->execute([$usuario_id]);
-                                    $trabajos = $stmt_trabajos->fetchAll();
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>Mis Trabajos
+                    </h4>
+                    <a href="exportar_trabajos_exel.php" class="btn btn-success">
+                        <i class="fas fa-download me-1"></i> Exportar Excel
+                    </a>
+                </div>
 
-                                    if (count($trabajos) > 0) {
-                                        foreach ($trabajos as $trabajo) {
-                                            $badge_class = [
-                                                'Pendiente' => 'bg-warning',
-                                                'En progreso' => 'bg-primary',
-                                                'Entregado' => 'bg-success',
-                                                'Cancelado' => 'bg-danger'
-                                            ][$trabajo['estado']] ?? 'bg-secondary';
-                                    ?>
-                                    <tr>
-                                        <td>#<?php echo $trabajo['id_trabajos']; ?></td>
-                                        <td>#<?php echo $trabajo['id_cotizacion']; ?></td>
-                                        <td><?php echo htmlspecialchars($trabajo['nombre_cliente']); ?></td>
-                                        <td><?php echo date('d/m/Y', strtotime($trabajo['fecha_inicio'])); ?></td>
-                                        <td>
-                                            <?php 
-                                            if ($trabajo['fecha_fin'] != '0000-00-00') {
-                                                echo date('d/m/Y', strtotime($trabajo['fecha_fin']));
-                                            } else {
-                                                echo '<span class="text-muted">-</span>';
-                                            }
-                                            ?>
-                                        </td>
-                                        <td>
-                                            <span class="badge <?php echo $badge_class; ?>">
-                                                <?php echo $trabajo['estado']; ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div class="btn-group" role="group">
-                                                <a href="ver_trabajo.php?id=<?php echo $trabajo['id_trabajos']; ?>" 
-                                                   class="btn btn-sm btn-outline-primary" title="Ver">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="editar_trabajo.php?id=<?php echo $trabajo['id_trabajos']; ?>" 
-                                                   class="btn btn-sm btn-outline-info" title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <?php
-                                        }
-                                    } else {
-                                    ?>
-                                    <tr>
-                                        <td colspan="7" class="text-center text-muted py-4">
-                                            <i class="fas fa-tools fa-3x mb-3"></i>
-                                            <p>No tienes trabajos asignados.</p>
-                                        </td>
-                                    </tr>
-                                    <?php } ?>
-                                </tbody>
-                            </table>
+                <!-- Sistema de Búsqueda -->
+                <div class="search-container">
+                    <input type="text" class="search-input" id="searchTrabajos"
+                        placeholder="Buscar trabajos por cliente, estado o descripción...">
+                    <div class="search-results" id="searchResultsTrabajos"></div>
+                </div>
+
+                <!-- Lista de Trabajos -->
+                <div class="client-list" id="allTrabajosList">
+                    <?php if (empty($todos_trabajos)): ?>
+                        <div class="text-center py-5">
+                            <i class="fas fa-tools fa-3x mb-3" style="color: var(--text-muted);"></i>
+                            <h4 style="color: var(--text-muted);">No hay trabajos</h4>
+                            <p style="color: var(--text-muted);">No tienes trabajos asignados.</p>
                         </div>
-                        <?php if ($total_trabajos > 10) { ?>
-                        <div class="text-center mt-3">
-                            <a href="mis_trabajos.php" class="btn btn-outline-primary">
-                                Ver todos los trabajos
-                            </a>
-                        </div>
-                        <?php } ?>
-                    </div>
+                    <?php else: ?>
+                        <?php foreach ($todos_trabajos as $trabajo): ?>
+                            <div class="client-item" onclick="showOptions('trabajo', <?php echo $trabajo['id_trabajos']; ?>, '<?php echo htmlspecialchars(addslashes($trabajo['nombre_cliente'])); ?>')">
+                                <div class="client-info">
+                                    <div class="client-name">
+                                        <?php echo htmlspecialchars($trabajo['nombre_cliente']); ?>
+                                        <span class="badge <?php
+                                                            switch ($trabajo['estado']) {
+                                                                case 'Pendiente':
+                                                                    echo 'bg-warning';
+                                                                    break;
+                                                                case 'En progreso':
+                                                                    echo 'bg-primary';
+                                                                    break;
+                                                                case 'Entregado':
+                                                                    echo 'bg-success';
+                                                                    break;
+                                                                case 'Cancelado':
+                                                                    echo 'bg-danger';
+                                                                    break;
+                                                                default:
+                                                                    echo 'bg-secondary';
+                                                            }
+                                                            ?> ms-2">
+                                            <?php echo $trabajo['estado']; ?>
+                                        </span>
+                                    </div>
+                                    <div class="client-description">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        Inicio: <?php echo date('d/m/Y', strtotime($trabajo['fecha_inicio'])); ?>
+                                        <?php if ($trabajo['fecha_fin'] && $trabajo['fecha_fin'] != '0000-00-00'): ?>
+                                            · Fin: <?php echo date('d/m/Y', strtotime($trabajo['fecha_fin'])); ?>
+                                        <?php endif; ?>
+                                        <?php if (!empty($trabajo['notas'])): ?>
+                                            · <i class="fas fa-clipboard me-1"></i>
+                                            <?php echo htmlspecialchars(substr($trabajo['notas'], 0, 60)); ?>...
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="client-arrow">
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Overlay y Menú Flotante -->
+    <div class="overlay" id="overlay"></div>
+    <div class="options-floating-card" id="optionsCard">
+        <button class="option-close" id="closeOptionsCard">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="options-card-header">
+            <h3 class="options-card-title" id="optionsCardTitle">Opciones</h3>
+        </div>
+        <div class="options-card-body" id="optionsCardBody">
+            <!-- Las opciones se cargan dinámicamente aquí -->
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Activar la pestaña guardada en localStorage o la primera por defecto
+        // Variables globales
+        let currentItemId = null;
+        let currentItemType = null;
+
+        // Mostrar tarjeta de opciones
+        function showOptions(type, id, name) {
+            currentItemId = id;
+            currentItemType = type;
+
+            // Actualizar título de la tarjeta
+            document.getElementById('optionsCardTitle').textContent = name;
+
+            // Actualizar opciones según el tipo
+            let optionsHtml = '';
+            if (type === 'cotizacion') {
+                optionsHtml = `
+                    <a href="ver_cotizacion.php?id=${id}" class="option-item">
+                        <i class="fas fa-eye"></i> Ver Detalles
+                    </a>
+                    <a href="imprimir_cotizacion.php?id=${id}" class="option-item" target="_blank">
+                        <i class="fas fa-print"></i> Imprimir
+                    </a>
+                `;
+            } else if (type === 'trabajo') {
+                optionsHtml = `
+                    <a href="ver_trabajo.php?id=${id}" class="option-item">
+                        <i class="fas fa-eye"></i> Ver Detalles
+                    </a>
+                `;
+            }
+
+            document.getElementById('optionsCardBody').innerHTML = optionsHtml;
+
+            // Mostrar overlay y tarjeta
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('optionsCard').style.display = 'block';
+        }
+
+        // Cerrar tarjeta de opciones
+        function closeOptionsCard() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('optionsCard').style.display = 'none';
+            currentItemId = null;
+            currentItemType = null;
+        }
+
+        // Event listeners para cerrar tarjeta
+        document.getElementById('closeOptionsCard').addEventListener('click', closeOptionsCard);
+        document.getElementById('overlay').addEventListener('click', closeOptionsCard);
+
+        // Búsqueda en tiempo real para cotizaciones
+        document.getElementById('searchCotizaciones').addEventListener('input', function() {
+            const query = this.value.trim();
+            const resultsContainer = document.getElementById('searchResultsCotizaciones');
+            const allList = document.getElementById('allCotizacionesList');
+
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                allList.style.display = 'block';
+                return;
+            }
+
+            allList.style.display = 'none';
+
+            fetch(`?ajax_cotizaciones=1&q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    resultsContainer.innerHTML = '';
+
+                    if (data.length === 0) {
+                        resultsContainer.innerHTML = '<div class="search-result-item">No se encontraron cotizaciones</div>';
+                        resultsContainer.style.display = 'block';
+                        return;
+                    }
+
+                    data.forEach(cotizacion => {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item';
+                        item.innerHTML = `
+                            <div>
+                                <div class="search-client-name">
+                                    ${cotizacion.nombre_cliente}
+                                    <span class="badge ${getBadgeClass(cotizacion.estado_cotizacion)} ms-2">
+                                        ${cotizacion.estado_cotizacion}
+                                    </span>
+                                </div>
+                                <div class="search-client-info">
+                                    ${cotizacion.marca_vehiculo} ${cotizacion.modelo_vehiculo} - ${cotizacion.placa_vehiculo}
+                                </div>
+                                <div class="search-client-date">
+                                    $${parseFloat(cotizacion.total_cotizacion).toFixed(2)} · ${new Date(cotizacion.fecha_cotizacion).toLocaleDateString()}
+                                </div>
+                            </div>
+                            <div class="client-arrow">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        `;
+                        item.addEventListener('click', () => {
+                            showOptions('cotizacion', cotizacion.id_cotizacion, cotizacion.nombre_cliente);
+                            resultsContainer.style.display = 'none';
+                            document.getElementById('searchCotizaciones').value = '';
+                            allList.style.display = 'block';
+                        });
+                        resultsContainer.appendChild(item);
+                    });
+
+                    resultsContainer.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error en la búsqueda:', error);
+                    resultsContainer.innerHTML = '<div class="search-result-item">Error en la búsqueda</div>';
+                    resultsContainer.style.display = 'block';
+                });
+        });
+
+        // Búsqueda en tiempo real para trabajos
+        document.getElementById('searchTrabajos').addEventListener('input', function() {
+            const query = this.value.trim();
+            const resultsContainer = document.getElementById('searchResultsTrabajos');
+            const allList = document.getElementById('allTrabajosList');
+
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                allList.style.display = 'block';
+                return;
+            }
+
+            allList.style.display = 'none';
+
+            fetch(`?ajax_trabajos=1&q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    resultsContainer.innerHTML = '';
+
+                    if (data.length === 0) {
+                        resultsContainer.innerHTML = '<div class="search-result-item">No se encontraron trabajos</div>';
+                        resultsContainer.style.display = 'block';
+                        return;
+                    }
+
+                    data.forEach(trabajo => {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item';
+                        item.innerHTML = `
+                            <div>
+                                <div class="search-client-name">
+                                    ${trabajo.nombre_cliente}
+                                    <span class="badge ${getBadgeClass(trabajo.estado)} ms-2">
+                                        ${trabajo.estado}
+                                    </span>
+                                </div>
+                                <div class="search-client-info">
+                                    ${trabajo.notas ? trabajo.notas.substring(0, 60) + '...' : 'Sin descripción'}
+                                </div>
+                                <div class="search-client-date">
+                                    ${new Date(trabajo.fecha_inicio).toLocaleDateString()}
+                                </div>
+                            </div>
+                            <div class="client-arrow">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        `;
+                        item.addEventListener('click', () => {
+                            showOptions('trabajo', trabajo.id_trabajos, trabajo.nombre_cliente);
+                            resultsContainer.style.display = 'none';
+                            document.getElementById('searchTrabajos').value = '';
+                            allList.style.display = 'block';
+                        });
+                        resultsContainer.appendChild(item);
+                    });
+
+                    resultsContainer.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error en la búsqueda:', error);
+                    resultsContainer.innerHTML = '<div class="search-result-item">Error en la búsqueda</div>';
+                    resultsContainer.style.display = 'block';
+                });
+        });
+
+        // Función para obtener clase de badge según estado
+        function getBadgeClass(estado) {
+            switch (estado) {
+                case 'Pendiente':
+                    return 'bg-warning';
+                case 'Aprobado':
+                    return 'bg-success';
+                case 'Rechazada':
+                    return 'bg-danger';
+                case 'Completada':
+                    return 'bg-info';
+                case 'En progreso':
+                    return 'bg-primary';
+                case 'Entregado':
+                    return 'bg-success';
+                case 'Cancelado':
+                    return 'bg-danger';
+                default:
+                    return 'bg-secondary';
+            }
+        }
+
+        // Cerrar resultados al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                document.getElementById('searchResultsCotizaciones').style.display = 'none';
+                document.getElementById('searchResultsTrabajos').style.display = 'none';
+            }
+        });
+
+        // Prevenir envío del formulario de búsqueda
+        document.querySelectorAll('.search-container').forEach(container => {
+            container.addEventListener('submit', function(e) {
+                e.preventDefault();
+            });
+        });
+
+        // Activar la pestaña guardada en localStorage
         document.addEventListener('DOMContentLoaded', function() {
             var activeTab = localStorage.getItem('activeProfileTab') || 'edit-tab';
             var triggerTab = document.querySelector('#' + activeTab);
@@ -988,87 +1393,70 @@ $total_trabajos = $stmt_trabajos->fetchColumn();
             // Guardar la pestaña activa cuando cambie
             var tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
             tabEls.forEach(function(tabEl) {
-                tabEl.addEventListener('shown.bs.tab', function (event) {
+                tabEl.addEventListener('shown.bs.tab', function(event) {
                     localStorage.setItem('activeProfileTab', event.target.id);
                 });
             });
-
-            // Configurar el checkbox para mostrar/ocultar todas las contraseñas
-            document.getElementById('mostrar_contrasenas').addEventListener('change', function() {
-                const show = this.checked;
-                const passwordFields = ['contrasena_actual', 'nueva_contrasena', 'confirmar_contrasena'];
-                
-                passwordFields.forEach(fieldId => {
-                    const field = document.getElementById(fieldId);
-                    const toggleBtn = field.parentNode.querySelector('.password-toggle i');
-                    
-                    if (field) {
-                        field.type = show ? 'text' : 'password';
-                        toggleBtn.className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
-                    }
-                });
-            });
         });
 
-        // Función para mostrar/ocultar contraseña individual
-        function togglePassword(fieldId) {
-            const field = document.getElementById(fieldId);
-            const toggleBtn = field.parentNode.querySelector('.password-toggle i');
-            
-            if (field.type === 'password') {
-                field.type = 'text';
-                toggleBtn.className = 'fas fa-eye-slash';
-            } else {
-                field.type = 'password';
-                toggleBtn.className = 'fas fa-eye';
+        // Validación del formulario - SIMPLIFICADA
+        document.getElementById('profileForm').addEventListener('submit', function(e) {
+            // Validación básica de campos requeridos
+            const nombre = document.getElementById('nombre_completo').value.trim();
+            const correo = document.getElementById('correo_usuario').value.trim();
+            const telefono = document.getElementById('telefono_usuario').value.trim();
+            const username = document.getElementById('username_usuario').value.trim();
+
+            if (!nombre || !correo || !telefono || !username) {
+                e.preventDefault();
+                mostrarError('Todos los campos obligatorios deben ser completados.');
+                return;
             }
+
+            // Validación básica de email
+            if (!isValidEmail(correo)) {
+                e.preventDefault();
+                mostrarError('El formato del correo electrónico no es válido.');
+                return;
+            }
+        });
+
+        // Función para validar email
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
         }
 
-        // Validación del formulario
-        document.getElementById('profileForm').addEventListener('submit', function(e) {
-            const nuevaContrasena = document.getElementById('nueva_contrasena').value;
-            const confirmarContrasena = document.getElementById('confirmar_contrasena').value;
-            const contrasenaActual = document.getElementById('contrasena_actual').value;
+        // Función para mostrar errores
+        function mostrarError(mensaje) {
+            const alerta = document.createElement('div');
+            alerta.className = 'alert alert-danger alert-dismissible fade show';
+            alerta.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
 
-            // Si se llena alguna contraseña, validar que se llenen todas
-            if (nuevaContrasena || confirmarContrasena || contrasenaActual) {
-                if (!contrasenaActual) {
-                    e.preventDefault();
-                    alert('Para cambiar la contraseña, debe ingresar la contraseña actual.');
-                    return;
-                }
+            // Insertar después del header
+            const header = document.querySelector('.header-section');
+            header.parentNode.insertBefore(alerta, header.nextSibling);
 
-                if (!nuevaContrasena) {
-                    e.preventDefault();
-                    alert('Debe ingresar una nueva contraseña.');
-                    return;
-                }
-
-                if (nuevaContrasena.length < 8) {
-                    e.preventDefault();
-                    alert('La nueva contraseña debe tener al menos 8 caracteres.');
-                    return;
-                }
-
-                if (nuevaContrasena !== confirmarContrasena) {
-                    e.preventDefault();
-                    alert('Las contraseñas nuevas no coinciden.');
-                    return;
-                }
-            }
-        });
-
-        // Efectos visuales para los campos
-        const inputs = document.querySelectorAll('.form-control');
-        inputs.forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.classList.add('focused');
+            // Hacer scroll a la alerta
+            alerta.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
             });
-            
-            input.addEventListener('blur', function() {
-                this.parentElement.classList.remove('focused');
-            });
-        });
+        }
+
+        // Funciones para exportar (simuladas por ahora)
+        function exportarCotizaciones() {
+            alert('Función de exportación de cotizaciones en desarrollo');
+        }
+
+        function exportarTrabajos() {
+            alert('Función de exportación de trabajos en desarrollo');
+        }
     </script>
 </body>
+
 </html>

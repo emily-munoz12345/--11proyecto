@@ -27,53 +27,115 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Cotizaciones | Nacional Tapizados</title>
     <style>
+        :root {
+            --primary-color: rgba(140, 74, 63, 0.8);
+            --primary-hover: rgba(140, 74, 63, 1);
+            --secondary-color: rgba(108, 117, 125, 0.8);
+            --text-color: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.7);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
+            --border-color: rgba(255, 255, 255, 0.2);
+            --success-color: rgba(25, 135, 84, 0.8);
+            --danger-color: rgba(220, 53, 69, 0.8);
+            --warning-color: rgba(255, 193, 7, 0.8);
+            --info-color: rgba(13, 202, 240, 0.8);
+        }
+
         body {
             background-image: url('https://pfst.cf2.poecdn.net/base/image/60ab54eef562f30f85a67bde31f924f078199dae0b7bc6c333dfb467a2c13471?w=1024&h=768&pmaid=442168253');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            color: #fff;
+            color: var(--text-color);
+            min-height: 100vh;
         }
 
         .main-container {
-            background-color: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            margin: 2rem;
+            max-width: 1400px;
+            margin: 2rem auto;
             padding: 2rem;
-            min-height: calc(100vh - 4rem);
-            position: relative;
+            background-color: var(--bg-transparent);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
         }
 
-        h1 {
-            color: white;
-            text-align: center;
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
             margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-title {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-color);
+        }
+
+        .page-title i {
+            margin-right: 12px;
+            color: var(--primary-color);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            gap: 0.5rem;
+        }
+
+        .btn-outline-secondary {
+            background-color: transparent;
+            border: 1px solid var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: var(--secondary-color);
+            color: white;
         }
 
         /* Estilos para el resumen */
         .summary-cards {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
             margin-bottom: 2rem;
-            justify-content: center;
         }
 
         .summary-card {
-            background-color: rgba(140, 74, 63, 0.5);
+            background-color: var(--bg-transparent-light);
             border-radius: 10px;
             padding: 1.5rem;
-            min-width: 200px;
             text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            background-color: rgba(140, 74, 63, 0.3);
         }
 
         .summary-card h3 {
@@ -82,12 +144,15 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
         }
 
         .summary-card p {
             font-size: 1.5rem;
             font-weight: bold;
             margin-bottom: 0;
+            color: var(--text-color);
         }
 
         /* Estilos para el buscador */
@@ -100,38 +165,49 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
         .search-input {
             flex-grow: 1;
             padding: 0.75rem 1rem;
-            border: none;
+            border: 1px solid var(--border-color);
             border-radius: 6px;
-            background-color: rgba(255, 255, 255, 0.2);
-            color: white;
+            background-color: var(--bg-input);
+            color: var(--text-color);
             font-size: 1rem;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-color);
+            background-color: rgba(0, 0, 0, 0.7);
         }
 
         .search-input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-muted);
         }
 
         .search-button {
             padding: 0.75rem 1.5rem;
-            background-color: rgba(140, 74, 63, 0.7);
+            background-color: var(--primary-color);
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .search-button:hover {
-            background-color: rgba(140, 74, 63, 0.9);
+            background-color: var(--primary-hover);
         }
 
         /* Estilos para la lista de cotizaciones */
         .cotizacion-list {
-            background-color: rgba(255, 255, 255, 0.15);
+            background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
             overflow: hidden;
             max-height: 500px;
             overflow-y: auto;
@@ -139,7 +215,7 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
 
         .cotizacion-item {
             padding: 1.2rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--border-color);
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -148,7 +224,7 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
         }
 
         .cotizacion-item:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(140, 74, 63, 0.3);
         }
 
         .cotizacion-item:last-child {
@@ -170,6 +246,7 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
             font-weight: 500;
             font-size: 1.1rem;
             margin: 0;
+            color: var(--text-color);
         }
 
         .cotizacion-estado {
@@ -204,7 +281,7 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
             flex-wrap: wrap;
             gap: 1rem;
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-muted);
         }
 
         .cotizacion-detail {
@@ -217,6 +294,7 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
             margin-left: 1rem;
             opacity: 0.7;
             transition: all 0.3s ease;
+            color: var(--text-color);
         }
 
         .cotizacion-item:hover .cotizacion-arrow {
@@ -246,23 +324,23 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
             width: 90%;
             max-width: 800px;
             max-height: 90vh;
-            background-color: rgba(50, 50, 50, 0.95);
+            background-color: rgba(40, 40, 40, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 12px;
             padding: 2rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
             z-index: 1001;
             animation: fadeInUp 0.4s ease;
             overflow-y: auto;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
         }
 
         @keyframes fadeInUp {
-            from { 
+            from {
                 opacity: 0;
                 transform: translate(-50%, -40%);
             }
-            to { 
+            to {
                 opacity: 1;
                 transform: translate(-50%, -50%);
             }
@@ -274,19 +352,19 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
             align-items: center;
             margin-bottom: 1.5rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .card-title {
             margin: 0;
             font-size: 1.8rem;
-            color: #fff;
+            color: var(--text-color);
         }
 
         .close-card {
             background: none;
             border: none;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-muted);
             font-size: 1.5rem;
             cursor: pointer;
             padding: 0.5rem;
@@ -300,8 +378,8 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
         }
 
         .close-card:hover {
-            color: white;
-            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            background-color: var(--bg-transparent);
         }
 
         .card-content {
@@ -316,22 +394,23 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
 
         .detail-label {
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--text-muted);
             margin-bottom: 0.25rem;
         }
 
         .detail-value {
             font-size: 1.1rem;
             word-break: break-word;
-            color: #fff;
+            color: var(--text-color);
         }
 
         .notes-section {
             grid-column: 1 / -1;
-            background-color: rgba(0, 0, 0, 0.2);
+            background-color: var(--bg-input);
             padding: 1.5rem;
             border-radius: 8px;
             margin-top: 1rem;
+            border: 1px solid var(--border-color);
         }
 
         .servicios-section {
@@ -342,20 +421,22 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
         .servicios-table {
             width: 100%;
             border-collapse: collapse;
-            background-color: rgba(0, 0, 0, 0.2);
+            background-color: var(--bg-input);
             border-radius: 8px;
             overflow: hidden;
         }
 
         .servicios-table th {
-            background-color: rgba(140, 74, 63, 0.5);
+            background-color: var(--primary-color);
             padding: 0.75rem;
             text-align: left;
+            color: var(--text-color);
         }
 
         .servicios-table td {
             padding: 0.75rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
         }
 
         .servicios-table tr:last-child td {
@@ -364,18 +445,20 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
 
         /* Estilos para el botón de volver */
         .back-button {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             margin-bottom: 1.5rem;
-            padding: 0.5rem 1rem;
-            background-color: rgba(140, 74, 63, 0.5);
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-color);
             color: white;
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 8px;
             transition: all 0.3s ease;
+            gap: 0.5rem;
         }
 
         .back-button:hover {
-            background-color: rgba(140, 74, 63, 0.8);
+            background-color: var(--primary-hover);
             transform: translateY(-2px);
         }
 
@@ -387,11 +470,20 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
         @media (max-width: 768px) {
             .main-container {
                 margin: 1rem;
-                padding: 1rem;
+                padding: 1.5rem;
+            }
+            
+            .header-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .page-title {
+                font-size: 1.5rem;
             }
             
             .summary-cards {
-                flex-direction: column;
+                grid-template-columns: 1fr;
             }
             
             .search-container {
@@ -428,11 +520,12 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
 </head>
 <body>
     <div class="main-container">
-        <a href="javascript:history.back()" class="back-button">
-            <i class="fas fa-arrow-left"></i> Volver
-        </a>
-        
-        <h1><i class="fas fa-file-invoice-dollar"></i> Lista de Cotizaciones</h1>
+        <div class="header-section">
+            <h1 class="page-title"><i class="fas fa-file-invoice-dollar"></i> Lista de Cotizaciones</h1>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
         
         <!-- Resumen de cotizaciones -->
         <div class="summary-cards">
