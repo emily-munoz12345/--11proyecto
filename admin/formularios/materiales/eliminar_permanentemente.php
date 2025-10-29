@@ -34,7 +34,7 @@ try {
     $material = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$material) {
-        $_SESSION['mensaje'] = 'Material no encontrado en la papelera o ya fue restaurado.';
+        $_SESSION['mensaje'] = 'Material no encontrado en la papelera.';
         $_SESSION['tipo_mensaje'] = 'danger';
         header('Location: index.php');
         exit;
@@ -57,7 +57,7 @@ try {
         VALUES ('materiales', ?, ?, 'ELIMINACION_PERMANENTE', ?, ?)
     ");
     
-    $datos_eliminados = "Material eliminado permanentemente: " . $material['nombre_material'] . " - Categoría: " . $material['categoria_material'];
+    $datos_eliminados = "Material eliminado permanentemente: " . $material['nombre_material'];
     $datos_completos = json_encode([
         'id_material' => $material['id_material'],
         'nombre_material' => $material['nombre_material'],

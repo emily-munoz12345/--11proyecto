@@ -1,49 +1,54 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Configuración de rutas
+define('ROOT_PATH', dirname(__DIR__, 3));
 require_once __DIR__ . '/../../../php/conexion.php';
 require_once __DIR__ . '/../../../php/auth.php';
 
+// Verificar permisos (solo Admin y Técnico)
 if (!isAdmin() && !isTechnician()) {
     header('Location: ../dashboard.php');
     exit;
 }
+
+// Generar token CSRF
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// Obtener cotizaciones disponibles (solo pendientes y sin trabajos activos)
+$cotizaciones = $conex->query("
+    SELECT c.id_cotizacion, c.id_cliente, c.id_vehiculo, 
+           cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo,
+           c.total_cotizacion, c.estado_cotizacion
+    FROM cotizaciones c
+    LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+    LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+    WHERE c.activo = 1 
+    AND c.estado_cotizacion = 'Pendiente'
+    AND NOT EXISTS (
+        SELECT 1 FROM trabajos t 
+        WHERE t.id_cotizacion = c.id_cotizacion AND t.activo = 1
+    )
+    ORDER BY c.fecha_cotizacion DESC
+")->fetchAll();
 
 // Inicializar variables de sesión para mensajes
 if (!isset($_SESSION['mensaje'])) {
     $_SESSION['mensaje'] = '';
     $_SESSION['tipo_mensaje'] = '';
 }
-
-// Obtener cotizaciones aprobadas sin trabajo asociado
-try {
-    $cotizaciones = $conex->query("
-        SELECT c.id_cotizacion, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo
-        FROM cotizaciones c
-        JOIN clientes cl ON c.id_cliente = cl.id_cliente
-        JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
-        WHERE c.estado_cotizacion = 'Aprobado'
-        AND NOT EXISTS (SELECT 1 FROM trabajos t WHERE t.id_cotizacion = c.id_cotizacion)
-        ORDER BY c.fecha_cotizacion DESC
-    ")->fetchAll();
-} catch (PDOException $e) {
-    $_SESSION['mensaje'] = 'Error al obtener cotizaciones: ' . $e->getMessage();
-    $_SESSION['tipo_mensaje'] = 'danger';
-    header('Location: index.php');
-    exit;
-}
-
-require_once __DIR__ . '/../../includes/head.php';
-$title = 'Nuevo Trabajo | Nacional Tapizados';
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?></title>
+    <title>Crear Nuevo Trabajo</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -53,8 +58,9 @@ $title = 'Nuevo Trabajo | Nacional Tapizados';
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -79,7 +85,7 @@ $title = 'Nuevo Trabajo | Nacional Tapizados';
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -99,6 +105,7 @@ $title = 'Nuevo Trabajo | Nacional Tapizados';
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -106,24 +113,24 @@ $title = 'Nuevo Trabajo | Nacional Tapizados';
             color: var(--primary-color);
         }
 
-        /* Estilos para formulario */
+        /* Estilos para formularios */
         .form-container {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
             padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border-color);
         }
 
         .form-label {
             font-weight: 500;
-            color: var(--text-color);
             margin-bottom: 0.5rem;
+            color: var(--text-color);
         }
 
         .form-control, .form-select {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-color);
             padding: 0.75rem;
@@ -132,19 +139,14 @@ $title = 'Nuevo Trabajo | Nacional Tapizados';
         }
 
         .form-control:focus, .form-select:focus {
-            background-color: rgba(255, 255, 255, 0.15);
+            background-color: rgba(0, 0, 0, 0.7);
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
+            box-shadow: 0 0 0 2px var(--primary-color);
             color: var(--text-color);
         }
 
         .form-control::placeholder {
             color: var(--text-muted);
-        }
-
-        textarea.form-control {
-            min-height: 120px;
-            resize: vertical;
         }
 
         /* Estilos para botones */
@@ -185,6 +187,20 @@ $title = 'Nuevo Trabajo | Nacional Tapizados';
             background-color: rgba(108, 117, 125, 1);
         }
 
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: rgba(25, 135, 84, 1);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
         /* Estilos para alertas */
         .alert {
             padding: 1rem;
@@ -194,46 +210,121 @@ $title = 'Nuevo Trabajo | Nacional Tapizados';
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
+            border-left: 4px solid var(--info-color);
+            background-color: rgba(13, 202, 240, 0.2);
+            color: var(--text-color);
         }
 
         .alert-success {
             background-color: rgba(25, 135, 84, 0.2);
             border-left: 4px solid var(--success-color);
-            color: white;
         }
 
         .alert-danger {
             background-color: rgba(220, 53, 69, 0.2);
             border-left: 4px solid var(--danger-color);
-            color: white;
         }
 
-        /* Vista previa de imágenes */
-        .img-preview-container {
+        .alert-warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .alert-info {
+            background-color: rgba(13, 202, 240, 0.2);
+            border-left: 4px solid var(--info-color);
+        }
+
+        /* Estilos para tarjetas de cotización */
+        .cotizacion-card {
+            background-color: var(--bg-transparent-light);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .cotizacion-card:hover {
+            background-color: rgba(140, 74, 63, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .cotizacion-card.selected {
+            background-color: rgba(25, 135, 84, 0.2);
+            border-color: var(--success-color);
+        }
+
+        .cotizacion-header {
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .cotizacion-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .cotizacion-badge {
+            background-color: var(--warning-color);
+            color: black;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .cotizacion-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            color: var(--text-color);
+        }
+
+        .cotizacion-detail i {
+            color: var(--primary-color);
+            width: 20px;
+            text-align: center;
+        }
+
+        .cotizacion-price {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
             margin-top: 0.5rem;
         }
 
-        .img-preview {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
+        .create-cotizacion-btn {
+            margin-top: 1rem;
+            text-align: center;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .main-container {
+                padding: 1rem;
                 margin: 1rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .form-container {
                 padding: 1.5rem;
             }
 
-            .header-section {
+            .cotizacion-header {
                 flex-direction: column;
-                align-items: flex-start;
+                gap: 0.5rem;
             }
         }
     </style>
@@ -244,7 +335,7 @@ $title = 'Nuevo Trabajo | Nacional Tapizados';
         <!-- Encabezado -->
         <div class="header-section">
             <h1 class="page-title">
-                <i class="fas fa-plus-circle"></i> Crear Nuevo Trabajo
+                <i class="fas fa-plus-circle"></i>Crear Nuevo Trabajo
             </h1>
             <div class="d-flex gap-2">
                 <a href="index.php" class="btn btn-secondary">
@@ -253,81 +344,121 @@ $title = 'Nuevo Trabajo | Nacional Tapizados';
             </div>
         </div>
 
-        <!-- Mensajes -->
-        <?php if (!empty($_SESSION['mensaje'])): ?>
-            <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
-                <div>
-                    <i class="fas fa-<?=
-                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : 'exclamation-triangle'
-                                        ?> me-2"></i>
-                    <?= $_SESSION['mensaje'] ?>
-                </div>
-                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+        <!-- Mensajes de alerta -->
+        <?php if ($_SESSION['mensaje']): ?>
+            <div class="alert alert-<?php echo $_SESSION['tipo_mensaje']; ?>">
+                <span><?php echo $_SESSION['mensaje']; ?></span>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <?php
+            // Limpiar mensaje después de mostrarlo
             $_SESSION['mensaje'] = '';
             $_SESSION['tipo_mensaje'] = '';
             ?>
         <?php endif; ?>
 
-        <!-- Formulario -->
+        <!-- Formulario para crear trabajo -->
         <div class="form-container">
-            <form action="procesar.php" method="POST" enctype="multipart/form-data" id="formTrabajo">
+            <form id="formTrabajo" action="procesar.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                 <input type="hidden" name="accion" value="crear">
                 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="id_cotizacion" class="form-label">Cotización *</label>
-                        <select class="form-select" id="id_cotizacion" name="id_cotizacion" required>
-                            <option value="">Seleccione una cotización...</option>
+                <!-- Selección de cotización -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3><i class="fas fa-file-invoice-dollar me-2"></i>Seleccionar Cotización Pendiente</h3>
+                        <a href="../cotizaciones/crear.php" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> Nueva Cotización
+                        </a>
+                    </div>
+                    
+                    <?php if (count($cotizaciones) > 0): ?>
+                        <div id="cotizacionesContainer">
                             <?php foreach ($cotizaciones as $cotizacion): ?>
-                            <option value="<?= $cotizacion['id_cotizacion'] ?>">
-                                #<?= $cotizacion['id_cotizacion'] ?> - 
-                                <?= htmlspecialchars($cotizacion['nombre_cliente']) ?> - 
-                                <?= htmlspecialchars($cotizacion['marca_vehiculo']) ?> 
-                                <?= htmlspecialchars($cotizacion['modelo_vehiculo']) ?>
-                                (<?= htmlspecialchars($cotizacion['placa_vehiculo']) ?>)
-                            </option>
+                                <div class="cotizacion-card" onclick="selectCotizacion(<?php echo $cotizacion['id_cotizacion']; ?>)">
+                                    <div class="cotizacion-header">
+                                        <h4 class="cotizacion-title">Cotización #<?php echo $cotizacion['id_cotizacion']; ?></h4>
+                                        <span class="cotizacion-badge"><?php echo $cotizacion['estado_cotizacion']; ?></span>
+                                    </div>
+                                    <div class="cotizacion-detail">
+                                        <i class="fas fa-user"></i>
+                                        <span><?php echo htmlspecialchars($cotizacion['nombre_cliente']); ?></span>
+                                    </div>
+                                    <div class="cotizacion-detail">
+                                        <i class="fas fa-car"></i>
+                                        <span><?php echo htmlspecialchars($cotizacion['marca_vehiculo'] . ' ' . $cotizacion['modelo_vehiculo']); ?></span>
+                                    </div>
+                                    <div class="cotizacion-detail">
+                                        <i class="fas fa-tag"></i>
+                                        <span><?php echo htmlspecialchars($cotizacion['placa_vehiculo']); ?></span>
+                                    </div>
+                                    <div class="cotizacion-price">
+                                        <i class="fas fa-dollar-sign"></i>
+                                        Total: $<?php echo number_format($cotizacion['total_cotizacion'], 2); ?>
+                                    </div>
+                                </div>
                             <?php endforeach; ?>
-                        </select>
-                        <?php if (empty($cotizaciones)): ?>
-                        <small class="text-muted" style="color: var(--text-muted) !important;">No hay cotizaciones aprobadas sin trabajo asociado</small>
-                        <?php endif; ?>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="fecha_inicio" class="form-label">Fecha de inicio *</label>
-                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
-                               value="<?= date('Y-m-d') ?>" required>
-                    </div>
+                        </div>
+                        <input type="hidden" id="cotizacion" name="cotizacion" required>
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Al crear un trabajo, la cotización se cambiará automáticamente a estado "Aprobado".
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i> 
+                            No hay cotizaciones pendientes disponibles para crear trabajos. 
+                        </div>
+                    <?php endif; ?>
                 </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="estado" class="form-label">Estado *</label>
+
+                <!-- Información del trabajo -->
+                <div class="mb-4">
+                    <h3 class="mb-3"><i class="fas fa-tools me-2"></i>Información del Trabajo</h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_inicio" class="form-label">Fecha de Inicio *</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_fin" class="form-label">Fecha de Finalización</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="estado" class="form-label">Estado del Trabajo *</label>
                         <select class="form-select" id="estado" name="estado" required>
+                            <option value="">Seleccionar estado</option>
                             <option value="Pendiente">Pendiente</option>
                             <option value="En progreso">En progreso</option>
+                            <option value="Entregado">Entregado</option>
+                            <option value="Cancelado">Cancelado</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <label for="fotos" class="form-label">Fotos (opcional, máximo 5)</label>
+                    
+                    <div class="mb-3">
+                        <label for="notas" class="form-label">Notas del Trabajo</label>
+                        <textarea class="form-control" id="notas" name="notas" rows="4" placeholder="Agregar notas adicionales sobre el trabajo..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="fotos" class="form-label">Fotos del Trabajo</label>
                         <input type="file" class="form-control" id="fotos" name="fotos[]" multiple accept="image/*">
-                        <small class="text-muted" style="color: var(--text-muted) !important;">Formatos permitidos: JPG, PNG, GIF. Máx. 5MB cada una</small>
-                        <div id="previewFotos" class="img-preview-container mt-2"></div>
+                        <div class="form-text text-muted">Puedes seleccionar múltiples imágenes (JPEG, PNG, GIF, WEBP)</div>
                     </div>
                 </div>
-                
-                <div class="mb-4">
-                    <label for="notas" class="form-label">Notas</label>
-                    <textarea class="form-control" id="notas" name="notas" rows="3"></textarea>
-                </div>
-                
-                <div class="d-flex justify-content-end gap-2">
-                    <button type="reset" class="btn btn-secondary">
-                        <i class="fas fa-undo"></i> Limpiar
-                    </button>
-                    <button type="submit" class="btn btn-primary" <?= empty($cotizaciones) ? 'disabled' : '' ?>>
-                        <i class="fas fa-save"></i> Guardar Trabajo
+
+                <!-- Botones de acción -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="index.php" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary" id="btnSubmit" <?php echo count($cotizaciones) === 0 ? 'disabled' : ''; ?>>
+                        <i class="fas fa-save"></i> Crear Trabajo
                     </button>
                 </div>
             </form>
@@ -336,56 +467,70 @@ $title = 'Nuevo Trabajo | Nacional Tapizados';
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    // Vista previa de fotos seleccionadas
-    document.getElementById('fotos').addEventListener('change', function(e) {
-        const preview = document.getElementById('previewFotos');
-        preview.innerHTML = '';
-        const files = e.target.files;
+        let selectedCotizacion = null;
         
-        if (files.length > 5) {
-            alert('Solo puedes subir un máximo de 5 fotos');
-            this.value = '';
-            return;
-        }
-        
-        for (let i = 0; i < Math.min(files.length, 5); i++) {
-            const file = files[i];
-            if (!file.type.match('image.*')) continue;
+        // Función para seleccionar una cotización
+        function selectCotizacion(cotizacionId) {
+            // Deseleccionar todas las tarjetas
+            document.querySelectorAll('.cotizacion-card').forEach(card => {
+                card.classList.remove('selected');
+            });
             
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.className = 'img-preview';
-                preview.appendChild(img);
+            // Seleccionar la tarjeta clickeada
+            const selectedCard = document.querySelector(`.cotizacion-card[onclick="selectCotizacion(${cotizacionId})"]`);
+            if (selectedCard) {
+                selectedCard.classList.add('selected');
+                selectedCotizacion = cotizacionId;
+                document.getElementById('cotizacion').value = cotizacionId;
+                
+                // Habilitar el botón de enviar
+                document.getElementById('btnSubmit').disabled = false;
             }
-            reader.readAsDataURL(file);
         }
-    });
-
-    // Validación antes de enviar
-    document.getElementById('formTrabajo').addEventListener('submit', function(e) {
-        const fotosInput = document.getElementById('fotos');
-        const maxSize = 5 * 1024 * 1024; // 5MB
         
-        if (fotosInput.files) {
-            // Validar cantidad de fotos
-            if (fotosInput.files.length > 5) {
-                alert('Solo puedes subir un máximo de 5 fotos');
+        // Validación del formulario antes de enviar
+        document.getElementById('formTrabajo').addEventListener('submit', function(e) {
+            if (!selectedCotizacion) {
                 e.preventDefault();
-                return;
+                alert('Por favor, selecciona una cotización para continuar.');
+                return false;
             }
             
-            // Validar tamaño de cada foto
-            for (let i = 0; i < fotosInput.files.length; i++) {
-                if (fotosInput.files[i].size > maxSize) {
-                    alert('El archivo ' + fotosInput.files[i].name + ' excede el tamaño máximo de 5MB');
-                    e.preventDefault();
-                    return;
-                }
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            if (!fechaInicio) {
+                e.preventDefault();
+                alert('Por favor, ingresa la fecha de inicio del trabajo.');
+                return false;
             }
-        }
-    });
+            
+            const estado = document.getElementById('estado').value;
+            if (!estado) {
+                e.preventDefault();
+                alert('Por favor, selecciona el estado del trabajo.');
+                return false;
+            }
+            
+            // Validación adicional de fechas
+            const fechaFin = document.getElementById('fecha_fin').value;
+            if (fechaFin && fechaFin < fechaInicio) {
+                e.preventDefault();
+                alert('La fecha de finalización no puede ser anterior a la fecha de inicio.');
+                return false;
+            }
+        });
+        
+        // Establecer fecha de inicio como hoy por defecto
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha_inicio').value = today;
+            
+            // Si hay cotizaciones, seleccionar la primera automáticamente
+            const primeraCotizacion = document.querySelector('.cotizacion-card');
+            if (primeraCotizacion) {
+                const cotizacionId = primeraCotizacion.getAttribute('onclick').match(/\d+/)[0];
+                selectCotizacion(parseInt(cotizacionId));
+            }
+        });
     </script>
 </body>
 </html>

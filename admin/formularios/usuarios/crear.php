@@ -332,14 +332,13 @@ $roles = $conex->query("SELECT * FROM roles WHERE activo = 1 ORDER BY nombre_rol
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="contrasena_usuario" class="form-label">Contraseña *</label>
-                            <input type="password" class="form-control" id="contrasena_usuario" name="contrasena_usuario" required 
-                                   placeholder="Ingrese la contraseña" minlength="6">
-                            <div class="form-text">La contraseña debe tener al menos 6 caracteres</div>
-                            <div class="password-strength" id="passwordStrength"></div>
+                            <input type="text" class="form-control" id="contrasena_usuario" name="contrasena_usuario" required 
+                                   placeholder="Ingrese la contraseña">
+                            <div class="form-text">La contraseña se almacenará en texto plano</div>
                         </div>
                         <div class="col-md-6">
                             <label for="confirmar_contrasena" class="form-label">Confirmar Contraseña *</label>
-                            <input type="password" class="form-control" id="confirmar_contrasena" name="confirmar_contrasena" required 
+                            <input type="text" class="form-control" id="confirmar_contrasena" name="confirmar_contrasena" required 
                                    placeholder="Confirme la contraseña">
                             <div class="form-text" id="passwordMatch"></div>
                         </div>
@@ -385,47 +384,13 @@ $roles = $conex->query("SELECT * FROM roles WHERE activo = 1 ORDER BY nombre_rol
         document.addEventListener('DOMContentLoaded', function() {
             const passwordInput = document.getElementById('contrasena_usuario');
             const confirmPasswordInput = document.getElementById('confirmar_contrasena');
-            const passwordStrength = document.getElementById('passwordStrength');
             const passwordMatch = document.getElementById('passwordMatch');
             const submitBtn = document.getElementById('submitBtn');
             const form = document.getElementById('usuarioForm');
 
-            // Función para verificar fortaleza de contraseña
-            function checkPasswordStrength(password) {
-                let strength = 0;
-                let messages = [];
-
-                if (password.length >= 6) strength++;
-                if (password.length >= 8) strength++;
-                if (/[A-Z]/.test(password)) strength++;
-                if (/[0-9]/.test(password)) strength++;
-                if (/[^A-Za-z0-9]/.test(password)) strength++;
-
-                if (strength < 2) {
-                    return { level: 'weak', message: 'Contraseña débil' };
-                } else if (strength < 4) {
-                    return { level: 'medium', message: 'Contraseña media' };
-                } else {
-                    return { level: 'strong', message: 'Contraseña fuerte' };
-                }
-            }
-
-            // Event listener para verificar contraseña
-            passwordInput.addEventListener('input', function() {
-                const password = this.value;
-                if (password.length > 0) {
-                    const strength = checkPasswordStrength(password);
-                    passwordStrength.textContent = strength.message;
-                    passwordStrength.className = 'password-strength ' + strength.level;
-                    passwordStrength.style.display = 'block';
-                } else {
-                    passwordStrength.style.display = 'none';
-                }
-                checkPasswordMatch();
-            });
-
             // Event listener para verificar coincidencia de contraseñas
             confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+            passwordInput.addEventListener('input', checkPasswordMatch);
 
             function checkPasswordMatch() {
                 const password = passwordInput.value;
@@ -458,9 +423,9 @@ $roles = $conex->query("SELECT * FROM roles WHERE activo = 1 ORDER BY nombre_rol
                     return false;
                 }
 
-                if (password.length < 6) {
+                if (password.length === 0) {
                     e.preventDefault();
-                    alert('La contraseña debe tener al menos 6 caracteres.');
+                    alert('La contraseña no puede estar vacía.');
                     return false;
                 }
 
@@ -469,7 +434,6 @@ $roles = $conex->query("SELECT * FROM roles WHERE activo = 1 ORDER BY nombre_rol
 
             // Limpiar mensajes al resetear el formulario
             form.addEventListener('reset', function() {
-                passwordStrength.style.display = 'none';
                 passwordMatch.textContent = '';
                 submitBtn.disabled = false;
             });

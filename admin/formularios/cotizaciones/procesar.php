@@ -76,14 +76,14 @@ $total = floatval($_POST['total']);
 $notas = trim($_POST['notas'] ?? '');
 
 // Verificar que el usuario está en sesión
-if (!isset($_SESSION['id_usuario'])) {
+if (!isset($_SESSION['usuario_id'])) {
     $_SESSION['mensaje'] = 'Error: Usuario no autenticado';
     $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: ' . ($accion === 'crear' ? 'crear.php' : "editar.php?id=$id"));
     exit;
 }
 
-$id_usuario = $_SESSION['id_usuario'];
+$id_usuario = $_SESSION['usuario_id'];
 
 try {
     $conex->beginTransaction();

@@ -10,7 +10,7 @@ require_once ROOT_PATH . '/php/auth.php';
 
 // Verificar permisos (solo Admin)
 if (!isAdmin()) {
-    $_SESSION['mensaje'] = 'No tienes permisos para eliminar permanentemente usuarios.';
+    $_SESSION['mensaje'] = 'No tienes permisos para eliminar usuarios.';
     $_SESSION['tipo_mensaje'] = 'danger';
     header('Location: index.php');
     exit;
@@ -35,14 +35,14 @@ if ($id_usuario == $id_usuario_actual) {
     exit;
 }
 
-// Verificar que el usuario existe y está en la papelera
+// Verificar que el usuario existe
 try {
-    $stmt = $conex->prepare("SELECT * FROM usuarios WHERE id_usuario = ? AND activo = 0");
+    $stmt = $conex->prepare("SELECT * FROM usuarios WHERE id_usuario = ?");
     $stmt->execute([$id_usuario]);
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$usuario) {
-        $_SESSION['mensaje'] = 'Usuario no encontrado en la papelera.';
+        $_SESSION['mensaje'] = 'Usuario no encontrado.';
         $_SESSION['tipo_mensaje'] = 'danger';
         header('Location: index.php');
         exit;
@@ -54,18 +54,18 @@ try {
     exit;
 }
 
-// Eliminar permanentemente el usuario
+// Eliminar el usuario directamente
 try {
     $conex->beginTransaction();
     
-    // 1. Guardar registro manual de eliminación permanente
+    // Guardar registro manual de eliminación
     $stmt = $conex->prepare("
         INSERT INTO registro_eliminaciones 
         (tabla, id_registro, eliminado_por, accion, datos, datos_anteriores) 
-        VALUES ('usuarios', ?, ?, 'ELIMINACION_PERMANENTE', ?, ?)
+        VALUES ('usuarios', ?, ?, 'ELIMINACION_DIRECTA', ?, ?)
     ");
     
-    $datos_eliminados = "Usuario eliminado permanentemente: " . $usuario['nombre_completo'];
+    $datos_eliminados = "Usuario eliminado: " . $usuario['nombre_completo'];
     $datos_completos = json_encode([
         'id_usuario' => $usuario['id_usuario'],
         'username_usuario' => $usuario['username_usuario'],
@@ -79,7 +79,7 @@ try {
     
     $stmt->execute([$id_usuario, $id_usuario_actual, $datos_eliminados, $datos_completos]);
     
-    // 2. Eliminar físicamente el registro del usuario
+    // Eliminar físicamente el registro del usuario
     $stmt = $conex->prepare("DELETE FROM usuarios WHERE id_usuario = ?");
     $stmt->execute([$id_usuario]);
     
@@ -90,7 +90,7 @@ try {
     
 } catch (PDOException $e) {
     $conex->rollBack();
-    $_SESSION['mensaje'] = 'Error al eliminar permanentemente el usuario: ' . $e->getMessage();
+    $_SESSION['mensaje'] = 'Error al eliminar el usuario: ' . $e->getMessage();
     $_SESSION['tipo_mensaje'] = 'danger';
 }
 

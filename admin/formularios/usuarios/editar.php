@@ -15,7 +15,7 @@ if (!isAdmin()) {
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if ($id <= 0) {
-    header('Location: index.php');
+    header('Location: index.php?error=ID de usuario inválido');
     exit;
 }
 
@@ -35,7 +35,8 @@ try {
         exit;
     }
 } catch (PDOException $e) {
-    header('Location: index.php?error=Error al obtener usuario');
+    error_log("Error al obtener usuario: " . $e->getMessage());
+    header('Location: index.php?error=Error al obtener información del usuario');
     exit;
 }
 
@@ -45,18 +46,22 @@ try {
     $stmt->execute();
     $roles = $stmt->fetchAll();
 } catch (PDOException $e) {
+    error_log("Error al obtener roles: " . $e->getMessage());
     $roles = [];
 }
 
-require_once __DIR__ . '/../../includes/head.php';
 $title = 'Editar Usuario | Nacional Tapizados';
+require_once __DIR__ . '/../../includes/head.php';
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <?php require_once __DIR__ . '/../../includes/head.php'; ?>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Usuario</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
             --primary-color: rgba(140, 74, 63, 0.8);
@@ -145,7 +150,7 @@ $title = 'Editar Usuario | Nacional Tapizados';
             width: 16px;
         }
 
-        .form-control {
+        .form-control, .form-select {
             background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-color);
@@ -155,34 +160,7 @@ $title = 'Editar Usuario | Nacional Tapizados';
             border-radius: 8px;
         }
 
-        .form-control:focus {
-            background-color: rgba(0, 0, 0, 0.7);
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
-            color: var(--text-color);
-        }
-
-        .form-control::placeholder {
-            color: var(--text-muted);
-        }
-
-        .form-control:disabled {
-            background-color: rgba(0, 0, 0, 0.4);
-            color: var(--text-muted);
-            cursor: not-allowed;
-        }
-
-        .form-select {
-            background-color: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            backdrop-filter: blur(5px);
-            transition: all 0.3s ease;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-        }
-
-        .form-select:focus {
+        .form-control:focus, .form-select:focus {
             background-color: rgba(0, 0, 0, 0.7);
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
@@ -223,16 +201,6 @@ $title = 'Editar Usuario | Nacional Tapizados';
             transform: translateY(-2px);
         }
 
-        .btn-danger {
-            background-color: var(--danger-color);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: rgba(220, 53, 69, 1);
-            transform: translateY(-2px);
-        }
-
         .btn-info {
             background-color: var(--info-color);
             color: white;
@@ -259,16 +227,6 @@ $title = 'Editar Usuario | Nacional Tapizados';
         .alert-success {
             background-color: rgba(25, 135, 84, 0.2);
             border-left: 4px solid var(--success-color);
-        }
-
-        .alert-warning {
-            background-color: rgba(255, 193, 7, 0.2);
-            border-left: 4px solid var(--warning-color);
-        }
-
-        .alert-info {
-            background-color: rgba(13, 202, 240, 0.2);
-            border-left: 4px solid var(--info-color);
         }
 
         .required-field::after {
@@ -304,25 +262,34 @@ $title = 'Editar Usuario | Nacional Tapizados';
             margin-bottom: 1.5rem;
         }
 
-        .user-info-item {
+        .info-row {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 0;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
             border-bottom: 1px solid var(--border-color);
         }
 
-        .user-info-item:last-child {
+        .info-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
             border-bottom: none;
         }
 
-        .user-info-label {
-            font-weight: 500;
-            color: var(--text-muted);
+        .info-label {
+            font-weight: 600;
+            color: var(--text-color);
+            min-width: 150px;
         }
 
-        .user-info-value {
-            color: var(--text-color);
+        .info-value {
+            color: var(--text-muted);
+            flex: 1;
+        }
+
+        .more-info-section {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
         }
 
         /* Estilos para el toggle switch */
@@ -411,26 +378,13 @@ $title = 'Editar Usuario | Nacional Tapizados';
                 flex-direction: column;
             }
 
-            .user-info-item {
+            .info-row {
                 flex-direction: column;
-                align-items: flex-start;
-                gap: 0.25rem;
+                gap: 0.5rem;
             }
-        }
 
-        @media (max-width: 576px) {
-            .form-section-title {
-                font-size: 1.1rem;
-            }
-            
-            .row {
-                margin-left: -0.5rem;
-                margin-right: -0.5rem;
-            }
-            
-            .col-md-6 {
-                padding-left: 0.5rem;
-                padding-right: 0.5rem;
+            .info-label {
+                min-width: auto;
             }
         }
     </style>
@@ -450,7 +404,7 @@ $title = 'Editar Usuario | Nacional Tapizados';
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <?= htmlspecialchars($_GET['error']) ?>
                 </div>
-                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:white;font-size:1.2rem;">&times;</button>
             </div>
         <?php endif; ?>
 
@@ -460,15 +414,16 @@ $title = 'Editar Usuario | Nacional Tapizados';
                     <i class="fas fa-check-circle me-2"></i>
                     <?= htmlspecialchars($_GET['success']) ?>
                 </div>
-                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:white;font-size:1.2rem;">&times;</button>
             </div>
         <?php endif; ?>
         
         <div class="card">
             <div class="card-body">
-                <form action="procesar.php" method="POST">
+                <form action="procesar.php" method="POST" id="editarUsuarioForm">
                     <input type="hidden" name="accion" value="editar">
                     <input type="hidden" name="id" value="<?= $usuario['id_usuario'] ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                     
                     <div class="form-section">
                         <h3 class="form-section-title">
@@ -476,10 +431,29 @@ $title = 'Editar Usuario | Nacional Tapizados';
                             Información del Usuario
                         </h3>
                         
-                        <div class="user-info-card ">
-                            <a href="ver.php?id=<?= $usuario['id_usuario'] ?>" class="btn btn-primary" target="_blank">
-                                <i class="fas fa-eye me-1"></i> Ver Información 
-                            </a>
+                        <div class="user-info-card">
+                            <div class="info-row">
+                                <div class="info-label">Usuario:</div>
+                                <div class="info-value"><?= htmlspecialchars($usuario['username_usuario'] ?? '') ?></div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Rol actual:</div>
+                                <div class="info-value"><?= htmlspecialchars($usuario['nombre_rol'] ?? '') ?></div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Estado actual:</div>
+                                <div class="info-value">
+                                    <span class="badge <?= $usuario['activo'] ? 'bg-success' : 'bg-danger' ?>">
+                                        <?= $usuario['activo'] ? 'Activo' : 'Inactivo' ?>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="more-info-section">
+                                <a href="ver.php?id=<?= $usuario['id_usuario'] ?>" class="btn btn-info">
+                                    <i class="fas fa-info-circle me-1"></i>Más Información
+                                </a>
+                            </div>
                         </div>
                     </div>
 
@@ -499,7 +473,7 @@ $title = 'Editar Usuario | Nacional Tapizados';
                                     <option value="">Seleccione un rol</option>
                                     <?php foreach ($roles as $rol): ?>
                                         <option value="<?= $rol['id_rol'] ?>" 
-                                            <?= $usuario['id_rol'] == $rol['id_rol'] ? 'selected' : '' ?>>
+                                            <?= ($usuario['id_rol'] == $rol['id_rol']) ? 'selected' : '' ?>>
                                             <?= htmlspecialchars($rol['nombre_rol']) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -512,10 +486,10 @@ $title = 'Editar Usuario | Nacional Tapizados';
                                 </label>
                                 <div class="toggle-container">
                                     <label class="toggle-switch">
-                                        <input type="checkbox" name="estado" value="Activo" <?= $usuario['activo'] ? 'checked' : '' ?>>
+                                        <input type="checkbox" name="estado" value="1" <?= $usuario['activo'] ? 'checked' : '' ?>>
                                         <span class="toggle-slider"></span>
                                     </label>
-                                    <span class="toggle-label"><?= $usuario['activo'] ? 'Activo' : 'Inactivo' ?></span>
+                                    <span class="toggle-label" id="estadoLabel"><?= $usuario['activo'] ? 'Activo' : 'Inactivo' ?></span>
                                 </div>
                             </div>
                         </div>
@@ -538,36 +512,39 @@ $title = 'Editar Usuario | Nacional Tapizados';
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Validación del formulario
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const rol = document.getElementById('rol').value;
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('editarUsuarioForm');
+            const toggleSwitch = document.querySelector('input[name="estado"]');
+            const estadoLabel = document.getElementById('estadoLabel');
             
-            // Validar campos requeridos
-            if (!rol) {
-                e.preventDefault();
-                alert('Por favor complete todos los campos requeridos (*)');
-                return false;
-            }
-        });
-
-        // Efectos visuales para los campos
-        const inputs = document.querySelectorAll('.form-control, .form-select');
-        inputs.forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.classList.add('focused');
+            // Validación del formulario
+            form.addEventListener('submit', function(e) {
+                const rol = document.getElementById('rol').value;
+                
+                if (!rol) {
+                    e.preventDefault();
+                    alert('Por favor seleccione un rol para el usuario');
+                    document.getElementById('rol').focus();
+                    return false;
+                }
             });
-            
-            input.addEventListener('blur', function() {
-                this.parentElement.classList.remove('focused');
-            });
-        });
 
-        // Actualizar etiqueta del toggle switch
-        const toggleSwitch = document.querySelector('input[name="estado"]');
-        const toggleLabel = document.querySelector('.toggle-label');
-        
-        toggleSwitch.addEventListener('change', function() {
-            toggleLabel.textContent = this.checked ? 'Activo' : 'Inactivo';
+            // Actualizar etiqueta del toggle switch
+            toggleSwitch.addEventListener('change', function() {
+                estadoLabel.textContent = this.checked ? 'Activo' : 'Inactivo';
+            });
+
+            // Efectos visuales para los campos
+            const inputs = document.querySelectorAll('.form-control, .form-select');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.style.transform = 'scale(1.02)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
         });
     </script>
 </body>

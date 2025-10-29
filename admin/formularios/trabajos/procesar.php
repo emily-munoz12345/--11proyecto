@@ -1,4 +1,8 @@
 <?php
+session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require_once __DIR__ . '/../../../php/conexion.php';
 require_once __DIR__ . '/../../../php/auth.php';
 
@@ -7,228 +11,156 @@ if (!isAdmin() && !isTechnician()) {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !isset($_GET['accion'])) {
-    header('Location: index.php');
+// Verificar token CSRF
+if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    $_SESSION['mensaje'] = 'Token de seguridad inválido';
+    $_SESSION['tipo_mensaje'] = 'danger';
+    header('Location: crear.php');
     exit;
 }
 
-$accion = $_POST['accion'] ?? $_GET['accion'] ?? '';
-$id = isset($_POST['id']) ? intval($_POST['id']) : (isset($_GET['id']) ? intval($_GET['id']) : 0);
-
-try {
-    $conex->beginTransaction();
-
-    if ($accion === 'crear') {
-        // Validar datos para crear nuevo trabajo
-        $id_cotizacion = intval($_POST['id_cotizacion']);
+if ($_POST['accion'] === 'crear') {
+    try {
+        // Obtener datos del formulario
+        $id_cotizacion = $_POST['cotizacion'];
         $fecha_inicio = $_POST['fecha_inicio'];
+        $fecha_fin = $_POST['fecha_fin'] ?: null;
         $estado = $_POST['estado'];
-        $notas = trim($_POST['notas'] ?? '');
-
-        // Validar que la cotización existe y está aprobada
-        $stmt = $conex->prepare("SELECT estado_cotizacion FROM cotizaciones WHERE id_cotizacion = ?");
-        $stmt->execute([$id_cotizacion]);
-        $cotizacion = $stmt->fetch();
-
-        if (!$cotizacion || $cotizacion['estado_cotizacion'] !== 'Aprobado') {
-            throw new Exception('La cotización no existe o no está aprobada');
+        $notas = $_POST['notas'] ?: '';
+        
+        // Validar datos requeridos
+        if (empty($id_cotizacion) || empty($fecha_inicio) || empty($estado)) {
+            throw new Exception('Todos los campos obligatorios deben ser completados');
         }
-
-        // Validar que no existe ya un trabajo para esta cotización
-        $stmt = $conex->prepare("SELECT 1 FROM trabajos WHERE id_cotizacion = ?");
-        $stmt->execute([$id_cotizacion]);
-        if ($stmt->fetch()) {
-            throw new Exception('Ya existe un trabajo para esta cotización');
+        
+        // Verificar que la cotización existe y está pendiente
+        $stmt_cotizacion = $conex->prepare("
+            SELECT estado_cotizacion 
+            FROM cotizaciones 
+            WHERE id_cotizacion = ? AND activo = 1
+        ");
+        $stmt_cotizacion->execute([$id_cotizacion]);
+        $cotizacion = $stmt_cotizacion->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$cotizacion) {
+            throw new Exception('La cotización seleccionada no existe o ha sido eliminada');
         }
-
-        // Procesar fotos si se subieron
-        $fotos = [];
-        $maxFotos = 5;
-        $maxSize = 5 * 1024 * 1024; // 5MB
-
+        
+        if ($cotizacion['estado_cotizacion'] !== 'Pendiente') {
+            throw new Exception('Solo se pueden crear trabajos para cotizaciones en estado "Pendiente"');
+        }
+        
+        // Verificar que la cotización no tenga ya un trabajo activo
+        $stmt_verificar = $conex->prepare("
+            SELECT COUNT(*) as count 
+            FROM trabajos 
+            WHERE id_cotizacion = ? AND activo = 1
+        ");
+        $stmt_verificar->execute([$id_cotizacion]);
+        $resultado = $stmt_verificar->fetch(PDO::FETCH_ASSOC);
+        
+        if ($resultado['count'] > 0) {
+            throw new Exception('Esta cotización ya tiene un trabajo asociado');
+        }
+        
+        // Procesar fotos
+        $fotos_paths = [];
         if (!empty($_FILES['fotos']['name'][0])) {
-            $uploadDir = __DIR__ . '/../../uploads/trabajos/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-
-            $fileCount = 0;
-            foreach ($_FILES['fotos']['tmp_name'] as $key => $tmp_name) {
-                if ($fileCount >= $maxFotos) break;
-                
-                // Validar tipo y tamaño de archivo
-                $fileType = strtolower(pathinfo($_FILES['fotos']['name'][$key], PATHINFO_EXTENSION));
-                $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
-                
-                if (!in_array($fileType, $allowedTypes)) continue;
-                if ($_FILES['fotos']['size'][$key] > $maxSize) continue;
-                if ($_FILES['fotos']['error'][$key] !== UPLOAD_ERR_OK) continue;
-                
-                // Generar nombre único
-                $fileName = 'trabajo_' . uniqid() . '.' . $fileType;
-                $targetPath = $uploadDir . $fileName;
-                
-                if (move_uploaded_file($tmp_name, $targetPath)) {
-                    $fotos[] = '/uploads/trabajos/' . $fileName;
-                    $fileCount++;
-                }
-            }
-        }
-
-        // Insertar nuevo trabajo
-        $sql = "INSERT INTO trabajos (id_cotizacion, fecha_inicio, fecha_fin, estado, notas, fotos) 
-                VALUES (?, ?, NULL, ?, ?, ?)";
-        $stmt = $conex->prepare($sql);
-        $stmt->execute([
-            $id_cotizacion,
-            $fecha_inicio,
-            $estado,
-            $notas,
-            !empty($fotos) ? implode(',', $fotos) : null
-        ]);
-
-        $id_trabajo = $conex->lastInsertId();
-        $mensaje = 'Trabajo creado exitosamente';
-
-    } elseif ($accion === 'editar' && $id > 0) {
-        // Validar datos para editar trabajo
-        $fecha_inicio = $_POST['fecha_inicio'];
-        $fecha_fin = !empty($_POST['fecha_fin']) ? $_POST['fecha_fin'] : null;
-        $estado = $_POST['estado'];
-        $notas = trim($_POST['notas'] ?? '');
-
-        // Obtener fotos existentes
-        $stmt = $conex->prepare("SELECT fotos FROM trabajos WHERE id_trabajos = ?");
-        $stmt->execute([$id]);
-        $trabajo = $stmt->fetch();
-        $fotos = [];
-        
-        if (!empty($trabajo['fotos'])) {
-            $fotos = is_array($trabajo['fotos']) ? $trabajo['fotos'] : explode(',', $trabajo['fotos']);
-            $fotos = array_filter($fotos); // Eliminar elementos vacíos
-        }
-
-        // Procesar nuevas fotos si se subieron
-        $maxFotos = 5;
-        $maxSize = 5 * 1024 * 1024; // 5MB
-
-        if (!empty($_FILES['fotos']['name'][0])) {
-            $uploadDir = __DIR__ . '/../../uploads/trabajos/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-
-            $fileCount = 0;
-            foreach ($_FILES['fotos']['tmp_name'] as $key => $tmp_name) {
-                if (count($fotos) + $fileCount >= $maxFotos) break;
-                
-                // Validar tipo y tamaño de archivo
-                $fileType = strtolower(pathinfo($_FILES['fotos']['name'][$key], PATHINFO_EXTENSION));
-                $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
-                
-                if (!in_array($fileType, $allowedTypes)) continue;
-                if ($_FILES['fotos']['size'][$key] > $maxSize) continue;
-                if ($_FILES['fotos']['error'][$key] !== UPLOAD_ERR_OK) continue;
-                
-                // Generar nombre único
-                $fileName = 'trabajo_' . $id . '_' . uniqid() . '.' . $fileType;
-                $targetPath = $uploadDir . $fileName;
-                
-                if (move_uploaded_file($tmp_name, $targetPath)) {
-                    $fotos[] = '/uploads/trabajos/' . $fileName;
-                    $fileCount++;
-                }
-            }
-        }
-
-        // Actualizar trabajo
-        $sql = "UPDATE trabajos SET 
-                fecha_inicio = ?, 
-                fecha_fin = ?, 
-                estado = ?, 
-                notas = ?, 
-                fotos = ?
-                WHERE id_trabajos = ?";
-        $stmt = $conex->prepare($sql);
-        $stmt->execute([
-            $fecha_inicio,
-            $fecha_fin,
-            $estado,
-            $notas,
-            !empty($fotos) ? implode(',', $fotos) : null,
-            $id
-        ]);
-
-        $mensaje = 'Trabajo actualizado exitosamente';
-
-    } elseif ($accion === 'eliminar_foto' && $id > 0 && isset($_GET['foto'])) {
-        // Eliminar una foto específica de un trabajo
-        $foto = urldecode($_GET['foto']);
-        
-        $stmt = $conex->prepare("SELECT fotos FROM trabajos WHERE id_trabajos = ?");
-        $stmt->execute([$id]);
-        $trabajo = $stmt->fetch();
-        
-        if ($trabajo) {
-            $fotos = [];
-            if (!empty($trabajo['fotos'])) {
-                $fotos = is_array($trabajo['fotos']) ? $trabajo['fotos'] : explode(',', $trabajo['fotos']);
-                $fotos = array_filter($fotos); // Eliminar elementos vacíos
+            $upload_dir = __DIR__ . '/../../../uploads/trabajos/';
+            
+            // Crear directorio si no existe
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0755, true);
             }
             
-            // Buscar y eliminar la foto específica
-            $key = array_search($foto, $fotos);
-            if ($key !== false) {
-                // Eliminar archivo físico
-                $ruta_foto = __DIR__ . '/../..' . $fotos[$key];
-                if (file_exists($ruta_foto)) {
-                    unlink($ruta_foto);
+            foreach ($_FILES['fotos']['tmp_name'] as $key => $tmp_name) {
+                if ($_FILES['fotos']['error'][$key] === UPLOAD_ERR_OK) {
+                    // Validar tipo de archivo
+                    $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                    $file_type = mime_content_type($tmp_name);
+                    
+                    if (!in_array($file_type, $allowed_types)) {
+                        throw new Exception('Tipo de archivo no permitido: ' . $_FILES['fotos']['name'][$key]);
+                    }
+                    
+                    // Validar tamaño del archivo (máximo 5MB)
+                    if ($_FILES['fotos']['size'][$key] > 5 * 1024 * 1024) {
+                        throw new Exception('El archivo es demasiado grande: ' . $_FILES['fotos']['name'][$key] . '. Máximo 5MB permitido.');
+                    }
+                    
+                    $file_name = uniqid() . '_' . basename($_FILES['fotos']['name'][$key]);
+                    $file_path = $upload_dir . $file_name;
+                    
+                    if (move_uploaded_file($tmp_name, $file_path)) {
+                        $fotos_paths[] = 'uploads/trabajos/' . $file_name;
+                    } else {
+                        throw new Exception('Error al subir la foto: ' . $_FILES['fotos']['name'][$key]);
+                    }
                 }
-                
-                // Eliminar del array
-                unset($fotos[$key]);
-                $fotos = array_values($fotos); // Reindexar array
-                
-                // Actualizar base de datos
-                $stmt = $conex->prepare("UPDATE trabajos SET fotos = ? WHERE id_trabajos = ?");
-                $stmt->execute([!empty($fotos) ? implode(',', $fotos) : null, $id]);
             }
         }
         
-        header("Location: editar.php?id=$id");
+        $fotos_string = !empty($fotos_paths) ? implode(',', $fotos_paths) : '';
+        
+        // Iniciar transacción para asegurar consistencia
+        $conex->beginTransaction();
+        
+        try {
+            // Actualizar estado de la cotización a "Aprobado"
+            $stmt_aprobar_cotizacion = $conex->prepare("
+                UPDATE cotizaciones 
+                SET estado_cotizacion = 'Aprobado' 
+                WHERE id_cotizacion = ?
+            ");
+            $stmt_aprobar_cotizacion->execute([$id_cotizacion]);
+            
+            // Insertar trabajo en la base de datos
+            $stmt = $conex->prepare("
+                INSERT INTO trabajos 
+                (id_cotizacion, fecha_inicio, fecha_fin, estado, notas, fotos, fecha_eliminacion, activo) 
+                VALUES (?, ?, ?, ?, ?, ?, NULL, 1)
+            ");
+            
+            $stmt->execute([
+                $id_cotizacion,
+                $fecha_inicio,
+                $fecha_fin,
+                $estado,
+                $notas,
+                $fotos_string
+            ]);
+            
+            // Actualizar estado de la cotización a "Completada" si el trabajo se marca como "Entregado"
+            if ($estado === 'Entregado') {
+                $stmt_completar_cotizacion = $conex->prepare("
+                    UPDATE cotizaciones 
+                    SET estado_cotizacion = 'Completada' 
+                    WHERE id_cotizacion = ?
+                ");
+                $stmt_completar_cotizacion->execute([$id_cotizacion]);
+            }
+            
+            // Confirmar transacción
+            $conex->commit();
+            
+            $_SESSION['mensaje'] = 'Trabajo creado exitosamente. La cotización ha sido aprobada automáticamente.';
+            $_SESSION['tipo_mensaje'] = 'success';
+            
+            header('Location: index.php');
+            exit;
+            
+        } catch (Exception $e) {
+            // Revertir transacción en caso de error
+            $conex->rollBack();
+            throw $e;
+        }
+        
+    } catch (Exception $e) {
+        error_log("Error al crear trabajo: " . $e->getMessage());
+        $_SESSION['mensaje'] = 'Error al crear el trabajo: ' . $e->getMessage();
+        $_SESSION['tipo_mensaje'] = 'danger';
+        header('Location: crear.php');
         exit;
-
-    } elseif ($accion === 'cambiar_estado' && $id > 0 && isset($_GET['estado'])) {
-        // Cambiar estado del trabajo
-        $nuevo_estado = $_GET['estado'];
-        $fecha_fin = ($nuevo_estado == 'Entregado') ? date('Y-m-d') : null;
-        
-        $sql = "UPDATE trabajos SET estado = ?, fecha_fin = ? WHERE id_trabajos = ?";
-        $stmt = $conex->prepare($sql);
-        $stmt->execute([$nuevo_estado, $fecha_fin, $id]);
-        
-        $mensaje = 'Estado del trabajo actualizado';
-    } else {
-        throw new Exception('Acción no válida');
     }
-
-    $conex->commit();
-    $_SESSION['mensaje'] = $mensaje;
-    $_SESSION['tipo_mensaje'] = 'success';
-    header("Location: index.php?id=$id");
-    exit;
-
-} catch (Exception $e) {
-    $conex->rollBack();
-    $_SESSION['mensaje'] = 'Error: ' . $e->getMessage();
-    $_SESSION['tipo_mensaje'] = 'danger';
-    
-    if ($accion === 'crear') {
-        header('Location: crear.php?error=' . urlencode($e->getMessage()));
-    } elseif ($accion === 'editar' || $accion === 'eliminar_foto') {
-        header("Location: editar.php?id=$id&error=" . urlencode($e->getMessage()));
-    } else {
-        header('Location: index.php');
-    }
-    exit;
 }
+?>

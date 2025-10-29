@@ -1,13 +1,53 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Configuración de rutas
+define('ROOT_PATH', dirname(__DIR__, 3));
 require_once __DIR__ . '/../../../php/conexion.php';
 require_once __DIR__ . '/../../../php/auth.php';
 
+// Verificar permisos (solo Admin y Técnico)
 if (!isAdmin() && !isTechnician()) {
     header('Location: ../dashboard.php');
     exit;
+}
+
+// Verificar que se proporcionó un ID válido
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    $_SESSION['mensaje'] = 'ID de trabajo no válido';
+    $_SESSION['tipo_mensaje'] = 'danger';
+    header('Location: index.php');
+    exit;
+}
+
+$id_trabajo = $_GET['id'];
+
+// Obtener datos del trabajo
+$stmt = $conex->prepare("
+    SELECT t.*, c.id_cotizacion, cl.nombre_cliente, v.marca_vehiculo, 
+           v.modelo_vehiculo, v.placa_vehiculo, c.estado_cotizacion
+    FROM trabajos t
+    LEFT JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
+    LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+    LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+    WHERE t.id_trabajos = ? AND t.activo = 1
+");
+
+$stmt->execute([$id_trabajo]);
+$trabajo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$trabajo) {
+    $_SESSION['mensaje'] = 'Trabajo no encontrado';
+    $_SESSION['tipo_mensaje'] = 'danger';
+    header('Location: index.php');
+    exit;
+}
+
+// Generar token CSRF
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
 // Inicializar variables de sesión para mensajes
@@ -16,54 +56,19 @@ if (!isset($_SESSION['mensaje'])) {
     $_SESSION['tipo_mensaje'] = '';
 }
 
-$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-
-if ($id <= 0) {
-    header('Location: index.php');
-    exit;
+// Obtener fotos existentes
+$fotos_existentes = [];
+if (!empty($trabajo['fotos'])) {
+    $fotos_existentes = explode(',', $trabajo['fotos']);
 }
-
-try {
-    // Obtener datos del trabajo
-    $sql = "SELECT t.*, c.id_cotizacion, cl.nombre_cliente, 
-            v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo
-            FROM trabajos t
-            JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
-            JOIN clientes cl ON c.id_cliente = cl.id_cliente
-            JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
-            WHERE t.id_trabajos = ?";
-    $stmt = $conex->prepare($sql);
-    $stmt->execute([$id]);
-    $trabajo = $stmt->fetch();
-
-    if (!$trabajo) {
-        header('Location: index.php?error=Trabajo no encontrado');
-        exit;
-    }
-
-    // Obtener fotos (si existen)
-    $sqlFotos = "SELECT id_foto, ruta_foto FROM fotos_trabajos WHERE id_trabajos = ?";
-    $stmtFotos = $conex->prepare($sqlFotos);
-    $stmtFotos->execute([$id]);
-    $fotos = $stmtFotos->fetchAll();
-
-} catch (PDOException $e) {
-    $_SESSION['mensaje'] = 'Error al obtener datos: ' . $e->getMessage();
-    $_SESSION['tipo_mensaje'] = 'danger';
-    header('Location: index.php');
-    exit;
-}
-
-require_once __DIR__ . '/../../includes/head.php';
-$title = 'Editar Trabajo | Nacional Tapizados';
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?></title>
+    <title>Editar Trabajo</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -73,8 +78,9 @@ $title = 'Editar Trabajo | Nacional Tapizados';
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -99,7 +105,7 @@ $title = 'Editar Trabajo | Nacional Tapizados';
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -119,6 +125,7 @@ $title = 'Editar Trabajo | Nacional Tapizados';
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -126,24 +133,24 @@ $title = 'Editar Trabajo | Nacional Tapizados';
             color: var(--primary-color);
         }
 
-        /* Estilos para formulario */
+        /* Estilos para formularios */
         .form-container {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
             padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border-color);
         }
 
         .form-label {
             font-weight: 500;
-            color: var(--text-color);
             margin-bottom: 0.5rem;
+            color: var(--text-color);
         }
 
         .form-control, .form-select {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-color);
             padding: 0.75rem;
@@ -152,19 +159,14 @@ $title = 'Editar Trabajo | Nacional Tapizados';
         }
 
         .form-control:focus, .form-select:focus {
-            background-color: rgba(255, 255, 255, 0.15);
+            background-color: rgba(0, 0, 0, 0.7);
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(140, 74, 63, 0.25);
+            box-shadow: 0 0 0 2px var(--primary-color);
             color: var(--text-color);
         }
 
         .form-control::placeholder {
             color: var(--text-muted);
-        }
-
-        textarea.form-control {
-            min-height: 120px;
-            resize: vertical;
         }
 
         /* Estilos para botones */
@@ -205,13 +207,22 @@ $title = 'Editar Trabajo | Nacional Tapizados';
             background-color: rgba(108, 117, 125, 1);
         }
 
-        .btn-danger {
-            background-color: var(--danger-color);
+        .btn-success {
+            background-color: var(--success-color);
             color: white;
         }
 
-        .btn-danger:hover {
-            background-color: rgba(220, 53, 69, 1);
+        .btn-success:hover {
+            background-color: rgba(25, 135, 84, 1);
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: black;
+        }
+
+        .btn-warning:hover {
+            background-color: rgba(255, 193, 7, 1);
         }
 
         /* Estilos para alertas */
@@ -223,63 +234,150 @@ $title = 'Editar Trabajo | Nacional Tapizados';
             justify-content: space-between;
             align-items: center;
             backdrop-filter: blur(5px);
+            border-left: 4px solid var(--info-color);
+            background-color: rgba(13, 202, 240, 0.2);
+            color: var(--text-color);
         }
 
         .alert-success {
             background-color: rgba(25, 135, 84, 0.2);
             border-left: 4px solid var(--success-color);
-            color: white;
         }
 
         .alert-danger {
             background-color: rgba(220, 53, 69, 0.2);
             border-left: 4px solid var(--danger-color);
-            color: white;
         }
 
-        /* Vista previa de imágenes */
-        .img-preview-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
+        .alert-warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning-color);
         }
 
-        .img-preview {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
+        .alert-info {
+            background-color: rgba(13, 202, 240, 0.2);
+            border-left: 4px solid var(--info-color);
+        }
+
+        /* Estilos para información del trabajo */
+        .info-card {
+            background-color: var(--bg-transparent-light);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
             border: 1px solid var(--border-color);
-            position: relative;
         }
 
-        .delete-img {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background-color: var(--danger-color);
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .info-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .info-badge {
+            background-color: var(--primary-color);
             color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .info-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            color: var(--text-color);
+        }
+
+        .info-detail i {
+            color: var(--primary-color);
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Estilos para galería de fotos */
+        .fotos-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .foto-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .foto-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+
+        .foto-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: var(--danger-color);
+            color: white;
+            border: none;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
+            width: 25px;
+            height: 25px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 0.8rem;
+        }
+
+        .foto-remove:hover {
+            background: var(--danger-hover);
+        }
+
+        .completado-section {
+            background-color: rgba(25, 135, 84, 0.1);
+            border: 1px solid var(--success-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .main-container {
+                padding: 1rem;
                 margin: 1rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .form-container {
                 padding: 1.5rem;
             }
 
-            .header-section {
+            .info-header {
                 flex-direction: column;
-                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .fotos-container {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             }
         }
     </style>
@@ -290,7 +388,7 @@ $title = 'Editar Trabajo | Nacional Tapizados';
         <!-- Encabezado -->
         <div class="header-section">
             <h1 class="page-title">
-                <i class="fas fa-edit"></i> Editar Trabajo #<?= $trabajo['id_trabajos'] ?>
+                <i class="fas fa-edit"></i>Editar Trabajo
             </h1>
             <div class="d-flex gap-2">
                 <a href="index.php" class="btn btn-secondary">
@@ -299,105 +397,149 @@ $title = 'Editar Trabajo | Nacional Tapizados';
             </div>
         </div>
 
-        <!-- Mensajes -->
-        <?php if (!empty($_SESSION['mensaje'])): ?>
-            <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
-                <div>
-                    <i class="fas fa-<?=
-                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : 'exclamation-triangle'
-                                        ?> me-2"></i>
-                    <?= $_SESSION['mensaje'] ?>
-                </div>
-                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'"></button>
+        <!-- Mensajes de alerta -->
+        <?php if ($_SESSION['mensaje']): ?>
+            <div class="alert alert-<?php echo $_SESSION['tipo_mensaje']; ?>">
+                <span><?php echo $_SESSION['mensaje']; ?></span>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <?php
+            // Limpiar mensaje después de mostrarlo
             $_SESSION['mensaje'] = '';
             $_SESSION['tipo_mensaje'] = '';
             ?>
         <?php endif; ?>
 
-        <!-- Información del trabajo -->
-        <div class="card mb-4" style="background-color: var(--bg-transparent-light); border-color: var(--border-color);">
-            <div class="card-body">
-                <h5 class="card-title" style="color: var(--text-color);">Información del trabajo</h5>
-                <div class="row">
-                    <div class="col-md-6">
-                        <p><strong>Cliente:</strong> <?= htmlspecialchars($trabajo['nombre_cliente']) ?></p>
-                        <p><strong>Vehículo:</strong> <?= htmlspecialchars($trabajo['marca_vehiculo']) ?> <?= htmlspecialchars($trabajo['modelo_vehiculo']) ?></p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Placa:</strong> <?= htmlspecialchars($trabajo['placa_vehiculo']) ?></p>
-                        <p><strong>Cotización:</strong> #<?= $trabajo['id_cotizacion'] ?></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Formulario -->
+        <!-- Formulario para editar trabajo -->
         <div class="form-container">
-            <form action="procesar.php" method="POST" enctype="multipart/form-data" id="formTrabajo">
+            <form id="formTrabajo" action="procesar_editar.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                 <input type="hidden" name="accion" value="editar">
-                <input type="hidden" name="id_trabajos" value="<?= $trabajo['id_trabajos'] ?>">
+                <input type="hidden" name="id_trabajo" value="<?php echo $id_trabajo; ?>">
+                <input type="hidden" name="fotos_existentes" id="fotosExistentes" value="<?php echo htmlspecialchars($trabajo['fotos']); ?>">
                 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="fecha_inicio" class="form-label">Fecha de inicio *</label>
-                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
-                               value="<?= htmlspecialchars($trabajo['fecha_inicio']) ?>" required>
+                <!-- Información de la cotización -->
+                <div class="info-card">
+                    <div class="info-header">
+                        <h3 class="info-title">Cotización #<?php echo $trabajo['id_cotizacion']; ?></h3>
+                        <span class="info-badge"><?php echo $trabajo['estado_cotizacion']; ?></span>
                     </div>
-                    <div class="col-md-6">
-                        <label for="fecha_fin" class="form-label">Fecha de finalización</label>
-                        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" 
-                               value="<?= htmlspecialchars($trabajo['fecha_fin'] ?? '') ?>">
+                    <div class="info-detail">
+                        <i class="fas fa-user"></i>
+                        <span><?php echo htmlspecialchars($trabajo['nombre_cliente']); ?></span>
+                    </div>
+                    <div class="info-detail">
+                        <i class="fas fa-car"></i>
+                        <span><?php echo htmlspecialchars($trabajo['marca_vehiculo'] . ' ' . $trabajo['modelo_vehiculo']); ?></span>
+                    </div>
+                    <div class="info-detail">
+                        <i class="fas fa-tag"></i>
+                        <span><?php echo htmlspecialchars($trabajo['placa_vehiculo']); ?></span>
                     </div>
                 </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="estado" class="form-label">Estado *</label>
+
+                <!-- Información del trabajo -->
+                <div class="mb-4">
+                    <h3 class="mb-3"><i class="fas fa-tools me-2"></i>Información del Trabajo</h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_inicio" class="form-label">Fecha de Inicio *</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
+                                   value="<?php echo htmlspecialchars($trabajo['fecha_inicio']); ?>" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_fin" class="form-label">Fecha de Finalización</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" 
+                                   value="<?php echo ($trabajo['fecha_fin'] && $trabajo['fecha_fin'] != '0000-00-00') ? htmlspecialchars($trabajo['fecha_fin']) : ''; ?>">
+                            <div class="form-text text-muted">
+                                <small>Dejar vacío si el trabajo aún no está completado</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="estado" class="form-label">Estado del Trabajo *</label>
                         <select class="form-select" id="estado" name="estado" required>
-                            <option value="Pendiente" <?= $trabajo['estado'] == 'Pendiente' ? 'selected' : '' ?>>Pendiente</option>
-                            <option value="En progreso" <?= $trabajo['estado'] == 'En progreso' ? 'selected' : '' ?>>En progreso</option>
-                            <option value="Completado" <?= $trabajo['estado'] == 'Completado' ? 'selected' : '' ?>>Completado</option>
+                            <option value="Pendiente" <?php echo $trabajo['estado'] == 'Pendiente' ? 'selected' : ''; ?>>Pendiente</option>
+                            <option value="En progreso" <?php echo $trabajo['estado'] == 'En progreso' ? 'selected' : ''; ?>>En progreso</option>
+                            <option value="Entregado" <?php echo $trabajo['estado'] == 'Entregado' ? 'selected' : ''; ?>>Entregado</option>
+                            <option value="Cancelado" <?php echo $trabajo['estado'] == 'Cancelado' ? 'selected' : ''; ?>>Cancelado</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <label for="fotos" class="form-label">Agregar más fotos (opcional, máximo 5)</label>
-                        <input type="file" class="form-control" id="fotos" name="fotos[]" multiple accept="image/*">
-                        <small class="text-muted" style="color: var(--text-muted) !important;">Formatos permitidos: JPG, PNG, GIF. Máx. 5MB cada una</small>
-                        <div id="previewFotos" class="img-preview-container mt-2"></div>
+                    
+                    <div class="mb-3">
+                        <label for="notas" class="form-label">Notas del Trabajo</label>
+                        <textarea class="form-control" id="notas" name="notas" rows="4" 
+                                  placeholder="Agregar notas adicionales sobre el trabajo..."><?php echo htmlspecialchars($trabajo['notas']); ?></textarea>
                     </div>
-                </div>
-                
-                <div class="mb-4">
-                    <label for="notas" class="form-label">Notas</label>
-                    <textarea class="form-control" id="notas" name="notas" rows="3"><?= htmlspecialchars($trabajo['notas'] ?? '') ?></textarea>
-                </div>
-                
-                <!-- Fotos existentes -->
-                <?php if (!empty($fotos)): ?>
-                <div class="mb-4">
-                    <label class="form-label">Fotos existentes</label>
-                    <div class="img-preview-container">
-                        <?php foreach ($fotos as $foto): ?>
-                        <div class="position-relative">
-                            <img src="<?= htmlspecialchars($foto['ruta_foto']) ?>" class="img-preview" alt="Foto del trabajo">
-                            <span class="delete-img" onclick="eliminarFoto(<?= $foto['id_foto'] ?>, <?= $trabajo['id_trabajos'] ?>)">
-                                <i class="fas fa-times"></i>
-                            </span>
+
+                    <!-- Sección de completado -->
+                    <div class="completado-section">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="marcar_completado" 
+                                   onchange="toggleFechaCompletado()">
+                            <label class="form-check-label" for="marcar_completado">
+                                <strong>Marcar como completado hoy</strong>
+                            </label>
                         </div>
-                        <?php endforeach; ?>
+                        <div class="form-text text-muted">
+                            Al activar esta opción, se establecerá la fecha de finalización como hoy y el estado como "Entregado"
+                        </div>
                     </div>
                 </div>
-                <?php endif; ?>
-                
-                <div class="d-flex justify-content-end gap-2">
-                    <button type="reset" class="btn btn-secondary">
-                        <i class="fas fa-undo"></i> Restablecer
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Guardar Cambios
-                    </button>
+
+                <!-- Gestión de fotos -->
+                <div class="mb-4">
+                    <h3 class="mb-3"><i class="fas fa-images me-2"></i>Fotos del Trabajo</h3>
+                    
+                    <!-- Fotos existentes -->
+                    <?php if (!empty($fotos_existentes) && !empty($fotos_existentes[0])): ?>
+                        <div class="mb-3">
+                            <label class="form-label">Fotos Actuales</label>
+                            <div class="fotos-container" id="fotosExistentesContainer">
+                                <?php foreach ($fotos_existentes as $index => $foto): ?>
+                                    <?php if (!empty(trim($foto))): ?>
+                                        <div class="foto-item">
+                                            <img src="/--11proyecto/<?php echo htmlspecialchars(trim($foto)); ?>" 
+                                                 alt="Foto del trabajo" 
+                                                 onerror="this.style.display='none'">
+                                            <button type="button" class="foto-remove" 
+                                                    onclick="eliminarFotoExistente('<?php echo htmlspecialchars(trim($foto)); ?>', this)">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <!-- Subir nuevas fotos -->
+                    <div class="mb-3">
+                        <label for="nuevas_fotos" class="form-label">Agregar Nuevas Fotos</label>
+                        <input type="file" class="form-control" id="nuevas_fotos" name="nuevas_fotos[]" multiple accept="image/*">
+                        <div class="form-text text-muted">
+                            Puedes seleccionar múltiples imágenes (JPEG, PNG, GIF, WEBP). Máximo 5MB por imagen.
+                        </div>
+                    </div>
+
+                    <!-- Vista previa de nuevas fotos -->
+                    <div id="vistaPreviaContainer" class="fotos-container" style="display: none;"></div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="index.php" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -405,63 +547,118 @@ $title = 'Editar Trabajo | Nacional Tapizados';
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    // Vista previa de fotos seleccionadas
-    document.getElementById('fotos').addEventListener('change', function(e) {
-        const preview = document.getElementById('previewFotos');
-        preview.innerHTML = '';
-        const files = e.target.files;
+        let fotosAEliminar = [];
         
-        if (files.length > 5) {
-            alert('Solo puedes subir un máximo de 5 fotos');
-            this.value = '';
-            return;
+        // Función para marcar como completado
+        function toggleFechaCompletado() {
+            const marcarCompletado = document.getElementById('marcar_completado');
+            const fechaFin = document.getElementById('fecha_fin');
+            const estado = document.getElementById('estado');
+            
+            if (marcarCompletado.checked) {
+                // Establecer fecha de hoy
+                const today = new Date().toISOString().split('T')[0];
+                fechaFin.value = today;
+                // Cambiar estado a Entregado
+                estado.value = 'Entregado';
+            } else {
+                // Limpiar fecha de finalización
+                fechaFin.value = '';
+                // Volver al estado anterior (o mantener el actual)
+            }
         }
         
-        for (let i = 0; i < Math.min(files.length, 5); i++) {
-            const file = files[i];
-            if (!file.type.match('image.*')) continue;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.className = 'img-preview';
-                preview.appendChild(img);
+        // Función para eliminar foto existente
+        function eliminarFotoExistente(fotoPath, boton) {
+            if (confirm('¿Estás seguro de que quieres eliminar esta foto?')) {
+                fotosAEliminar.push(fotoPath);
+                boton.parentElement.remove();
+                
+                // Actualizar el campo hidden con las fotos que quedan
+                actualizarFotosExistentes();
             }
-            reader.readAsDataURL(file);
         }
-    });
-
-    // Validación antes de enviar
-    document.getElementById('formTrabajo').addEventListener('submit', function(e) {
-        const fotosInput = document.getElementById('fotos');
-        const maxSize = 5 * 1024 * 1024; // 5MB
         
-        if (fotosInput.files) {
-            // Validar cantidad de fotos
-            if (fotosInput.files.length > 5) {
-                alert('Solo puedes subir un máximo de 5 fotos');
-                e.preventDefault();
-                return;
+        // Función para actualizar el campo hidden de fotos existentes
+        function actualizarFotosExistentes() {
+            const fotosContainer = document.getElementById('fotosExistentesContainer');
+            const fotosActuales = [];
+            
+            if (fotosContainer) {
+                const fotos = fotosContainer.querySelectorAll('.foto-item');
+                fotos.forEach(foto => {
+                    const img = foto.querySelector('img');
+                    if (img && img.src) {
+                        // Extraer la ruta relativa de la URL completa
+                        const url = new URL(img.src);
+                        const path = url.pathname;
+                        // Remover el base path del proyecto
+                        const relativePath = path.replace('/--11proyecto/', '');
+                        if (relativePath) {
+                            fotosActuales.push(relativePath);
+                        }
+                    }
+                });
             }
             
-            // Validar tamaño de cada foto
-            for (let i = 0; i < fotosInput.files.length; i++) {
-                if (fotosInput.files[i].size > maxSize) {
-                    alert('El archivo ' + fotosInput.files[i].name + ' excede el tamaño máximo de 5MB');
-                    e.preventDefault();
-                    return;
+            document.getElementById('fotosExistentes').value = fotosActuales.join(',');
+        }
+        
+        // Vista previa de nuevas fotos
+        document.getElementById('nuevas_fotos').addEventListener('change', function(e) {
+            const container = document.getElementById('vistaPreviaContainer');
+            container.innerHTML = '';
+            container.style.display = 'none';
+            
+            const files = e.target.files;
+            if (files.length > 0) {
+                container.style.display = 'grid';
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const div = document.createElement('div');
+                        div.className = 'foto-item';
+                        div.innerHTML = `
+                            <img src="${e.target.result}" alt="Vista previa">
+                            <button type="button" class="foto-remove" onclick="this.parentElement.remove()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        container.appendChild(div);
+                    }
+                    
+                    reader.readAsDataURL(file);
                 }
             }
-        }
-    });
-
-    // Función para eliminar foto
-    function eliminarFoto(idFoto, idTrabajo) {
-        if (confirm('¿Estás seguro de que deseas eliminar esta foto?')) {
-            window.location.href = 'procesar.php?accion=eliminar_foto&id_foto=' + idFoto + '&id_trabajos=' + idTrabajo;
-        }
-    }
+        });
+        
+        // Validación del formulario
+        document.getElementById('formTrabajo').addEventListener('submit', function(e) {
+            const fechaInicio = document.getElementById('fecha_inicio').value;
+            const fechaFin = document.getElementById('fecha_fin').value;
+            
+            if (!fechaInicio) {
+                e.preventDefault();
+                alert('Por favor, ingresa la fecha de inicio del trabajo.');
+                return false;
+            }
+            
+            if (fechaFin && fechaFin < fechaInicio) {
+                e.preventDefault();
+                alert('La fecha de finalización no puede ser anterior a la fecha de inicio.');
+                return false;
+            }
+            
+            // Agregar las fotos a eliminar al formulario
+            const fotosEliminarInput = document.createElement('input');
+            fotosEliminarInput.type = 'hidden';
+            fotosEliminarInput.name = 'fotos_eliminar';
+            fotosEliminarInput.value = JSON.stringify(fotosAEliminar);
+            this.appendChild(fotosEliminarInput);
+        });
     </script>
 </body>
 </html>

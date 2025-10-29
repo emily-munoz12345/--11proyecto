@@ -4,7 +4,6 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Configuración de rutas
-define('ROOT_PATH', dirname(__DIR__, 3));
 require_once __DIR__ . '/../../php/conexion.php';
 require_once __DIR__ . '/../../php/auth.php';
 
@@ -14,79 +13,117 @@ if (!isAdmin()) {
     exit;
 }
 
-// Inicializar variables de sesión para mensajes
+// Inicializar mensajes
 if (!isset($_SESSION['mensaje'])) {
     $_SESSION['mensaje'] = '';
     $_SESSION['tipo_mensaje'] = '';
 }
 
-// Procesar parámetros de búsqueda
+// Parámetros de búsqueda
 $tipoFiltro = $_GET['tipo'] ?? 'all';
-$buscarTexto = $_GET['buscar'] ?? '';
+$buscarTexto = trim($_GET['buscar'] ?? '');
 
-// Obtener estadísticas de la papelera
+// Configuración de tablas y columnas
+$tablasConfig = [
+    'clientes' => [
+        'id_col' => 'id_cliente', 
+        'nombre_col' => 'nombre_cliente'
+    ],
+    'vehiculos' => [
+        'id_col' => 'id_vehiculo', 
+        'nombre_col' => 'CONCAT(marca_vehiculo, " ", modelo_vehiculo)'
+    ],
+    'materiales' => [
+        'id_col' => 'id_material', 
+        'nombre_col' => 'nombre_material'
+    ],
+    'servicios' => [
+        'id_col' => 'id_servicio', 
+        'nombre_col' => 'nombre_servicio'
+    ],
+    'cotizaciones' => [
+        'id_col' => 'id_cotizacion', 
+        'nombre_col' => 'CONCAT("Cotización #", id_cotizacion)'
+    ],
+    'trabajos' => [
+        'id_col' => 'id_trabajos', 
+        'nombre_col' => 'CONCAT("Trabajo #", id_trabajos)'
+    ],
+    'mensajes_contacto' => [
+        'id_col' => 'id_mensaje', 
+        'nombre_col' => 'CONCAT("Mensaje: ", asunto)'
+    ]
+];
+
+// Obtener estadísticas basadas en elementos actualmente en papelera
 $statsQuery = "
     SELECT 
-        COUNT(*) as total_elementos,
+        COUNT(DISTINCT CONCAT(tabla, '-', id_registro)) as total_elementos,
         MAX(fecha_eliminacion) as ultima_eliminacion,
         COUNT(DISTINCT tabla) as tipos_diferentes
     FROM registro_eliminaciones 
     WHERE accion = 'ELIMINACION'
+    AND EXISTS (
+        SELECT 1 FROM (
+            SELECT 'clientes' as tabla_name, id_cliente as id FROM clientes WHERE activo = 0
+            UNION ALL SELECT 'vehiculos', id_vehiculo FROM vehiculos WHERE activo = 0
+            UNION ALL SELECT 'materiales', id_material FROM materiales WHERE activo = 0
+            UNION ALL SELECT 'servicios', id_servicio FROM servicios WHERE activo = 0
+            UNION ALL SELECT 'cotizaciones', id_cotizacion FROM cotizaciones WHERE activo = 0
+            UNION ALL SELECT 'trabajos', id_trabajos FROM trabajos WHERE activo = 0
+            UNION ALL SELECT 'mensajes_contacto', id_mensaje FROM mensajes_contacto WHERE activo = 0
+        ) AS elementos_papelera
+        WHERE elementos_papelera.tabla_name = registro_eliminaciones.tabla 
+        AND elementos_papelera.id = registro_eliminaciones.id_registro
+    )
 ";
 
 $stats = $conex->query($statsQuery)->fetch(PDO::FETCH_ASSOC);
 
-// FUNCIÓN AUXILIAR: Obtener nombre de columna ID según tabla
-function getColumnName($tabla) {
-    $columnMap = [
-        'clientes' => 'id_cliente',
-        'vehiculos' => 'id_vehiculo',
-        'materiales' => 'id_material',
-        'servicios' => 'id_servicio',
-        'cotizaciones' => 'id_cotizacion',
-        'trabajos' => 'id_trabajos',
-        'mensajes_contacto' => 'id_mensaje',
-        'usuarios' => 'id_usuario',
-        'roles' => 'id_rol',
-        'cliente_vehiculo' => 'id_cliente',
-        'cotizacion_servicios' => 'id_cotizacion'
-    ];
-    
-    return $columnMap[$tabla] ?? 'id';
-}
-
-// Construir consulta base para obtener registros eliminados
+// Construir consulta principal para obtener elementos únicos en papelera
 $query = "
     SELECT 
         re.*,
         u.nombre_completo as usuario_responsable,
-        CASE 
-            WHEN re.tabla = 'clientes' THEN (SELECT nombre_cliente FROM clientes WHERE id_cliente = re.id_registro)
-            WHEN re.tabla = 'vehiculos' THEN (SELECT CONCAT(marca_vehiculo, ' ', modelo_vehiculo) FROM vehiculos WHERE id_vehiculo = re.id_registro)
-            WHEN re.tabla = 'materiales' THEN (SELECT nombre_material FROM materiales WHERE id_material = re.id_registro)
-            WHEN re.tabla = 'servicios' THEN (SELECT nombre_servicio FROM servicios WHERE id_servicio = re.id_registro)
-            WHEN re.tabla = 'cotizaciones' THEN (SELECT CONCAT('Cotización #', id_cotizacion) FROM cotizaciones WHERE id_cotizacion = re.id_registro)
-            WHEN re.tabla = 'trabajos' THEN (SELECT CONCAT('Trabajo #', id_trabajos) FROM trabajos WHERE id_trabajos = re.id_registro)
-            WHEN re.tabla = 'mensajes_contacto' THEN (SELECT CONCAT('Mensaje: ', asunto) FROM mensajes_contacto WHERE id_mensaje = re.id_registro)
-            WHEN re.tabla = 'usuarios' THEN (SELECT nombre_completo FROM usuarios WHERE id_usuario = re.id_registro)
-            WHEN re.tabla = 'roles' THEN (SELECT nombre_rol FROM roles WHERE id_rol = re.id_registro)
-            ELSE 'Elemento'
-        END as nombre_elemento
+        CASE re.tabla
+";
+
+foreach ($tablasConfig as $tabla => $config) {
+    $query .= " WHEN '$tabla' THEN (SELECT {$config['nombre_col']} FROM $tabla WHERE {$config['id_col']} = re.id_registro) \n";
+}
+
+$query .= " ELSE 'Elemento' END as nombre_elemento
     FROM registro_eliminaciones re
     LEFT JOIN usuarios u ON re.eliminado_por = u.id_usuario
     WHERE re.accion = 'ELIMINACION'
+    AND (re.tabla, re.id_registro, re.fecha_eliminacion) IN (
+        SELECT tabla, id_registro, MAX(fecha_eliminacion)
+        FROM registro_eliminaciones 
+        WHERE accion = 'ELIMINACION'
+        GROUP BY tabla, id_registro
+    )
+    AND EXISTS (
+        SELECT 1 FROM (
+            SELECT 'clientes' as tabla_name, id_cliente as id FROM clientes WHERE activo = 0
+            UNION ALL SELECT 'vehiculos', id_vehiculo FROM vehiculos WHERE activo = 0
+            UNION ALL SELECT 'materiales', id_material FROM materiales WHERE activo = 0
+            UNION ALL SELECT 'servicios', id_servicio FROM servicios WHERE activo = 0
+            UNION ALL SELECT 'cotizaciones', id_cotizacion FROM cotizaciones WHERE activo = 0
+            UNION ALL SELECT 'trabajos', id_trabajos FROM trabajos WHERE activo = 0
+            UNION ALL SELECT 'mensajes_contacto', id_mensaje FROM mensajes_contacto WHERE activo = 0
+        ) AS elementos_papelera
+        WHERE elementos_papelera.tabla_name = re.tabla 
+        AND elementos_papelera.id = re.id_registro
+    )
 ";
 
 // Aplicar filtros
 $params = [];
-
-// Filtro por tipo
-if ($tipoFiltro !== 'all') {
+if ($tipoFiltro !== 'all' && isset($tablasConfig[$tipoFiltro])) {
     $query .= " AND re.tabla = ?";
     $params[] = $tipoFiltro;
 }
 
-// Filtro por texto de búsqueda
 if (!empty($buscarTexto)) {
     $query .= " AND (
         re.datos LIKE ? OR 
@@ -95,16 +132,12 @@ if (!empty($buscarTexto)) {
         re.tabla LIKE ?
     )";
     $searchTerm = "%$buscarTexto%";
-    $params[] = $searchTerm;
-    $params[] = $searchTerm;
-    $params[] = $searchTerm;
-    $params[] = $searchTerm;
+    array_push($params, $searchTerm, $searchTerm, $searchTerm, $searchTerm);
 }
 
-// Ordenar resultados
 $query .= " ORDER BY re.fecha_eliminacion DESC";
 
-// Obtener registros filtrados
+// Obtener registros
 $registrosEliminaciones = [];
 try {
     $stmt = $conex->prepare($query);
@@ -115,89 +148,112 @@ try {
     $_SESSION['tipo_mensaje'] = 'danger';
 }
 
-// Procesar restauración de elementos
-if (isset($_POST['restaurar']) && is_numeric($_POST['id']) && !empty($_POST['tabla'])) {
-    $id = $_POST['id'];
-    $tabla = $_POST['tabla'];
-    $id_column = getColumnName($tabla);
-    
+// Procesar acciones
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Establecer usuario actual para el trigger
-        $conex->query("CALL SetUsuarioActual(" . $_SESSION['user_id'] . ")");
+        $conex->beginTransaction();
         
-        // Restaurar elemento (activarlo)
-        $sql = "UPDATE $tabla SET activo = 1 WHERE $id_column = ?";
-        $stmt = $conex->prepare($sql);
-        $stmt->execute([$id]);
-        
-        // Limpiar usuario actual
-        $conex->query("CALL LimpiarUsuarioActual()");
-        
-        $_SESSION['mensaje'] = "Elemento restaurado correctamente";
-        $_SESSION['tipo_mensaje'] = 'success';
-        
-        header('Location: papelera.php?' . http_build_query($_GET));
-        exit;
-    } catch (Exception $e) {
-        $_SESSION['mensaje'] = "Error al restaurar elemento: " . $e->getMessage();
-        $_SESSION['tipo_mensaje'] = 'danger';
-    }
-}
-
-// Procesar eliminación permanente individual
-if (isset($_POST['eliminar_permanentemente']) && is_numeric($_POST['id']) && !empty($_POST['tabla'])) {
-    $id = $_POST['id'];
-    $tabla = $_POST['tabla'];
-    $id_column = getColumnName($tabla);
-    
-    try {
-        // Eliminar permanentemente de la tabla original
-        $sql = "DELETE FROM $tabla WHERE $id_column = ?";
-        $stmt = $conex->prepare($sql);
-        $stmt->execute([$id]);
-        
-        // Eliminar el registro de eliminaciones
-        $deleteRegistro = "DELETE FROM registro_eliminaciones WHERE tabla = ? AND id_registro = ? AND accion = 'ELIMINACION'";
-        $stmt2 = $conex->prepare($deleteRegistro);
-        $stmt2->execute([$tabla, $id]);
-        
-        $_SESSION['mensaje'] = "Elemento eliminado permanentemente";
-        $_SESSION['tipo_mensaje'] = 'success';
-        
-        header('Location: papelera.php?' . http_build_query($_GET));
-        exit;
-    } catch (Exception $e) {
-        $_SESSION['mensaje'] = "Error al eliminar elemento: " . $e->getMessage();
-        $_SESSION['tipo_mensaje'] = 'danger';
-    }
-}
-
-// Procesar vaciar papelera
-if (isset($_POST['vaciar_papelera'])) {
-    try {
-        // Eliminar permanentemente todos los elementos en papelera
-        $tablas = ['clientes', 'vehiculos', 'materiales', 'servicios', 'cotizaciones', 'trabajos', 'mensajes_contacto', 'usuarios', 'roles'];
-        
-        foreach ($tablas as $tabla) {
-            $id_column = getColumnName($tabla);
-            $sql = "DELETE FROM $tabla WHERE activo = 0";
-            $conex->exec($sql);
+        if (isset($_POST['restaurar']) && isset($_POST['id']) && isset($_POST['tabla'])) {
+            $id = $_POST['id'];
+            $tabla = $_POST['tabla'];
+            
+            if (!is_numeric($id) || !isset($tablasConfig[$tabla])) {
+                throw new Exception("Datos inválidos para restaurar");
+            }
+            
+            $id_col = $tablasConfig[$tabla]['id_col'];
+            
+            // Verificar que el elemento existe y está en papelera
+            $checkStmt = $conex->prepare("SELECT COUNT(*) as count FROM $tabla WHERE $id_col = ? AND activo = 0");
+            $checkStmt->execute([$id]);
+            $result = $checkStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($result['count'] == 0) {
+                throw new Exception("El elemento no existe en la papelera o ya fue restaurado");
+            }
+            
+            // Configurar usuario actual para triggers - CORREGIDO EL TYP0
+            $user_id = $_SESSION['user_id'] ?? 0; // Usar valor por defecto si no existe
+            $conex->query("CALL SetUsuarioActual(" . intval($user_id) . ")");
+            
+            // Restaurar elemento
+            $updateStmt = $conex->prepare("UPDATE $tabla SET activo = 1 WHERE $id_col = ?");
+            $updateStmt->execute([$id]);
+            
+            // Limpiar usuario actual
+            $conex->query("CALL LimpiarUsuarioActual()");
+            
+            $_SESSION['mensaje'] = "Elemento restaurado correctamente de " . ucfirst(str_replace('_', ' ', $tabla));
+            $_SESSION['tipo_mensaje'] = 'success';
+            
+        } elseif (isset($_POST['eliminar_permanentemente']) && isset($_POST['id']) && isset($_POST['tabla'])) {
+            $id = $_POST['id'];
+            $tabla = $_POST['tabla'];
+            
+            if (!is_numeric($id) || !isset($tablasConfig[$tabla])) {
+                throw new Exception("Datos inválidos para eliminar");
+            }
+            
+            $id_col = $tablasConfig[$tabla]['id_col'];
+            
+            // Verificar que el elemento existe
+            $checkStmt = $conex->prepare("SELECT COUNT(*) as count FROM $tabla WHERE $id_col = ?");
+            $checkStmt->execute([$id]);
+            $result = $checkStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($result['count'] == 0) {
+                throw new Exception("El elemento no existe");
+            }
+            
+            // Eliminar elemento permanentemente
+            $deleteStmt = $conex->prepare("DELETE FROM $tabla WHERE $id_col = ?");
+            $deleteStmt->execute([$id]);
+            
+            // Eliminar registros de eliminación
+            $deleteRegistroStmt = $conex->prepare("DELETE FROM registro_eliminaciones WHERE tabla = ? AND id_registro = ? AND accion = 'ELIMINACION'");
+            $deleteRegistroStmt->execute([$tabla, $id]);
+            
+            $_SESSION['mensaje'] = "Elemento eliminado permanentemente de " . ucfirst(str_replace('_', ' ', $tabla));
+            $_SESSION['tipo_mensaje'] = 'success';
+            
+        } elseif (isset($_POST['vaciar_papelera'])) {
+            $totalEliminados = 0;
+            
+            foreach ($tablasConfig as $tabla => $config) {
+                $id_col = $config['id_col'];
+                
+                // Contar elementos a eliminar
+                $countStmt = $conex->prepare("SELECT COUNT(*) as count FROM $tabla WHERE activo = 0");
+                $countStmt->execute();
+                $count = $countStmt->fetch(PDO::FETCH_ASSOC)['count'];
+                $totalEliminados += $count;
+                
+                // Eliminar elementos inactivos
+                $deleteStmt = $conex->prepare("DELETE FROM $tabla WHERE activo = 0");
+                $deleteStmt->execute();
+            }
+            
+            // Limpiar registros de eliminaciones
+            $conex->exec("DELETE FROM registro_eliminaciones WHERE accion = 'ELIMINACION'");
+            
+            $_SESSION['mensaje'] = "Papelera vaciada correctamente. Se eliminaron $totalEliminados elementos permanentemente.";
+            $_SESSION['tipo_mensaje'] = 'success';
         }
         
-        // Limpiar todos los registros de eliminaciones
-        $conex->exec("DELETE FROM registro_eliminaciones WHERE accion = 'ELIMINACION'");
+        $conex->commit();
         
-        $_SESSION['mensaje'] = "Papelera vaciada correctamente";
-        $_SESSION['tipo_mensaje'] = 'success';
-        
-        header('Location: papelera.php');
+        // Redirigir para evitar reenvío del formulario
+        header('Location: papelera.php?' . http_build_query($_GET));
         exit;
+        
     } catch (Exception $e) {
-        $_SESSION['mensaje'] = "Error al vaciar papelera: " . $e->getMessage();
+        $conex->rollBack();
+        $_SESSION['mensaje'] = "Error en la operación: " . $e->getMessage();
         $_SESSION['tipo_mensaje'] = 'danger';
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -260,7 +316,6 @@ if (isset($_POST['vaciar_papelera'])) {
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            color: var(--text-color);
         }
 
         .page-title i {
@@ -268,7 +323,6 @@ if (isset($_POST['vaciar_papelera'])) {
             color: var(--primary-color);
         }
 
-        /* Estadísticas */
         .summary-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -305,10 +359,8 @@ if (isset($_POST['vaciar_papelera'])) {
             font-size: 1.5rem;
             font-weight: bold;
             margin-bottom: 0;
-            color: var(--text-color);
         }
 
-        /* Estilos para tablas */
         .table-container {
             overflow-x: auto;
             background-color: var(--bg-transparent-light);
@@ -328,7 +380,6 @@ if (isset($_POST['vaciar_papelera'])) {
             padding: 1rem;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
-            color: var(--text-color);
         }
 
         th {
@@ -344,7 +395,6 @@ if (isset($_POST['vaciar_papelera'])) {
             background-color: rgba(140, 74, 63, 0.2);
         }
 
-        /* Estilos para botones */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -352,7 +402,6 @@ if (isset($_POST['vaciar_papelera'])) {
             padding: 0.5rem 0.75rem;
             border-radius: 6px;
             font-weight: 500;
-            text-decoration: none;
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
@@ -360,52 +409,20 @@ if (isset($_POST['vaciar_papelera'])) {
             gap: 0.5rem;
         }
 
-        .btn i {
-            font-size: 0.9rem;
-        }
-
         .btn-sm {
             padding: 0.35rem 0.5rem;
             font-size: 0.8rem;
         }
 
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
+        .btn-primary { background-color: var(--primary-color); }
+        .btn-secondary { background-color: var(--secondary-color); }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-success { background-color: var(--success-color); }
+
+        .btn:hover {
+            opacity: 0.9;
         }
 
-        .btn-primary:hover {
-            background-color: var(--primary-hover);
-        }
-
-        .btn-secondary {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background-color: rgba(108, 117, 125, 1);
-        }
-
-        .btn-danger {
-            background-color: var(--danger-color);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: rgba(220, 53, 69, 1);
-        }
-
-        .btn-success {
-            background-color: var(--success-color);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background-color: rgba(25, 135, 84, 1);
-        }
-
-        /* Estilos para alertas */
         .alert {
             padding: 1rem;
             border-radius: 8px;
@@ -415,31 +432,11 @@ if (isset($_POST['vaciar_papelera'])) {
             align-items: center;
             backdrop-filter: blur(5px);
             border-left: 4px solid var(--info-color);
-            background-color: rgba(13, 202, 240, 0.2);
-            color: var(--text-color);
         }
 
-        .alert-success {
-            background-color: rgba(25, 135, 84, 0.2);
-            border-left: 4px solid var(--success-color);
-        }
+        .alert-success { background-color: rgba(25, 135, 84, 0.2); border-left-color: var(--success-color); }
+        .alert-danger { background-color: rgba(220, 53, 69, 0.2); border-left-color: var(--danger-color); }
 
-        .alert-danger {
-            background-color: rgba(220, 53, 69, 0.2);
-            border-left: 4px solid var(--danger-color);
-        }
-
-        .alert-warning {
-            background-color: rgba(255, 193, 7, 0.2);
-            border-left: 4px solid var(--warning-color);
-        }
-
-        .alert-info {
-            background-color: rgba(13, 202, 240, 0.2);
-            border-left: 4px solid var(--info-color);
-        }
-
-        /* Estilos para elementos eliminados */
         .deleted-item {
             opacity: 0.8;
             background-color: rgba(220, 53, 69, 0.1);
@@ -449,7 +446,6 @@ if (isset($_POST['vaciar_papelera'])) {
             background-color: rgba(220, 53, 69, 0.2);
         }
 
-        /* Badges para tipos de elementos */
         .badge {
             padding: 0.35rem 0.65rem;
             border-radius: 6px;
@@ -457,44 +453,14 @@ if (isset($_POST['vaciar_papelera'])) {
             font-weight: 600;
         }
 
-        .badge-cliente {
-            background-color: var(--primary-color);
-        }
+        .badge-cliente { background-color: var(--primary-color); }
+        .badge-vehiculo { background-color: var(--info-color); }
+        .badge-material { background-color: var(--warning-color); color: #000; }
+        .badge-servicio { background-color: var(--success-color); }
+        .badge-cotizacion { background-color: #6f42c1; }
+        .badge-trabajo { background-color: #fd7e14; }
+        .badge-mensaje { background-color: #20c997; }
 
-        .badge-vehiculo {
-            background-color: var(--info-color);
-        }
-
-        .badge-material {
-            background-color: var(--warning-color);
-            color: #000;
-        }
-
-        .badge-servicio {
-            background-color: var(--success-color);
-        }
-
-        .badge-cotizacion {
-            background-color: #6f42c1;
-        }
-
-        .badge-trabajo {
-            background-color: #fd7e14;
-        }
-
-        .badge-mensaje {
-            background-color: #20c997;
-        }
-
-        .badge-usuario {
-            background-color: #e83e8c;
-        }
-
-        .badge-rol {
-            background-color: #6c757d;
-        }
-
-        /* Formularios */
         .form-control, .form-select {
             background-color: var(--bg-input);
             border: 1px solid var(--border-color);
@@ -509,35 +475,21 @@ if (isset($_POST['vaciar_papelera'])) {
             color: var(--text-color);
         }
 
-        .form-control::placeholder {
-            color: var(--text-muted);
-        }
-
-        /* Responsive */
         @media (max-width: 768px) {
             .main-container {
                 padding: 1rem;
                 margin: 1rem;
             }
-
             .header-section {
                 flex-direction: column;
                 align-items: flex-start;
             }
-
             .page-title {
                 font-size: 1.5rem;
             }
-            
-            .btn-sm {
-                padding: 0.25rem 0.4rem;
-                font-size: 0.75rem;
-            }
-            
             table {
                 min-width: 600px;
             }
-
             .summary-cards {
                 grid-template-columns: 1fr;
             }
@@ -551,30 +503,21 @@ if (isset($_POST['vaciar_papelera'])) {
             <h1 class="page-title">
                 <i class="fas fa-trash"></i> Sistema de Papelera
             </h1>
-            <div class="d-flex gap-2 align-items-center">
-                <a href="../dashboard.php" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver al Inicio
-                </a>
-            </div>
+            <a href="../dashboard.php" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Inicio
+            </a>
         </div>
 
         <!-- Mensajes -->
         <?php if (!empty($_SESSION['mensaje'])): ?>
             <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
                 <div>
-                    <i class="fas fa-<?=
-                                        $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : 
-                                        ($_SESSION['tipo_mensaje'] === 'danger' ? 'times-circle' : 
-                                        ($_SESSION['tipo_mensaje'] === 'warning' ? 'exclamation-triangle' : 'info-circle'))
-                                        ?> me-2"></i>
+                    <i class="fas fa-<?= $_SESSION['tipo_mensaje'] === 'success' ? 'check-circle' : 'times-circle' ?> me-2"></i>
                     <?= $_SESSION['mensaje'] ?>
                 </div>
                 <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.style.display='none'"></button>
             </div>
-            <?php
-            $_SESSION['mensaje'] = '';
-            $_SESSION['tipo_mensaje'] = '';
-            ?>
+            <?php $_SESSION['mensaje'] = $_SESSION['tipo_mensaje'] = ''; ?>
         <?php endif; ?>
 
         <!-- Estadísticas -->
@@ -603,36 +546,29 @@ if (isset($_POST['vaciar_papelera'])) {
                 <h5 class="m-0"><i class="fas fa-filter me-2"></i>Filtros de Búsqueda</h5>
             </div>
             <div class="card-body">
-                <form method="get" id="filterForm" class="row">
-                    <div class="col-md-4 mb-3">
+                <form method="get" id="filterForm" class="row g-3">
+                    <div class="col-md-4">
                         <label class="form-label">Tipo de Elemento</label>
-                        <select class="form-select" name="tipo" id="tipoFilter">
+                        <select class="form-select" name="tipo" onchange="this.form.submit()">
                             <option value="all">Todos los tipos</option>
-                            <option value="clientes" <?= $tipoFiltro == 'clientes' ? 'selected' : '' ?>>Clientes</option>
-                            <option value="vehiculos" <?= $tipoFiltro == 'vehiculos' ? 'selected' : '' ?>>Vehículos</option>
-                            <option value="materiales" <?= $tipoFiltro == 'materiales' ? 'selected' : '' ?>>Materiales</option>
-                            <option value="servicios" <?= $tipoFiltro == 'servicios' ? 'selected' : '' ?>>Servicios</option>
-                            <option value="cotizaciones" <?= $tipoFiltro == 'cotizaciones' ? 'selected' : '' ?>>Cotizaciones</option>
-                            <option value="trabajos" <?= $tipoFiltro == 'trabajos' ? 'selected' : '' ?>>Trabajos</option>
-                            <option value="mensajes_contacto" <?= $tipoFiltro == 'mensajes_contacto' ? 'selected' : '' ?>>Mensajes</option>
-                            <option value="usuarios" <?= $tipoFiltro == 'usuarios' ? 'selected' : '' ?>>Usuarios</option>
-                            <option value="roles" <?= $tipoFiltro == 'roles' ? 'selected' : '' ?>>Roles</option>
+                            <?php foreach ($tablasConfig as $tabla => $config): ?>
+                                <option value="<?= $tabla ?>" <?= $tipoFiltro == $tabla ? 'selected' : '' ?>>
+                                    <?= ucfirst(str_replace('_', ' ', $tabla)) ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6">
                         <label class="form-label">Buscar en contenido</label>
-                        <input type="text" class="form-control" name="buscar" id="buscarFilter" 
-                               placeholder="Buscar en datos, usuario o ID..." value="<?= htmlspecialchars($buscarTexto) ?>">
-                        <div class="form-text text-light">Busca en datos del elemento, nombre del usuario o ID</div>
+                        <input type="text" class="form-control" name="buscar" value="<?= htmlspecialchars($buscarTexto) ?>"
+                               placeholder="Buscar en datos, usuario o ID...">
                     </div>
-                    <div class="col-md-2 mb-3 d-flex align-items-end">
-                        <div class="w-100">
-                            <?php if ($tipoFiltro !== 'all' || !empty($buscarTexto)): ?>
-                                <a href="papelera.php" class="btn btn-secondary w-100">
-                                    <i class="fas fa-times"></i> Limpiar
-                                </a>
-                            <?php endif; ?>
-                        </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <?php if ($tipoFiltro !== 'all' || !empty($buscarTexto)): ?>
+                            <a href="papelera.php" class="btn btn-secondary w-100">
+                                <i class="fas fa-times"></i> Limpiar
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </form>
             </div>
@@ -642,15 +578,13 @@ if (isset($_POST['vaciar_papelera'])) {
         <div class="card" style="background-color: var(--bg-transparent-light); border: 1px solid var(--border-color);">
             <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--primary-color); border-bottom: 1px solid var(--border-color);">
                 <h5 class="m-0"><i class="fas fa-trash-alt me-2"></i>Registros de Eliminación</h5>
-                <div>
-                    <?php if (!empty($registrosEliminaciones)): ?>
-                    <form method="post" class="d-inline" onsubmit="return confirm('¿Está seguro de que desea vaciar la papelera? Esta acción eliminará permanentemente todos los elementos y no se puede deshacer.')">
+                <?php if (!empty($registrosEliminaciones)): ?>
+                    <form method="post" onsubmit="return confirm('¿Está seguro de que desea vaciar la papelera? Esta acción eliminará permanentemente todos los elementos y no se puede deshacer.')">
                         <button type="submit" name="vaciar_papelera" class="btn btn-danger btn-sm">
                             <i class="fas fa-trash"></i> Vaciar Papelera
                         </button>
                     </form>
-                    <?php endif; ?>
-                </div>
+                <?php endif; ?>
             </div>
             <div class="card-body">
                 <?php if (!empty($registrosEliminaciones)): ?>
@@ -666,11 +600,7 @@ if (isset($_POST['vaciar_papelera'])) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($registrosEliminaciones as $registro): 
-                                    // Determinar clase del badge según la tabla
-                                    $badgeClass = 'badge-' . str_replace('_', '', $registro['tabla']);
-                                    $tipoTexto = ucfirst(str_replace('_', ' ', $registro['tabla']));
-                                ?>
+                                <?php foreach ($registrosEliminaciones as $registro): ?>
                                     <tr class="deleted-item">
                                         <td>
                                             <?= htmlspecialchars($registro['nombre_elemento'] ?? 'Elemento #' . $registro['id_registro']) ?>
@@ -679,23 +609,21 @@ if (isset($_POST['vaciar_papelera'])) {
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <span class="badge <?= $badgeClass ?>">
-                                                <?= $tipoTexto ?>
+                                            <span class="badge badge-<?= str_replace('_', '', $registro['tabla']) ?>">
+                                                <?= ucfirst(str_replace('_', ' ', $registro['tabla'])) ?>
                                             </span>
                                         </td>
-                                        <td>
-                                            <?= htmlspecialchars($registro['usuario_responsable'] ?? 'Sistema') ?>
-                                        </td>
+                                        <td><?= htmlspecialchars($registro['usuario_responsable'] ?? 'Sistema') ?></td>
                                         <td><?= date('d/m/Y H:i', strtotime($registro['fecha_eliminacion'])) ?></td>
                                         <td>
-                                            <form method="post" class="d-inline" onsubmit="return confirm('¿Restaurar este elemento?')">
+                                            <form method="post" class="d-inline" onsubmit="return confirm('¿Restaurar este elemento de <?= ucfirst(str_replace('_', ' ', $registro['tabla'])) ?>?')">
                                                 <input type="hidden" name="id" value="<?= $registro['id_registro'] ?>">
                                                 <input type="hidden" name="tabla" value="<?= $registro['tabla'] ?>">
                                                 <button type="submit" name="restaurar" class="btn btn-success btn-sm">
                                                     <i class="fas fa-undo"></i> Restaurar
                                                 </button>
                                             </form>
-                                            <form method="post" class="d-inline" onsubmit="return confirm('¿Eliminar PERMANENTEMENTE este elemento? Esta acción no se puede deshacer.')">
+                                            <form method="post" class="d-inline" onsubmit="return confirm('¿Eliminar PERMANENTEMENTE este elemento de <?= ucfirst(str_replace('_', ' ', $registro['tabla'])) ?>? Esta acción no se puede deshacer.')">
                                                 <input type="hidden" name="id" value="<?= $registro['id_registro'] ?>">
                                                 <input type="hidden" name="tabla" value="<?= $registro['tabla'] ?>">
                                                 <button type="submit" name="eliminar_permanentemente" class="btn btn-danger btn-sm">
@@ -713,9 +641,6 @@ if (isset($_POST['vaciar_papelera'])) {
                         <i class="fas fa-trash fa-4x mb-3" style="color: var(--text-muted);"></i>
                         <h4 style="color: var(--text-muted);">La papelera está vacía</h4>
                         <p style="color: var(--text-muted);">No hay elementos eliminados que mostrar.</p>
-                        <a href="papelera.php" class="btn btn-primary mt-3">
-                            <i class="fas fa-refresh"></i> Mostrar todo
-                        </a>
                     </div>
                 <?php endif; ?>
             </div>
@@ -724,34 +649,14 @@ if (isset($_POST['vaciar_papelera'])) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Auto-ocultar mensajes después de 5 segundos
         document.addEventListener('DOMContentLoaded', function() {
-            const tipoFilter = document.getElementById('tipoFilter');
-            const buscarFilter = document.getElementById('buscarFilter');
-            const filterForm = document.getElementById('filterForm');
-
-            // Auto-submit cuando cambian los filtros
-            tipoFilter.addEventListener('change', function() {
-                filterForm.submit();
-            });
-
-            // Búsqueda automática con debounce
-            let searchTimeout;
-            buscarFilter.addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(function() {
-                    filterForm.submit();
-                }, 500);
-            });
-
-            // Auto-ocultar mensajes después de 5 segundos
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(function(alert) {
-                setTimeout(function() {
+                setTimeout(() => {
                     if (alert.style.display !== 'none') {
                         alert.style.opacity = '0';
-                        setTimeout(function() {
-                            alert.style.display = 'none';
-                        }, 300);
+                        setTimeout(() => alert.style.display = 'none', 300);
                     }
                 }, 5000);
             });

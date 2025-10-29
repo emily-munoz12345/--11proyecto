@@ -1,10 +1,14 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Configuración de rutas
+define('ROOT_PATH', dirname(__DIR__, 3));
 require_once __DIR__ . '/../../../php/conexion.php';
 require_once __DIR__ . '/../../../php/auth.php';
 
+// Verificar permisos (solo Admin y Técnico)
 if (!isAdmin() && !isTechnician()) {
     header('Location: ../dashboard.php');
     exit;
@@ -16,151 +20,92 @@ if (!isset($_SESSION['mensaje'])) {
     $_SESSION['tipo_mensaje'] = '';
 }
 
-// Obtener parámetros de filtrado
-$filtro_estado = isset($_GET['estado']) ? $_GET['estado'] : '';
-$filtro_cliente = isset($_GET['cliente']) ? $_GET['cliente'] : '';
+// Obtener estadísticas generales (excluyendo eliminados - activos = 1)
+$stats = $conex->query("SELECT 
+    COUNT(*) as total_trabajos,
+    (SELECT CONCAT(cl.nombre_cliente, ' - ', v.marca_vehiculo, ' ', v.modelo_vehiculo) 
+     FROM trabajos t2 
+     LEFT JOIN cotizaciones c ON t2.id_cotizacion = c.id_cotizacion
+     LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+     LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+     WHERE t2.activo = 1 
+     ORDER BY t2.fecha_inicio DESC LIMIT 1) as ultimo_trabajo,
+    (SELECT COUNT(*) FROM trabajos WHERE estado = 'Pendiente' AND activo = 1) as trabajos_pendientes,
+    (SELECT COUNT(*) FROM trabajos WHERE estado = 'En progreso' AND activo = 1) as trabajos_en_progreso,
+    (SELECT COUNT(*) FROM trabajos WHERE estado = 'Entregado' AND activo = 1) as trabajos_entregados,
+    (SELECT COUNT(*) FROM trabajos WHERE activo = 0) as en_papelera
+FROM trabajos WHERE activo = 1")->fetch(PDO::FETCH_ASSOC);
 
-// Construir consulta base
-$sql = "SELECT t.*, c.id_cotizacion, cl.nombre_cliente, 
-        v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo,
-        (SELECT COUNT(*) FROM fotos_trabajos ft WHERE ft.id_trabajos = t.id_trabajos) as num_fotos
-        FROM trabajos t
-        JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
-        JOIN clientes cl ON c.id_cliente = cl.id_cliente
-        JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo";
+// Obtener los 4 trabajos más recientes (excluyendo eliminados - activos = 1)
+$trabajosRecientes = $conex->query("
+    SELECT t.*, c.id_cotizacion, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo
+    FROM trabajos t
+    LEFT JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
+    LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+    LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+    WHERE t.activo = 1 
+    ORDER BY t.fecha_inicio DESC LIMIT 4
+")->fetchAll();
 
-$params = [];
-$conditions = [];
+// Obtener todos los trabajos activos para la pestaña de buscar
+$todosTrabajos = $conex->query("
+    SELECT t.*, c.id_cotizacion, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo
+    FROM trabajos t
+    LEFT JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
+    LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+    LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+    WHERE t.activo = 1 
+    ORDER BY t.fecha_inicio DESC
+")->fetchAll();
 
-// Aplicar filtros
-if (!empty($filtro_estado)) {
-    $conditions[] = "t.estado = ?";
-    $params[] = $filtro_estado;
-}
+// Obtener trabajos en la papelera (eliminados - activos = 0)
+$trabajosEliminar = $conex->query("
+    SELECT t.*, c.id_cotizacion, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo
+    FROM trabajos t
+    LEFT JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
+    LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+    LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+    WHERE t.activo = 0 
+    ORDER BY t.fecha_eliminacion DESC
+")->fetchAll();
 
-if (!empty($filtro_cliente)) {
-    $conditions[] = "cl.nombre_cliente LIKE ?";
-    $params[] = "%$filtro_cliente%";
-}
+// Procesar búsqueda si es una solicitud AJAX
+if (isset($_GET['ajax'])) {
+    header('Content-Type: application/json');
 
-if (!empty($conditions)) {
-    $sql .= " WHERE " . implode(" AND ", $conditions);
-}
-
-$sql .= " ORDER BY t.fecha_inicio DESC, t.id_trabajos DESC";
-
-try {
-    $stmt = $conex->prepare($sql);
-    $stmt->execute($params);
-    $trabajos = $stmt->fetchAll();
-} catch (PDOException $e) {
-    $_SESSION['mensaje'] = 'Error al obtener trabajos: ' . $e->getMessage();
-    $_SESSION['tipo_mensaje'] = 'danger';
-    $trabajos = [];
-}
-
-// Obtener trabajos recientes (últimos 4)
-$trabajosRecientes = [];
-try {
-    $sqlRecientes = "SELECT t.*, c.id_cotizacion, cl.nombre_cliente, 
-                    v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo,
-                    (SELECT COUNT(*) FROM fotos_trabajos ft WHERE ft.id_trabajos = t.id_trabajos) as num_fotos
-                    FROM trabajos t
-                    JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
-                    JOIN clientes cl ON c.id_cliente = cl.id_cliente
-                    JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
-                    ORDER BY t.fecha_inicio DESC LIMIT 4";
-    $stmtRecientes = $conex->query($sqlRecientes);
-    $trabajosRecientes = $stmtRecientes->fetchAll();
-} catch (PDOException $e) {
-    // Error silencioso para trabajos recientes
-}
-
-// Procesar solicitud para cargar detalles de trabajo
-if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
-    $idTrabajo = $_GET['cargar_detalles'];
-    
-    // Obtener información del trabajo
-    $sqlDetalles = "SELECT t.*, c.id_cotizacion, cl.nombre_cliente, cl.telefono_cliente, cl.email_cliente,
-                   v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo, v.anio_vehiculo, v.color_vehiculo,
-                   (SELECT COUNT(*) FROM fotos_trabajos ft WHERE ft.id_trabajos = t.id_trabajos) as num_fotos
-                   FROM trabajos t
-                   JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
-                   JOIN clientes cl ON c.id_cliente = cl.id_cliente
-                   JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
-                   WHERE t.id_trabajos = ?";
-    
-    $stmt = $conex->prepare($sqlDetalles);
-    $stmt->execute([$idTrabajo]);
-    $trabajo = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($trabajo) {
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">ID</div>';
-        echo '<div class="detail-value">' . $trabajo['id_trabajos'] . '</div>';
-        echo '</div>';
-        
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">Cliente</div>';
-        echo '<div class="detail-value">' . htmlspecialchars($trabajo['nombre_cliente']) . '</div>';
-        echo '</div>';
-        
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">Contacto</div>';
-        echo '<div class="detail-value">' . htmlspecialchars($trabajo['telefono_cliente']) . '<br>' . htmlspecialchars($trabajo['email_cliente'] ?? 'N/A') . '</div>';
-        echo '</div>';
-        
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">Vehículo</div>';
-        echo '<div class="detail-value">' . htmlspecialchars($trabajo['marca_vehiculo'] . ' ' . $trabajo['modelo_vehiculo']) . 
-             ' (' . htmlspecialchars($trabajo['placa_vehiculo']) . ')<br>' .
-             'Año: ' . htmlspecialchars($trabajo['anio_vehiculo'] ?? 'N/A') . ', Color: ' . htmlspecialchars($trabajo['color_vehiculo'] ?? 'N/A') . '</div>';
-        echo '</div>';
-        
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">Fecha Inicio</div>';
-        echo '<div class="detail-value">' . date('d/m/Y', strtotime($trabajo['fecha_inicio'])) . '</div>';
-        echo '</div>';
-        
-        if (!empty($trabajo['fecha_fin'])) {
-            echo '<div class="detail-item">';
-            echo '<div class="detail-label">Fecha Fin</div>';
-            echo '<div class="detail-value">' . date('d/m/Y', strtotime($trabajo['fecha_fin'])) . '</div>';
-            echo '</div>';
-        }
-        
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">Estado</div>';
-        echo '<div class="detail-value"><span class="badge badge-' . str_replace(' ', '-', strtolower($trabajo['estado'])) . '">' . $trabajo['estado'] . '</span></div>';
-        echo '</div>';
-        
-        echo '<div class="detail-item">';
-        echo '<div class="detail-label">Fotos</div>';
-        echo '<div class="detail-value">' . $trabajo['num_fotos'] . ' fotos</div>';
-        echo '</div>';
-        
-        if (!empty($trabajo['descripcion'])) {
-            echo '<div class="notes-section">';
-            echo '<div class="detail-label">Descripción</div>';
-            echo '<div class="detail-value">' . nl2br(htmlspecialchars($trabajo['descripcion'])) . '</div>';
-            echo '</div>';
-        }
-    } else {
-        echo '<div class="alert alert-danger">Trabajo no encontrado</div>';
+    if (!isset($_GET['q']) || strlen($_GET['q']) < 2) {
+        echo json_encode([]);
+        exit;
     }
+
+    $searchTerm = '%' . $_GET['q'] . '%';
+    $stmt = $conex->prepare("
+        SELECT t.*, c.id_cotizacion, cl.nombre_cliente, v.marca_vehiculo, v.modelo_vehiculo, v.placa_vehiculo
+        FROM trabajos t
+        LEFT JOIN cotizaciones c ON t.id_cotizacion = c.id_cotizacion
+        LEFT JOIN clientes cl ON c.id_cliente = cl.id_cliente
+        LEFT JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+        WHERE t.activo = 1 
+        AND (cl.nombre_cliente LIKE :search 
+        OR v.placa_vehiculo LIKE :search 
+        OR t.id_trabajos LIKE :search)
+        ORDER BY t.fecha_inicio DESC 
+        LIMIT 10
+    ");
+    $stmt->bindParam(':search', $searchTerm);
+    $stmt->execute();
+
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
     exit;
 }
-
-require_once __DIR__ . '/../../includes/head.php';
-$title = 'Gestión de Trabajos | Nacional Tapizados';
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?></title>
+    <title>Gestión de Trabajos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -170,8 +115,9 @@ $title = 'Gestión de Trabajos | Nacional Tapizados';
             --secondary-color: rgba(108, 117, 125, 0.8);
             --text-color: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
+            --bg-transparent: rgba(0, 0, 0, 0.5);
+            --bg-transparent-light: rgba(0, 0, 0, 0.4);
+            --bg-input: rgba(0, 0, 0, 0.6);
             --border-color: rgba(255, 255, 255, 0.2);
             --success-color: rgba(25, 135, 84, 0.8);
             --danger-color: rgba(220, 53, 69, 0.8);
@@ -196,7 +142,7 @@ $title = 'Gestión de Trabajos | Nacional Tapizados';
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
         }
 
@@ -216,6 +162,7 @@ $title = 'Gestión de Trabajos | Nacional Tapizados';
             font-size: 2rem;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            color: var(--text-color);
         }
 
         .page-title i {
@@ -263,7 +210,7 @@ $title = 'Gestión de Trabajos | Nacional Tapizados';
             padding: 1rem;
             border-radius: 8px;
             border: none;
-            background-color: var(--bg-transparent-light);
+            background-color: var(--bg-input);
             color: var(--text-color);
             font-size: 1rem;
             backdrop-filter: blur(5px);
@@ -274,24 +221,69 @@ $title = 'Gestión de Trabajos | Nacional Tapizados';
         .search-input:focus {
             outline: none;
             box-shadow: 0 0 0 2px var(--primary-color);
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(0, 0, 0, 0.7);
         }
 
         .search-input::placeholder {
             color: var(--text-muted);
         }
 
+        .search-results {
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+            background-color: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .search-result-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .search-result-item:hover {
+            background-color: var(--primary-color);
+        }
+
+        .search-client-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .search-client-info {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .search-client-date {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
         /* Estilos para la lista de trabajos */
-        .work-list {
+        .client-list {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border-color);
             overflow: hidden;
         }
 
-        .work-item {
+        .client-item {
             padding: 1.2rem;
             border-bottom: 1px solid var(--border-color);
             cursor: pointer;
@@ -302,30 +294,39 @@ $title = 'Gestión de Trabajos | Nacional Tapizados';
             position: relative;
         }
 
-        .work-item:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+        .client-item:hover {
+            background-color: rgba(140, 74, 63, 0.3);
         }
 
-        .work-name {
+        .client-name {
             font-weight: 500;
             font-size: 1.1rem;
+            color: var(--text-color);
         }
 
-        .work-description {
+        .client-description {
             font-size: 0.9rem;
             color: var(--text-muted);
             margin-top: 0.3rem;
         }
 
-        .work-arrow {
+        .client-arrow {
             margin-left: 1rem;
             opacity: 0.7;
             transition: all 0.3s ease;
+            color: var(--text-color);
         }
 
-        .work-item:hover .work-arrow {
+        .client-item:hover .client-arrow {
             opacity: 1;
             transform: translateX(3px);
+        }
+
+        /* Estilos para acciones en la lista */
+        .client-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         /* Estilos para tablas */
@@ -334,7 +335,7 @@ $title = 'Gestión de Trabajos | Nacional Tapizados';
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border-color);
         }
 
@@ -365,7 +366,7 @@ $title = 'Gestión de Trabajos | Nacional Tapizados';
         }
 
         tr:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(140, 74, 63, 0.2);
         }
 
         /* Estilos para botones */
@@ -420,232 +421,332 @@ $title = 'Gestión de Trabajos | Nacional Tapizados';
             background-color: rgba(220, 53, 69, 1);
         }
 
-        .btn-outline-secondary {
-            background-color: transparent;
-            border: 1px solid var(--secondary-color);
-            color: var(--text-color);
-        }
-
-        .btn-outline-secondary:hover {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-
-        .btn-outline-danger {
-            background-color: transparent;
-            border: 1px solid var(--danger-color);
-            color: var(--text-color);
-        }
-
-        .btn-outline-danger:hover {
-            background-color: var(--danger-color);
-            color: white;
-        }
-
-        /* Estilos para badges */
-        .badge {
-            padding: 0.35rem 0.65rem;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .badge-pendiente {
-            background-color: var(--warning-color);
-            color: #000;
-        }
-
-        .badge-en-proceso {
+        .btn-info {
             background-color: var(--info-color);
-            color: #000;
+            color: white;
         }
 
-        .badge-completado {
+        .btn-info:hover {
+            background-color: rgba(13, 202, 240, 1);
+        }
+
+        .btn-success {
             background-color: var(--success-color);
             color: white;
         }
 
-        .badge-cancelado {
-            background-color: var(--danger-color);
-            color: white;
+        .btn-success:hover {
+            background-color: rgba(25, 135, 84, 1);
         }
 
-        /* Estilos para tarjetas flotantes */
-        .floating-card {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            padding: 2rem;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: black;
+        }
+
+        .btn-warning:hover {
+            background-color: rgba(255, 193, 7, 1);
+        }
+
+        /* Estilos para tarjetas de resumen */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background-color: var(--bg-transparent-light);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
             border: 1px solid var(--border-color);
-            display: none;
         }
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
+        .summary-card:hover {
+            transform: translateY(-5px);
+            background-color: rgba(140, 74, 63, 0.3);
         }
 
-        .card-title {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
+        .summary-card h3 {
+            margin-top: 0;
+            font-size: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: var(--text-muted);
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: color 0.3s ease;
+            margin-bottom: 0.5rem;
         }
 
-        .close-btn:hover {
+        .summary-card p {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0;
             color: var(--text-color);
         }
 
-        .detail-item {
-            display: flex;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .detail-label {
-            width: 120px;
-            font-weight: 500;
+        .summary-card .summary-description {
+            font-size: 0.85rem;
             color: var(--text-muted);
+            margin-top: 0.5rem;
         }
 
-        .detail-value {
-            flex: 1;
-        }
-
-        .notes-section {
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--border-color);
-        }
-
-        /* Overlay para tarjetas flotantes */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            z-index: 999;
-            display: none;
-        }
-
-        /* Estilos para mensajes */
+        /* Estilos para alertas */
         .alert {
             padding: 1rem;
             border-radius: 8px;
             margin-bottom: 1.5rem;
-            border: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             backdrop-filter: blur(5px);
+            border-left: 4px solid var(--info-color);
+            background-color: rgba(13, 202, 240, 0.2);
+            color: var(--text-color);
         }
 
         .alert-success {
-            background-color: rgba(25, 135, 84, 0.8);
-            color: white;
+            background-color: rgba(25, 135, 84, 0.2);
+            border-left: 4px solid var(--success-color);
         }
 
         .alert-danger {
-            background-color: rgba(220, 53, 69, 0.8);
-            color: white;
+            background-color: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid var(--danger-color);
         }
 
         .alert-warning {
-            background-color: rgba(255, 193, 7, 0.8);
-            color: black;
+            background-color: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning-color);
         }
 
-        /* Estilos para filtros */
-        .filter-container {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
+        .alert-info {
+            background-color: rgba(13, 202, 240, 0.2);
+            border-left: 4px solid var(--info-color);
         }
 
-        .filter-select, .filter-input {
-            padding: 0.5rem;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            background-color: var(--bg-transparent-light);
-            color: var(--text-color);
-            min-width: 180px;
+        /* Estilos para elementos eliminados */
+        .deleted-item {
+            opacity: 0.8;
+            background-color: rgba(220, 53, 69, 0.1);
         }
 
-        .filter-input::placeholder {
-            color: var(--text-muted);
+        .deleted-item:hover {
+            background-color: rgba(220, 53, 69, 0.2);
         }
 
-        /* Estilos para trabajos recientes */
-        .recent-works {
+        .deleted-badge {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        .days-left {
+            font-size: 0.8rem;
+            color: var(--warning-color);
+            margin-top: 0.25rem;
+        }
+
+        /* Estilos para tarjetas de trabajos */
+        .client-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1.5rem;
-            margin-top: 1.5rem;
         }
 
-        .recent-card {
+        .client-card {
             background-color: var(--bg-transparent-light);
             backdrop-filter: blur(8px);
             border-radius: 12px;
             padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--border-color);
             transition: all 0.3s ease;
+            position: relative;
             cursor: pointer;
         }
 
-        .recent-card:hover {
+        .client-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            background-color: rgba(140, 74, 63, 0.2);
         }
 
-        .recent-card-header {
+        .client-card-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 1rem;
         }
 
-        .recent-card-title {
-            font-size: 1.1rem;
-            font-weight: 500;
+        .client-card-title {
             margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color);
         }
 
-        .recent-card-body {
-            color: var(--text-muted);
-            font-size: 0.9rem;
+        .client-card-badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
         }
 
-        .recent-card-footer {
-            margin-top: 1rem;
+        .client-card-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .client-card-detail {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+            color: var(--text-color);
+        }
+
+        .client-card-detail i {
+            color: var(--primary-color);
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Flecha para tarjetas */
+        .edit-arrow {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .edit-arrow:hover {
+            transform: translateX(3px);
+            color: var(--text-color);
+        }
+
+        /* Nueva tarjeta flotante para opciones */
+        .options-floating-card {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background-color: rgba(40, 40, 40, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            z-index: 1001;
+            animation: fadeInUp 0.4s ease;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .options-card-header {
+            background-color: var(--primary-color);
+            padding: 1.2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .options-card-title {
+            margin: 0;
+            font-size: 1.2rem;
+            color: white;
+            font-weight: 500;
+        }
+
+        .options-card-body {
+            padding: 1.5rem;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            padding: 0.9rem 1rem;
+            margin-bottom: 0.8rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            color: var(--text-color);
+            text-decoration: none;
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .option-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .option-item:hover {
+            background-color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .option-item i {
+            margin-right: 0.8rem;
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .option-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-close:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Estilos para tarjetas flotantes */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
         }
 
         /* Responsive */
@@ -654,249 +755,374 @@ $title = 'Gestión de Trabajos | Nacional Tapizados';
                 padding: 1rem;
                 margin: 1rem;
             }
-            
+
             .header-section {
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
             .nav-tabs .nav-link {
                 padding: 0.5rem 1rem;
                 font-size: 0.9rem;
             }
-            
-            .filter-container {
-                flex-direction: column;
+
+            .summary-cards {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             }
-            
-            .filter-select, .filter-input {
-                width: 100%;
+
+            .client-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .options-floating-card {
+                width: 90%;
+                max-width: 300px;
             }
         }
     </style>
 </head>
-<body>
 
-    
+<body>
     <div class="main-container">
+        <!-- Encabezado -->
         <div class="header-section">
-            <h1 class="page-title"><i class="fas fa-tools"></i> GESTIÓN DE TRABAJOS</h1>
-            <a href="create.php" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Nuevo Trabajo
-            </a>
+            <h1 class="page-title">
+                <i class="fas fa-tools"></i>Gestión de Trabajos
+            </h1>
+            <div class="d-flex gap-2">
+                <a href="crear.php" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Trabajo
+                </a>
+                <a href="../../dashboard.php" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
         </div>
 
-        <?php if (!empty($_SESSION['mensaje'])): ?>
-            <div class="alert alert-<?= $_SESSION['tipo_mensaje'] ?>">
-                <?= $_SESSION['mensaje'] ?>
+        <!-- Mensajes de alerta -->
+        <?php if ($_SESSION['mensaje']): ?>
+            <div class="alert alert-<?php echo $_SESSION['tipo_mensaje']; ?>">
+                <span><?php echo $_SESSION['mensaje']; ?></span>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <?php 
+            <?php
+            // Limpiar mensaje después de mostrarlo
             $_SESSION['mensaje'] = '';
             $_SESSION['tipo_mensaje'] = '';
             ?>
         <?php endif; ?>
 
+        <!-- Tarjetas de resumen -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>Total de Trabajos</h3>
+                <p><?php echo $stats['total_trabajos']; ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>Último Trabajo</h3>
+                <p><?php echo $stats['ultimo_trabajo'] ?: 'No hay trabajos'; ?></p>
+                <div class="summary-description">Cliente - Vehículo</div>
+            </div>
+            <div class="summary-card">
+                <h3>Pendientes</h3>
+                <p><?php echo $stats['trabajos_pendientes']; ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>En Progreso</h3>
+                <p><?php echo $stats['trabajos_en_progreso']; ?></p>
+            </div>
+            <div class="summary-card">
+                <h3>En Papelera</h3>
+                <p><?php echo $stats['en_papelera']; ?></p>
+            </div>
+        </div>
+
         <!-- Pestañas de navegación -->
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button" role="tab" aria-controls="search" aria-selected="true">
-                    <i class="fas fa-search me-1"></i> Buscar
+                <button class="nav-link active" id="buscar-tab" data-bs-toggle="tab" data-bs-target="#buscar" type="button" role="tab" aria-controls="buscar" aria-selected="true">
+                    <i class="fas fa-search"></i> Buscar
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab" aria-controls="recent" aria-selected="false">
-                    <i class="fas fa-history me-1"></i> Recientes
+                <button class="nav-link" id="recientes-tab" data-bs-toggle="tab" data-bs-target="#recientes" type="button" role="tab" aria-controls="recientes" aria-selected="false">
+                    <i class="fas fa-clock"></i> Recientes
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="eliminar-tab" data-bs-toggle="tab" data-bs-target="#eliminar" type="button" role="tab" aria-controls="eliminar" aria-selected="false">
+                    <i class="fas fa-trash"></i> Papelera
                 </button>
             </li>
         </ul>
 
+        <!-- Contenido de las pestañas -->
         <div class="tab-content" id="myTabContent">
-            <!-- Pestaña de búsqueda -->
-            <div class="tab-pane fade show active" id="search" role="tabpanel" aria-labelledby="search-tab">
-                <div class="filter-container">
-                    <select class="filter-select" id="filtro-estado">
-                        <option value="">Todos los estados</option>
-                        <option value="Pendiente" <?= $filtro_estado == 'Pendiente' ? 'selected' : '' ?>>Pendiente</option>
-                        <option value="En Proceso" <?= $filtro_estado == 'En Proceso' ? 'selected' : '' ?>>En Proceso</option>
-                        <option value="Completado" <?= $filtro_estado == 'Completado' ? 'selected' : '' ?>>Completado</option>
-                        <option value="Cancelado" <?= $filtro_estado == 'Cancelado' ? 'selected' : '' ?>>Cancelado</option>
-                    </select>
-                    
-                    <input type="text" class="filter-input" id="filtro-cliente" placeholder="Filtrar por cliente" value="<?= htmlspecialchars($filtro_cliente) ?>">
-                    
-                    <button class="btn btn-secondary" id="aplicar-filtros">
-                        <i class="fas fa-filter"></i> Aplicar Filtros
-                    </button>
-                    
-                    <a href="index.php" class="btn btn-outline-secondary">
-                        <i class="fas fa-times"></i> Limpiar
-                    </a>
+
+            <!-- Pestaña Buscar (activa por defecto) -->
+            <div class="tab-pane fade show active" id="buscar" role="tabpanel" aria-labelledby="buscar-tab">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Buscar trabajos por cliente, placa o ID...">
+                    <div id="searchResults" class="search-results"></div>
                 </div>
 
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Cliente</th>
-                                <th>Vehículo</th>
-                                <th>Fecha Inicio</th>
-                                <th>Estado</th>
-                                <th>Fotos</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (count($trabajos) > 0): ?>
-                                <?php foreach ($trabajos as $trabajo): ?>
-                                    <tr>
-                                        <td><?= $trabajo['id_trabajos'] ?></td>
-                                        <td><?= htmlspecialchars($trabajo['nombre_cliente']) ?></td>
-                                        <td><?= htmlspecialchars($trabajo['marca_vehiculo'] . ' ' . $trabajo['modelo_vehiculo'] . ' (' . $trabajo['placa_vehiculo'] . ')') ?></td>
-                                        <td><?= date('d/m/Y', strtotime($trabajo['fecha_inicio'])) ?></td>
-                                        <td>
-                                            <span class="badge badge-<?= str_replace(' ', '-', strtolower($trabajo['estado'])) ?>">
-                                                <?= $trabajo['estado'] ?>
-                                            </span>
-                                        </td>
-                                        <td><?= $trabajo['num_fotos'] ?></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-primary view-details" data-id="<?= $trabajo['id_trabajos'] ?>">
-                                                <i class="fas fa-eye"></i> Ver
-                                            </button>
-                                            <a href="edit.php?id=<?= $trabajo['id_trabajos'] ?>" class="btn btn-sm btn-secondary">
-                                                <i class="fas fa-edit"></i> Editar
-                                            </a>
-                                            <a href="delete.php?id=<?= $trabajo['id_trabajos'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de que deseas eliminar este trabajo?');">
-                                                <i class="fas fa-trash"></i> Eliminar
-                                            </a>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="7" class="text-center py-4">No se encontraron trabajos</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                <div class="client-list" id="allTrabajosList">
+                    <?php foreach ($todosTrabajos as $trabajo): ?>
+                        <div class="client-item" onclick="showOptions(<?php echo $trabajo['id_trabajos']; ?>, '<?php echo htmlspecialchars(addslashes($trabajo['nombre_cliente'])); ?>')">
+                            <div>
+                                <div class="client-name"><?php echo htmlspecialchars($trabajo['nombre_cliente']); ?></div>
+                                <div class="client-description">
+                                    <?php echo htmlspecialchars($trabajo['marca_vehiculo'] . ' ' . $trabajo['modelo_vehiculo']); ?> -
+                                    <?php echo htmlspecialchars($trabajo['placa_vehiculo']); ?> -
+                                    Estado: <?php echo htmlspecialchars($trabajo['estado']); ?>
+                                </div>
+                            </div>
+                            <div class="client-arrow">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
 
-            <!-- Pestaña de trabajos recientes -->
-            <div class="tab-pane fade" id="recent" role="tabpanel" aria-labelledby="recent-tab">
-                <h3 class="mb-4">Trabajos Recientes</h3>
-                
-                <?php if (count($trabajosRecientes) > 0): ?>
-                    <div class="recent-works">
-                        <?php foreach ($trabajosRecientes as $trabajo): ?>
-                            <div class="recent-card" data-id="<?= $trabajo['id_trabajos'] ?>">
-                                <div class="recent-card-header">
-                                    <h4 class="recent-card-title"><?= htmlspecialchars($trabajo['nombre_cliente']) ?></h4>
-                                    <span class="badge badge-<?= str_replace(' ', '-', strtolower($trabajo['estado'])) ?>">
-                                        <?= $trabajo['estado'] ?>
-                                    </span>
+            <!-- Pestaña Recientes -->
+            <div class="tab-pane fade" id="recientes" role="tabpanel" aria-labelledby="recientes-tab">
+                <div class="client-cards">
+                    <?php foreach ($trabajosRecientes as $trabajo): ?>
+                        <div class="client-card" onclick="showOptions(<?php echo $trabajo['id_trabajos']; ?>, '<?php echo htmlspecialchars(addslashes($trabajo['nombre_cliente'])); ?>')">
+                            <div class="client-card-header">
+                                <h3 class="client-card-title"><?php echo htmlspecialchars($trabajo['nombre_cliente']); ?></h3>
+                                <span class="client-card-badge"><?php echo htmlspecialchars($trabajo['estado']); ?></span>
+                            </div>
+                            <div class="client-card-body">
+                                <div class="client-card-detail">
+                                    <i class="fas fa-car"></i>
+                                    <span><?php echo htmlspecialchars($trabajo['marca_vehiculo'] . ' ' . $trabajo['modelo_vehiculo']); ?></span>
                                 </div>
-                                <div class="recent-card-body">
-                                    <p><strong>Vehículo:</strong> <?= htmlspecialchars($trabajo['marca_vehiculo'] . ' ' . $trabajo['modelo_vehiculo']) ?></p>
-                                    <p><strong>Placa:</strong> <?= htmlspecialchars($trabajo['placa_vehiculo']) ?></p>
-                                    <p><strong>Inicio:</strong> <?= date('d/m/Y', strtotime($trabajo['fecha_inicio'])) ?></p>
+                                <div class="client-card-detail">
+                                    <i class="fas fa-tag"></i>
+                                    <span><?php echo htmlspecialchars($trabajo['placa_vehiculo']); ?></span>
                                 </div>
-                                <div class="recent-card-footer">
-                                    <span><?= $trabajo['num_fotos'] ?> fotos</span>
-                                    <button class="btn btn-sm btn-primary view-details" data-id="<?= $trabajo['id_trabajos'] ?>">
-                                        <i class="fas fa-eye"></i> Detalles
-                                    </button>
+                                <div class="client-card-detail">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Inicio: <?php echo date('d/m/Y', strtotime($trabajo['fecha_inicio'])); ?></span>
+                                </div>
+                                <?php if ($trabajo['fecha_fin'] && $trabajo['fecha_fin'] != '0000-00-00'): ?>
+                                    <div class="client-card-detail">
+                                        <i class="fas fa-calendar-check"></i>
+                                        <span>Fin: <?php echo date('d/m/Y', strtotime($trabajo['fecha_fin'])); ?></span>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="edit-arrow">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <!-- Pestaña Papelera -->
+            <div class="tab-pane fade" id="eliminar" role="tabpanel" aria-labelledby="eliminar-tab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <?php if (isAdmin() && count($trabajosEliminar) > 0): ?>
+                        <a href="vaciar_papelera.php" class="btn btn-outline-warning btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente todos los trabajos de la papelera y no se podrán recuperar.')">
+                            <i class="fas fa-broom me-1"></i> Vaciar papelera
+                        </a>
+                    <?php endif; ?>
+                </div>
+
+                <?php if (count($trabajosEliminar) > 0): ?>
+                    <div class="client-list">
+                        <?php foreach ($trabajosEliminar as $trabajo): ?>
+                            <div class="client-item deleted-item">
+                                <div class="client-info">
+                                    <div class="client-name"><?php echo htmlspecialchars($trabajo['nombre_cliente']); ?></div>
+                                    <div class="client-description">
+                                        <?php echo htmlspecialchars($trabajo['marca_vehiculo'] . ' ' . $trabajo['modelo_vehiculo']); ?> ·
+                                        <?php echo htmlspecialchars($trabajo['placa_vehiculo']); ?> ·
+                                        Estado: <?php echo htmlspecialchars($trabajo['estado']); ?>
+                                        <br>
+                                        <small>Eliminado: <?php echo $trabajo['fecha_eliminacion'] ? date('d/m/Y H:i', strtotime($trabajo['fecha_eliminacion'])) : 'Fecha no disponible'; ?></small>
+                                    </div>
+                                </div>
+                                <div class="client-actions">
+                                    <a href="restaurar.php?id=<?= $trabajo['id_trabajos'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar trabajo de <?= htmlspecialchars(addslashes($trabajo['nombre_cliente'])) ?>?')">
+                                        <i class="fas fa-undo"></i> Restaurar
+                                    </a>
+                                    <?php if (isAdmin()): ?>
+                                        <a href="eliminar_permanentemente.php?id=<?= $trabajo['id_trabajos'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente el trabajo de <?= htmlspecialchars(addslashes($trabajo['nombre_cliente'])) ?> y no se podrá recuperar.')">
+                                            <i class="fas fa-trash"></i> Eliminar
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <div class="alert alert-info">
-                        No hay trabajos recientes para mostrar.
+                    <div class="text-center py-5">
+                        <i class="fas fa-trash-alt fa-3x mb-3" style="color: var(--text-muted);"></i>
+                        <h4 style="color: var(--text-muted);">La papelera está vacía</h4>
+                        <p style="color: var(--text-muted);">No hay trabajos eliminados</p>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 
-    <!-- Tarjeta flotante para detalles -->
+    <!-- Tarjeta flotante de opciones -->
     <div class="overlay" id="overlay"></div>
-    <div class="floating-card" id="details-card">
-        <div class="card-header">
-            <h3 class="card-title">Detalles del Trabajo</h3>
-            <button class="close-btn" id="close-details">&times;</button>
+    <div class="options-floating-card" id="optionsCard">
+        <button class="option-close" onclick="closeOptions()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="options-card-header">
+            <h3 class="options-card-title" id="optionsTitle">Opciones</h3>
         </div>
-        <div class="card-body" id="details-content">
-            <!-- Los detalles se cargarán aquí mediante AJAX -->
+        <div class="options-card-body">
+            <a href="#" class="option-item" id="viewOption">
+                <i class="fas fa-eye"></i> Ver Detalles
+            </a>
+            <a href="#" class="option-item" id="editOption">
+                <i class="fas fa-edit"></i> Editar Trabajo
+            </a>
+            <a href="#" class="option-item" id="deleteOption">
+                <i class="fas fa-trash"></i> Mover a Papelera
+            </a>
+            <a href="#" class="option-item" id="cotizacionOption">
+                <i class="fas fa-file-invoice-dollar"></i> Ver Cotización
+            </a>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const overlay = document.getElementById('overlay');
-            const detailsCard = document.getElementById('details-card');
-            const detailsContent = document.getElementById('details-content');
-            const closeDetailsBtn = document.getElementById('close-details');
-            
-            // Función para mostrar detalles
-            function showDetails(id) {
-                fetch(`?cargar_detalles=${id}`)
-                    .then(response => response.text())
-                    .then(data => {
-                        detailsContent.innerHTML = data;
-                        detailsCard.style.display = 'block';
-                        overlay.style.display = 'block';
-                        document.body.style.overflow = 'hidden';
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        detailsContent.innerHTML = '<div class="alert alert-danger">Error al cargar los detalles</div>';
-                    });
+        // Variables globales
+        let currentTrabajoId = null;
+        let currentTrabajoName = '';
+
+        // Función para mostrar opciones de trabajo
+        function showOptions(trabajoId, trabajoName) {
+            currentTrabajoId = trabajoId;
+            currentTrabajoName = trabajoName;
+
+            // Actualizar título
+            document.getElementById('optionsTitle').textContent = 'Opciones: ' + trabajoName;
+
+            // Actualizar enlaces
+            document.getElementById('viewOption').href = 'ver.php?id=' + trabajoId;
+            document.getElementById('editOption').href = 'editar.php?id=' + trabajoId;
+            document.getElementById('deleteOption').href = 'javascript:void(0);';
+            document.getElementById('deleteOption').onclick = function() {
+                eliminarTrabajo(trabajoId);
+            };
+            document.getElementById('cotizacionOption').href = '../cotizaciones/ver.php?id=' + trabajoId;
+
+            // Mostrar tarjeta y overlay
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('optionsCard').style.display = 'block';
+        }
+
+        // Función para cerrar opciones
+        function closeOptions() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('optionsCard').style.display = 'none';
+            currentTrabajoId = null;
+            currentTrabajoName = '';
+        }
+
+        // Cerrar al hacer clic en el overlay
+        document.getElementById('overlay').addEventListener('click', closeOptions);
+
+        // Función para eliminar trabajo (mover a papelera)
+        function eliminarTrabajo(id) {
+            if (confirm('¿Estás seguro de que quieres mover este trabajo a la papelera?')) {
+                window.location.href = 'eliminar.php?id=' + id;
             }
-            
-            // Event listeners para botones de ver detalles
-            document.querySelectorAll('.view-details').forEach(button => {
-                button.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    showDetails(id);
+        }
+
+        // Función para restaurar trabajo desde la papelera
+        function restaurarTrabajo(id) {
+            if (confirm('¿Estás seguro de que quieres restaurar este trabajo?')) {
+                window.location.href = 'restaurar.php?id=' + id;
+            }
+        }
+
+        // Función para eliminar permanentemente
+        function eliminarPermanente(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar permanentemente este trabajo? Esta acción no se puede deshacer.')) {
+                window.location.href = 'eliminar_permanentemente.php?id=' + id;
+            }
+        }
+
+        // Función para vaciar la papelera
+        function vaciarPapelera() {
+            if (confirm('¿Estás seguro de que quieres vaciar la papelera? Todos los trabajos eliminados se perderán permanentemente.')) {
+                window.location.href = 'vaciar_papelera.php';
+            }
+        }
+
+        // Búsqueda en tiempo real
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const query = this.value.trim();
+            const resultsContainer = document.getElementById('searchResults');
+
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            fetch('?ajax=1&q=' + encodeURIComponent(query))
+                .then(response => response.json())
+                .then(data => {
+                    resultsContainer.innerHTML = '';
+
+                    if (data.length === 0) {
+                        resultsContainer.innerHTML = '<div class="search-result-item">No se encontraron resultados</div>';
+                    } else {
+                        data.forEach(trabajo => {
+                            const resultItem = document.createElement('div');
+                            resultItem.className = 'search-result-item';
+                            resultItem.innerHTML = `
+                                <div>
+                                    <div class="search-client-name">${trabajo.nombre_cliente}</div>
+                                    <div class="search-client-info">${trabajo.marca_vehiculo} ${trabajo.modelo_vehiculo} - ${trabajo.placa_vehiculo}</div>
+                                    <div class="search-client-date">Estado: ${trabajo.estado}</div>
+                                </div>
+                                <div class="client-arrow">
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            `;
+                            resultItem.addEventListener('click', () => {
+                                showOptions(trabajo.id_trabajos, trabajo.nombre_cliente);
+                                resultsContainer.style.display = 'none';
+                                document.getElementById('searchInput').value = '';
+                            });
+                            resultsContainer.appendChild(resultItem);
+                        });
+                    }
+
+                    resultsContainer.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error en la búsqueda:', error);
+                    resultsContainer.innerHTML = '<div class="search-result-item">Error en la búsqueda</div>';
+                    resultsContainer.style.display = 'block';
                 });
-            });
-            
-            // Event listeners para tarjetas recientes
-            document.querySelectorAll('.recent-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    showDetails(id);
-                });
-            });
-            
-            // Cerrar tarjeta de detalles
-            closeDetailsBtn.addEventListener('click', function() {
-                detailsCard.style.display = 'none';
-                overlay.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            });
-            
-            overlay.addEventListener('click', function() {
-                detailsCard.style.display = 'none';
-                overlay.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            });
-            
-            // Aplicar filtros
-            document.getElementById('aplicar-filtros').addEventListener('click', function() {
-                const estado = document.getElementById('filtro-estado').value;
-                const cliente = document.getElementById('filtro-cliente').value;
-                
-                let url = 'index.php?';
-                if (estado) url += `estado=${estado}&`;
-                if (cliente) url += `cliente=${encodeURIComponent(cliente)}`;
-                
-                window.location.href = url;
-            });
+        });
+
+        // Ocultar resultados al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                document.getElementById('searchResults').style.display = 'none';
+            }
         });
     </script>
 </body>
+
 </html>

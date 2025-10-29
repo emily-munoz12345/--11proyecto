@@ -96,7 +96,7 @@ $stats = $conex->query("SELECT
 FROM usuarios")->fetch(PDO::FETCH_ASSOC);
 
 // Obtener los 8 usuarios más recientes (activos e inactivos)
-$usuariosRecientes = $conex->query("SELECT u.*, r.nombre_rol FROM usuarios u JOIN roles r ON u.id_rol = r.id_rol ORDER BY u.fecha_creacion DESC LIMIT 8")->fetchAll();
+$usuariosRecientes = $conex->query("SELECT u.*, r.nombre_rol FROM usuarios u JOIN roles r ON u.id_rol = r.id_rol ORDER BY u.fecha_creacion DESC LIMIT 4")->fetchAll();
 
 // Obtener todos los usuarios activos para las pestañas
 $todosUsuarios = $conex->query("SELECT u.*, r.nombre_rol FROM usuarios u JOIN roles r ON u.id_rol = r.id_rol WHERE u.activo = 1 ORDER BY u.nombre_completo ASC")->fetchAll();

@@ -526,11 +526,11 @@ if (isset($_GET['ajax'])) {
             opacity: 0.8;
             background-color: rgba(220, 53, 69, 0.1);
         }
-        
+
         .deleted-item:hover {
             background-color: rgba(220, 53, 69, 0.2);
         }
-        
+
         .deleted-badge {
             background-color: var(--danger-color);
             color: white;
@@ -539,7 +539,7 @@ if (isset($_GET['ajax'])) {
             font-size: 0.75rem;
             margin-left: 0.5rem;
         }
-        
+
         .days-left {
             font-size: 0.8rem;
             color: var(--warning-color);
@@ -735,6 +735,7 @@ if (isset($_GET['ajax'])) {
                 opacity: 0;
                 transform: translate(-50%, -40%);
             }
+
             to {
                 opacity: 1;
                 transform: translate(-50%, -50%);
@@ -852,7 +853,7 @@ if (isset($_GET['ajax'])) {
 
         <!-- Contenido de las pestañas -->
         <div class="tab-content" id="myTabContent">
-            
+
             <!-- Pestaña Buscar (activa por defecto) -->
             <div class="tab-pane fade show active" id="buscar" role="tabpanel" aria-labelledby="buscar-tab">
                 <div class="search-container">
@@ -866,8 +867,8 @@ if (isset($_GET['ajax'])) {
                             <div>
                                 <div class="client-name"><?php echo htmlspecialchars($cotizacion['nombre_cliente']); ?></div>
                                 <div class="client-description">
-                                    <?php echo htmlspecialchars($cotizacion['marca_vehiculo'] . ' ' . $cotizacion['modelo_vehiculo']); ?> - 
-                                    <?php echo htmlspecialchars($cotizacion['placa_vehiculo']); ?> - 
+                                    <?php echo htmlspecialchars($cotizacion['marca_vehiculo'] . ' ' . $cotizacion['modelo_vehiculo']); ?> -
+                                    <?php echo htmlspecialchars($cotizacion['placa_vehiculo']); ?> -
                                     $<?php echo number_format($cotizacion['total_cotizacion'], 2); ?>
                                 </div>
                             </div>
@@ -914,51 +915,51 @@ if (isset($_GET['ajax'])) {
                 </div>
             </div>
 
-<!-- Pestaña Papelera (ACTUALIZADA) -->
-<div class="tab-pane fade" id="eliminar" role="tabpanel" aria-labelledby="eliminar-tab">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <?php if (isAdmin() && count($cotizacionesEliminar) > 0): ?>
-            <button type="button" class="btn btn-outline-warning btn-sm" onclick="vaciarPapelera()">
-                <i class="fas fa-broom me-1"></i> Vaciar papelera
-            </button>
-        <?php endif; ?>
-    </div>
-    
-    <?php if (count($cotizacionesEliminar) > 0): ?>
-        <div class="client-list">
-            <?php foreach ($cotizacionesEliminar as $cotizacion): ?>
-                <div class="client-item deleted-item">
-                    <div class="client-info">
-                        <div class="client-name"><?php echo htmlspecialchars($cotizacion['nombre_cliente']); ?></div>
-                        <div class="client-description">
-                            <?php echo htmlspecialchars($cotizacion['marca_vehiculo'] . ' ' . $cotizacion['modelo_vehiculo']); ?> · 
-                            <?php echo htmlspecialchars($cotizacion['placa_vehiculo']); ?> · 
-                            $<?php echo number_format($cotizacion['total_cotizacion'], 2); ?>
-                            <br>
-                            <small>Eliminado: <?php echo $cotizacion['fecha_eliminacion'] ? date('d/m/Y H:i', strtotime($cotizacion['fecha_eliminacion'])) : 'Fecha no disponible'; ?></small>
-                        </div>
-                    </div>
-                    <div class="client-actions">
-                        <a href="restaurar.php?id=<?= $cotizacion['id_cotizacion'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar cotización de <?= htmlspecialchars(addslashes($cotizacion['nombre_cliente'])) ?>?')">
-                            <i class="fas fa-undo"></i> Restaurar
-                        </a>
-                        <?php if (isAdmin()): ?>
-                        <a href="eliminar_permanentemente.php?id=<?= $cotizacion['id_cotizacion'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente la cotización de <?= htmlspecialchars(addslashes($cotizacion['nombre_cliente'])) ?> y no se podrá recuperar.')">
-                            <i class="fas fa-trash"></i> Eliminar
-                        </a>
-                        <?php endif; ?>
-                    </div>
+            <!-- Pestaña Papelera (ACTUALIZADA) -->
+            <div class="tab-pane fade" id="eliminar" role="tabpanel" aria-labelledby="eliminar-tab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <?php if (isAdmin() && count($cotizacionesEliminar) > 0): ?>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="vaciarPapelera()">
+                            <i class="fas fa-broom me-1"></i> Vaciar papelera
+                        </button>
+                    <?php endif; ?>
                 </div>
-            <?php endforeach; ?>
-        </div>
-    <?php else: ?>
-        <div class="text-center py-5">
-            <i class="fas fa-trash-alt fa-3x mb-3" style="color: var(--text-muted);"></i>
-            <h4 style="color: var(--text-muted);">La papelera está vacía</h4>
-            <p style="color: var(--text-muted);">No hay cotizaciones eliminadas</p>
-        </div>
-    <?php endif; ?>
-</div>
+
+                <?php if (count($cotizacionesEliminar) > 0): ?>
+                    <div class="client-list">
+                        <?php foreach ($cotizacionesEliminar as $cotizacion): ?>
+                            <div class="client-item deleted-item">
+                                <div class="client-info">
+                                    <div class="client-name"><?php echo htmlspecialchars($cotizacion['nombre_cliente']); ?></div>
+                                    <div class="client-description">
+                                        <?php echo htmlspecialchars($cotizacion['marca_vehiculo'] . ' ' . $cotizacion['modelo_vehiculo']); ?> ·
+                                        <?php echo htmlspecialchars($cotizacion['placa_vehiculo']); ?> ·
+                                        $<?php echo number_format($cotizacion['total_cotizacion'], 2); ?>
+                                        <br>
+                                        <small>Eliminado: <?php echo $cotizacion['fecha_eliminacion'] ? date('d/m/Y H:i', strtotime($cotizacion['fecha_eliminacion'])) : 'Fecha no disponible'; ?></small>
+                                    </div>
+                                </div>
+                                <div class="client-actions">
+                                    <a href="restaurar.php?id=<?= $cotizacion['id_cotizacion'] ?>" class="btn btn-success btn-sm" onclick="return confirm('¿Restaurar cotización de <?= htmlspecialchars(addslashes($cotizacion['nombre_cliente'])) ?>?')">
+                                        <i class="fas fa-undo"></i> Restaurar
+                                    </a>
+                                    <?php if (isAdmin()): ?>
+                                        <a href="eliminar_permanentemente.php?id=<?= $cotizacion['id_cotizacion'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('¿ESTÁS SEGURO? Esta acción eliminará permanentemente la cotización de <?= htmlspecialchars(addslashes($cotizacion['nombre_cliente'])) ?> y no se podrá recuperar.')">
+                                            <i class="fas fa-trash"></i> Eliminar
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="text-center py-5">
+                        <i class="fas fa-trash-alt fa-3x mb-3" style="color: var(--text-muted);"></i>
+                        <h4 style="color: var(--text-muted);">La papelera está vacía</h4>
+                        <p style="color: var(--text-muted);">No hay cotizaciones eliminadas</p>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
@@ -994,15 +995,15 @@ if (isset($_GET['ajax'])) {
         function showOptions(id, name) {
             currentCotizacionId = id;
             currentCotizacionName = name;
-            
+
             // Actualizar título
             document.getElementById('optionsTitle').textContent = name;
-            
+
             // Actualizar enlaces
             document.getElementById('viewOption').href = `ver.php?id=${id}`;
             document.getElementById('editOption').href = `editar.php?id=${id}`;
             document.getElementById('deleteOption').href = `eliminar.php?id=${id}`;
-            
+
             // Mostrar overlay y tarjeta
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('optionsCard').style.display = 'block';
@@ -1027,17 +1028,17 @@ if (isset($_GET['ajax'])) {
         document.getElementById('searchInput').addEventListener('input', function() {
             const query = this.value.trim();
             const resultsContainer = document.getElementById('searchResults');
-            
+
             if (query.length < 2) {
                 resultsContainer.style.display = 'none';
                 return;
             }
-            
+
             fetch(`?ajax=1&q=${encodeURIComponent(query)}`)
                 .then(response => response.json())
                 .then(data => {
                     resultsContainer.innerHTML = '';
-                    
+
                     if (data.length === 0) {
                         resultsContainer.innerHTML = '<div class="search-result-item">No se encontraron resultados</div>';
                     } else {
@@ -1063,7 +1064,7 @@ if (isset($_GET['ajax'])) {
                             resultsContainer.appendChild(item);
                         });
                     }
-                    
+
                     resultsContainer.style.display = 'block';
                 })
                 .catch(error => {
