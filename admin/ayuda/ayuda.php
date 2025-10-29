@@ -1,41 +1,40 @@
-<?php
-require_once __DIR__ . '../../../php/conexion.php';
-require_once __DIR__ . '../../../php/auth.php';
-require_once __DIR__ . '../../includes/head.php';
-?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ayuda Administrativa | Nacional Tapizados</title>
-    <!-- Font Awesome -->
+    <title>Sistema de Ayuda - Gestión de Clientes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Biblioteca para generar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
-            --primary-color: rgba(140, 74, 63, 0.8);
+            --primary-color: rgba(140, 74, 63, 0.9);
             --primary-hover: rgba(140, 74, 63, 1);
+            --secondary-color: rgba(108, 117, 125, 0.9);
             --text-color: #ffffff;
-            --text-muted: rgba(255, 255, 255, 0.7);
-            --bg-transparent: rgba(255, 255, 255, 0.1);
-            --bg-transparent-light: rgba(255, 255, 255, 0.15);
-            --border-color: rgba(255, 255, 255, 0.2);
-            --success-color: #28a745;
-            --link-color: #4CAF50;
+            --text-light: #f8f9fa;
+            --text-muted: rgba(255, 255, 255, 0.85);
+            --bg-transparent: rgba(30, 30, 30, 0.85);
+            --bg-transparent-light: rgba(50, 50, 50, 0.7);
+            --bg-input: rgba(0, 0, 0, 0.6);
+            --border-color: rgba(255, 255, 255, 0.3);
+            --success-color: rgba(25, 135, 84, 0.9);
+            --danger-color: rgba(220, 53, 69, 0.9);
+            --warning-color: rgba(255, 193, 7, 0.9);
+            --info-color: rgba(13, 202, 240, 0.9);
         }
-        
+
         body {
             background-image: url('https://pfst.cf2.poecdn.net/base/image/60ab54eef562f30f85a67bde31f924f078199dae0b7bc6c333dfb467a2c13471?w=1024&h=768&pmaid=442168253');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-light);
             min-height: 100vh;
+            line-height: 1.6;
         }
 
         .main-container {
@@ -45,7 +44,7 @@ require_once __DIR__ . '../../includes/head.php';
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             border: 1px solid var(--border-color);
         }
 
@@ -62,9 +61,10 @@ require_once __DIR__ . '../../includes/head.php';
 
         .page-title {
             margin: 0;
-            font-size: 2rem;
-            font-weight: 600;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            color: var(--text-light);
         }
 
         .page-title i {
@@ -72,22 +72,199 @@ require_once __DIR__ . '../../includes/head.php';
             color: var(--primary-color);
         }
 
-        /* Estilos para pestañas */
-        .nav-tabs {
+        .user-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .help-section {
+            margin-bottom: 2.5rem;
+            padding: 2rem;
+            background-color: var(--bg-transparent-light);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .help-section h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary-color);
+            font-weight: 600;
+        }
+
+        .help-section h3 {
+            color: var(--text-light);
+            margin-top: 1.8rem;
+            margin-bottom: 1.2rem;
+            font-weight: 600;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+        }
+
+        .help-section h4 {
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .help-section p {
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, var(--bg-transparent-light) 0%, rgba(70, 70, 70, 0.6) 100%);
+            border-radius: 10px;
+            padding: 1.8rem;
+            margin-bottom: 1.8rem;
+            border-left: 5px solid var(--primary-color);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            border-left: 5px solid var(--primary-hover);
+        }
+
+        .feature-card h5 {
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .feature-card h5 i {
+            margin-right: 12px;
+            color: var(--primary-color);
+            font-size: 1.3rem;
+        }
+
+        .step-list {
+            list-style-type: none;
+            padding-left: 0;
+            counter-reset: step;
+        }
+
+        .step-list li {
+            margin-bottom: 1.2rem;
+            padding-left: 2.5rem;
+            position: relative;
+            color: var(--text-light);
+            font-size: 1.05rem;
+        }
+
+        .step-list li:before {
+            content: counter(step);
+            counter-increment: step;
+            position: absolute;
+            left: 0;
+            top: 0;
+            background-color: var(--primary-color);
+            color: white;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .permission-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .permission-table th,
+        .permission-table td {
+            padding: 1rem;
+            text-align: left;
             border-bottom: 1px solid var(--border-color);
-            margin-bottom: 2rem;
+            color: var(--text-light);
+        }
+
+        .permission-table th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        .permission-table tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .permission-table tr:hover {
+            background-color: rgba(140, 74, 63, 0.2);
+        }
+
+        .btn-help {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+
+        .btn-help:hover {
+            background-color: var(--primary-hover);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-pdf {
+            background-color: var(--danger-color);
+        }
+
+        .btn-pdf:hover {
+            background-color: rgba(220, 53, 69, 1);
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 2.5rem;
         }
 
         .nav-link {
             color: var(--text-muted);
             border: none;
-            padding: 0.75rem 1.5rem;
+            padding: 1rem 1.8rem;
             font-weight: 500;
             transition: all 0.3s ease;
+            font-size: 1.05rem;
+            border-radius: 8px 8px 0 0;
         }
 
         .nav-link:hover {
-            color: var(--text-color);
+            color: var(--text-light);
             background-color: var(--bg-transparent-light);
         }
 
@@ -95,480 +272,637 @@ require_once __DIR__ . '../../includes/head.php';
             color: white;
             background-color: var(--primary-color);
             border-radius: 8px 8px 0 0;
+            font-weight: 600;
         }
 
         .tab-content {
             padding: 1.5rem 0;
         }
 
-        /* Estilos para tarjetas */
-        .help-card {
-            background-color: var(--bg-transparent-light);
-            backdrop-filter: blur(8px);
-            border-radius: 12px;
-            padding: 1.5rem;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            height: 100%;
-        }
-
-        .help-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .help-card-header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .help-card-icon {
-            width: 50px;
-            height: 50px;
-            background-color: rgba(140, 74, 63, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary-color);
-            font-size: 1.5rem;
-        }
-
-        .help-card-title {
-            margin: 0;
-            font-size: 1.4rem;
-            font-weight: 600;
-        }
-
-        .help-card-body {
-            margin-bottom: 1rem;
-        }
-
-        /* FAQ */
-        .faq-item {
-            margin-bottom: 1.5rem;
-            padding: 1.5rem;
-            background-color: rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .faq-item:hover {
-            background-color: rgba(255, 255, 255, 0.12);
-        }
-
-        .faq-item h3 {
-            margin-top: 0;
-            margin-bottom: 1rem;
-            font-size: 1.2rem;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .faq-item h3 span {
-            background-color: var(--primary-color);
-            color: white;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-        }
-
-        .faq-item p {
-            margin: 0;
-            line-height: 1.6;
-            color: var(--text-muted);
-        }
-
-        /* Contacto */
-        .contact-method {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            padding: 1rem;
-            background-color: rgba(255, 255, 255, 0.05);
+        .simple-explanation {
+            background-color: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid var(--info-color);
         }
 
-        .contact-method i {
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            width: 40px;
-            height: 40px;
-            background-color: rgba(140, 74, 63, 0.2);
-            border-radius: 50%;
+        .simple-explanation h5 {
+            color: var(--info-color);
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 0.5rem;
         }
 
-        .contact-method div h4 {
-            margin: 0 0 0.3rem;
-            font-size: 1.1rem;
+        .warning-box {
+            background-color: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid var(--warning-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
         }
 
-        .contact-method div p {
-            margin: 0;
-            color: var(--text-muted);
+        .info-box {
+            background-color: rgba(13, 202, 240, 0.2);
+            border-left: 4px solid var(--info-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
         }
 
-        .contact-method a {
-            color: var(--link-color);
-            text-decoration: none;
-            transition: all 0.2s ease;
+        .quick-access {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
         }
 
-        .contact-method a:hover {
-            color: var(--primary-color);
-            text-decoration: underline;
-        }
-
-        /* Recursos */
-        .resource-card {
-            background-color: var(--bg-transparent-light);
+        .quick-card {
+            background: linear-gradient(135deg, var(--bg-transparent-light) 0%, rgba(70, 70, 70, 0.6) 100%);
             border-radius: 10px;
             padding: 1.5rem;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             text-align: center;
-            height: 100%;
-        }
-
-        .resource-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .resource-icon {
-            width: 60px;
-            height: 60px;
-            background-color: rgba(76, 175, 80, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem;
-            color: var(--link-color);
-            font-size: 1.5rem;
-        }
-
-        .resource-card h3 {
-            margin: 0 0 1rem;
-            font-size: 1.1rem;
-        }
-
-        .resource-card p {
-            flex-grow: 1;
-            margin-bottom: 1rem;
-            color: var(--text-muted);
-        }
-
-        .resource-card a {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background-color: var(--primary-color);
-            color: white;
-            border-radius: 6px;
-            text-decoration: none;
             transition: all 0.3s ease;
-        }
-
-        .resource-card a:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-2px);
-        }
-
-        /* Botones */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            border: none;
+            border: 1px solid var(--border-color);
             cursor: pointer;
-            font-size: 0.85rem;
-            gap: 0.5rem;
         }
 
-        .btn i {
-            font-size: 0.9rem;
+        .quick-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            border-color: var(--primary-color);
         }
 
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
+        .quick-card i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
         }
 
-        .btn-primary:hover {
-            background-color: var(--primary-hover);
+        .quick-card h4 {
+            color: var(--text-light);
+            margin-bottom: 1rem;
         }
 
-        .btn-secondary {
-            background-color: rgba(108, 117, 125, 0.8);
-            color: white;
+        .quick-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
         }
 
-        .btn-secondary:hover {
-            background-color: rgba(108, 117, 125, 1);
+        .role-restricted {
+            display: none;
         }
 
-        /* Responsive */
+        .admin-only {
+            display: none;
+        }
+
+        .seller-only {
+            display: none;
+        }
+
         @media (max-width: 768px) {
             .main-container {
+                padding: 1rem;
                 margin: 1rem;
-                padding: 1.5rem;
             }
-            
+
             .header-section {
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
-            .nav-tabs {
-                flex-wrap: wrap;
+
+            .page-title {
+                font-size: 1.8rem;
             }
-            
+
             .nav-link {
-                border-radius: 8px;
-                margin-bottom: 0.5rem;
+                padding: 0.8rem 1.2rem;
+                font-size: 0.95rem;
             }
+
+            .quick-access {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Estilos para el contenido del PDF */
+        .pdf-content {
+            background: white;
+            color: #333;
+            padding: 2rem;
+            font-family: Arial, sans-serif;
+        }
+
+        .pdf-content h1, .pdf-content h2, .pdf-content h3 {
+            color: #8c4a3f;
+        }
+
+        .pdf-content .feature-card {
+            background: #f8f9fa;
+            border-left: 5px solid #8c4a3f;
         }
     </style>
 </head>
-<body class="admin-body">
-    <div class="admin-container-center">
-        <!-- Sidebar -->
-        <?php include __DIR__ . '../../includes/sidebar.php'; ?>
-        
-        <!-- Contenido principal -->
-        <main class="admin-main">
-            <div class="main-container">
-                <!-- Encabezado -->
-                <div class="header-section">
-                    <h1 class="page-title">
-                        <i class="fas fa-headset"></i> Soporte Administrativo
-                    </h1>
-                    <div class="d-flex gap-2">
-                        <a href="javascript:history.back()" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver
-                        </a>
-                    </div>
+<body>
+    <div class="main-container">
+        <!-- Encabezado -->
+        <div class="header-section">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-question-circle"></i> Sistema de Ayuda
+                </h1>
+                <div class="user-badge mt-2">
+                    <i class="fas fa-user"></i>
+                    <span id="currentUser">Administrador</span>
                 </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="../dashboard.php" class="btn-help">
+                    <i class="fas fa-arrow-left"></i> Volver al Sistema
+                </a>
+                <button class="btn-help btn-pdf" id="exportPdf">
+                    <i class="fas fa-file-pdf"></i> Descargar PDF
+                </button>
+            </div>
+        </div>
 
-                <p class="mb-4">Recursos y asistencia técnica para el personal administrativo de Nacional Tapizados. Aquí encontrarás guías, contactos de soporte y respuestas a preguntas frecuentes sobre el sistema interno.</p>
+        <!-- Selector de Rol (solo para demostración) -->
+        <div class="help-section">
+            <h3>Selecciona tu Rol en el Sistema</h3>
+            <p>Esta selección determina qué información podrás ver en el sistema de ayuda:</p>
+            <div class="d-flex gap-3 flex-wrap">
+                <button class="btn-help" onclick="setUserRole('admin')">
+                    <i class="fas fa-user-shield"></i> Soy Administrador
+                </button>
+                <button class="btn-help" onclick="setUserRole('seller')">
+                    <i class="fas fa-user-tie"></i> Soy Vendedor
+                </button>
+            </div>
+        </div>
 
-                <!-- Pestañas de navegación -->
-                <ul class="nav nav-tabs" id="helpTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="faq-tab" data-bs-toggle="tab" data-bs-target="#faq" type="button" role="tab">
-                            <i class="fas fa-question-circle"></i> Preguntas Frecuentes
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="support-tab" data-bs-toggle="tab" data-bs-target="#support" type="button" role="tab">
-                            <i class="fas fa-life-ring"></i> Soporte Técnico
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="resources-tab" data-bs-toggle="tab" data-bs-target="#resources" type="button" role="tab">
-                            <i class="fas fa-tools"></i> Recursos
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="procedures-tab" data-bs-toggle="tab" data-bs-target="#procedures" type="button" role="tab">
-                            <i class="fas fa-list-check"></i> Procedimientos
-                        </button>
-                    </li>
-                </ul>
+        <!-- Accesos Rápidos -->
+        <div class="quick-access">
+            <div class="quick-card" onclick="showTab('overview')">
+                <i class="fas fa-home"></i>
+                <h4>Resumen del Sistema</h4>
+                <p>Conoce cómo funciona el sistema de gestión de clientes</p>
+            </div>
+            <div class="quick-card admin-only" onclick="showTab('admin')">
+                <i class="fas fa-user-shield"></i>
+                <h4>Guía del Administrador</h4>
+                <p>Funciones completas de gestión del sistema</p>
+            </div>
+            <div class="quick-card seller-only" onclick="showTab('seller')">
+                <i class="fas fa-user-tie"></i>
+                <h4>Guía del Vendedor</h4>
+                <p>Funciones para gestión de clientes</p>
+            </div>
+            <div class="quick-card" onclick="showTab('features')">
+                <i class="fas fa-cogs"></i>
+                <h4>Funcionalidades</h4>
+                <p>Descubre todas las herramientas disponibles</p>
+            </div>
+            <div class="quick-card" onclick="showTab('troubleshooting')">
+                <i class="fas fa-tools"></i>
+                <h4>Solución de Problemas</h4>
+                <p>Resuelve incidencias comunes del sistema</p>
+            </div>
+        </div>
 
-                <!-- Contenido de las pestañas -->
-                <div class="tab-content" id="helpTabsContent">
-                    <!-- Pestaña de FAQ -->
-                    <div class="tab-pane fade show active" id="faq" role="tabpanel">
-                        <div class="help-card">
-                            <div class="help-card-header">
-                                <div class="help-card-icon">
-                                    <i class="fas fa-question-circle"></i>
-                                </div>
-                                <h2 class="help-card-title">Preguntas Frecuentes - Área Administrativa</h2>
-                            </div>
-                            <div class="help-card-body">
-                                <div class="faq-item">
-                                    <h3><span>1</span> ¿Cómo gestionar usuarios y permisos?</h3>
-                                    <p>Desde el módulo de Usuarios en el panel de administración puedes crear, editar y desactivar cuentas. Los roles y permisos se asignan en la pestaña "Configuración de acceso".</p>
-                                </div>
-                                
-                                <div class="faq-item">
-                                    <h3><span>2</span> ¿Qué hacer si el sistema muestra errores?</h3>
-                                    <p>Primero verifica tu conexión a internet. Si el problema persiste, registra el código de error y contacta a soporte técnico. No intentes soluciones que puedan afectar la integridad de los datos.</p>
-                                </div>
-                                
-                                <div class="faq-item">
-                                    <h3><span>3</span> ¿Cómo actualizar inventario?</h3>
-                                    <p>Dirígete al módulo de Inventario, selecciona "Actualizar existencias". Puedes hacer ajustes manuales o cargar un archivo CSV con las nuevas cantidades.</p>
-                                </div>
-                                
-                                <div class="faq-item">
-                                    <h3><span>4</span> ¿Cómo configurar alertas del sistema?</h3>
-                                    <p>En Configuración > Notificaciones puedes activar alertas para niveles bajos de inventario, pagos pendientes, citas próximas y otros eventos importantes.</p>
-                                </div>
-                            </div>
-                        </div>
+        <!-- Pestañas de navegación -->
+        <ul class="nav nav-tabs" id="helpTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                    <i class="fas fa-home"></i> Resumen
+                </button>
+            </li>
+            <li class="nav-item admin-only" role="presentation">
+                <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab">
+                    <i class="fas fa-user-shield"></i> Administrador
+                </button>
+            </li>
+            <li class="nav-item seller-only" role="presentation">
+                <button class="nav-link" id="seller-tab" data-bs-toggle="tab" data-bs-target="#seller" type="button" role="tab">
+                    <i class="fas fa-user-tie"></i> Vendedor
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab">
+                    <i class="fas fa-cogs"></i> Funcionalidades
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="troubleshooting-tab" data-bs-toggle="tab" data-bs-target="#troubleshooting" type="button" role="tab">
+                    <i class="fas fa-tools"></i> Problemas
+                </button>
+            </li>
+        </ul>
+
+        <!-- Contenido de las pestañas -->
+        <div class="tab-content" id="helpTabsContent">
+            <!-- Pestaña de Resumen -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="help-section">
+                    <h2>Sistema de Gestión de Clientes - Nacional Tapizados</h2>
+                    <p>Este sistema permite gestionar de manera eficiente la información de los clientes de <strong>Nacional Tapizados</strong>, empresa especializada en tapicería automotriz con más de 25 años de experiencia.</p>
+                    
+                    <div class="info-box">
+                        <h4><i class="fas fa-info-circle"></i> Información Importante</h4>
+                        <p>El sistema está diseñado específicamente para el negocio de tapicería automotriz, permitiendo gestionar clientes que solicitan servicios como tapizado completo, reparaciones, impermeabilización y personalización de vehículos.</p>
                     </div>
-
-                    <!-- Pestaña de Soporte Técnico -->
-                    <div class="tab-pane fade" id="support" role="tabpanel">
-                        <div class="help-card">
-                            <div class="help-card-header">
-                                <div class="help-card-icon">
-                                    <i class="fas fa-life-ring"></i>
-                                </div>
-                                <h2 class="help-card-title">Soporte Técnico</h2>
-                            </div>
-                            <div class="help-card-body">
-                                <p>Para problemas técnicos urgentes o consultas sobre el sistema administrativo, contacta a nuestro equipo de soporte interno.</p>
-                                
-                                <div class="contact-method">
-                                    <i class="fas fa-phone"></i>
-                                    <div>
-                                        <h4>Soporte Urgente</h4>
-                                        <p><a href="tel:+573001234567">Ext. 101 (Interno)</a></p>
-                                        <p>Disponible 24/7 para emergencias del sistema</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="contact-method">
-                                    <i class="fas fa-users"></i>
-                                    <div>
-                                        <h4>Capacitación</h4>
-                                        <p><a href="mailto:capacitacion@nacionaltapizados.com">capacitacion@nacionaltapizados.com</a></p>
-                                        <p>Solicita sesiones de entrenamiento para tu equipo</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    
+                    <div class="feature-card">
+                        <h5><i class="fas fa-users"></i> Perfiles de Usuario</h5>
+                        <p>El sistema cuenta con dos tipos de usuarios principales con permisos diferenciados:</p>
+                        
+                        <table class="permission-table">
+                            <thead>
+                                <tr>
+                                    <th>Función</th>
+                                    <th>Administrador</th>
+                                    <th>Vendedor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Crear clientes</td>
+                                    <td><i class="fas fa-check text-success"></i></td>
+                                    <td><i class="fas fa-check text-success"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Editar todos los clientes</td>
+                                    <td><i class="fas fa-check text-success"></i></td>
+                                    <td><i class="fas fa-check text-success"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Eliminar permanentemente</td>
+                                    <td><i class="fas fa-check text-success"></i></td>
+                                    <td><i class="fas fa-times text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Gestionar papelera</td>
+                                    <td><i class="fas fa-check text-success"></i></td>
+                                    <td><i class="fas fa-times text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>Ver historial completo</td>
+                                    <td><i class="fas fa-check text-success"></i></td>
+                                    <td><i class="fas fa-times text-danger"></i></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-
-                    <!-- Pestaña de Recursos -->
-                    <div class="tab-pane fade" id="resources" role="tabpanel">
-                        <div class="row">
-                            <div class="col-md-6 col-lg-3 mb-4">
-                                <div class="resource-card">
-                                    <div class="resource-icon">
-                                        <i class="fas fa-file-alt"></i>
-                                    </div>
-                                    <h3>Manual Administrativo</h3>
-                                    <p>Guía completa con todos los procesos y políticas internas de la empresa.</p>
-                                    <a href="manual_administrativo.pdf" target="_blank">
-                                        <i class="fas fa-download"></i> Descargar
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6 col-lg-3 mb-4">
-                                <div class="resource-card">
-                                    <div class="resource-icon">
-                                        <i class="fas fa-video"></i>
-                                    </div>
-                                    <h3>Tutoriales en Video</h3>
-                                    <p>Videotutoriales paso a paso para aprender a usar el sistema.</p>
-                                    <a href="https://intranet.nacionaltapizados.com/tutoriales" target="_blank">
-                                        <i class="fas fa-external-link-alt"></i> Acceder
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6 col-lg-3 mb-4">
-                                <div class="resource-card">
-                                    <div class="resource-icon">
-                                        <i class="fas fa-list-check"></i>
-                                    </div>
-                                    <h3>Checklist Diario</h3>
-                                    <p>Lista de verificación para las tareas administrativas diarias.</p>
-                                    <a href="checklist_diario.pdf" target="_blank">
-                                        <i class="fas fa-download"></i> Descargar
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6 col-lg-3 mb-4">
-                                <div class="resource-card">
-                                    <div class="resource-icon">
-                                        <i class="fas fa-headset"></i>
-                                    </div>
-                                    <h3>Soporte Remoto</h3>
-                                    <p>Acceso a asistencia técnica remota para resolver problemas rápidamente.</p>
-                                    <a href="https://soporte.nacionaltapizados.com" target="_blank">
-                                        <i class="fas fa-external-link-alt"></i> Conectar
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pestaña de Procedimientos -->
-                    <div class="tab-pane fade" id="procedures" role="tabpanel">
-                        <div class="help-card">
-                            <div class="help-card-header">
-                                <div class="help-card-icon">
-                                    <i class="fas fa-list-check"></i>
-                                </div>
-                                <h2 class="help-card-title">Procedimientos Administrativos</h2>
-                            </div>
-                            <div class="help-card-body">
-                                <div class="faq-item">
-                                    <h3><span>1</span> Cierre de Caja Diario</h3>
-                                    <p>Realizar el corte de caja diario antes de las 7:00 PM. Verificar que los totales coincidan con el sistema y reportar cualquier discrepancia al departamento de contabilidad.</p>
-                                </div>
-                                
-                                <div class="faq-item">
-                                    <h3><span>2</span> Actualización de Inventario</h3>
-                                    <p>Los martes y viernes se deben actualizar los niveles de inventario. Registrar productos con menos de 5 unidades en el reporte de reposición urgente.</p>
-                                </div>
-                                
-                                <div class="faq-item">
-                                    <h3><span>3</span> Respaldo de Información</h3>
-                                    <p>El sistema realiza respaldos automáticos cada 24 horas. Verificar el reporte de respaldo exitoso cada mañana a las 8:00 AM.</p>
-                                </div>
-                                
-                                <div class="faq-item">
-                                    <h3><span>4</span> Reporte de Incidentes</h3>
-                                    <p>Cualquier falla o problema técnico debe ser reportado inmediatamente usando el formulario de incidentes en la intranet, indicando el código de error si está disponible.</p>
-                                </div>
-                            </div>
-                        </div>
+                    
+                    <h3>¿Cómo Funciona el Sistema?</h3>
+                    <div class="simple-explanation">
+                        <h5><i class="fas fa-lightbulb"></i> Explicación Sencilla</h5>
+                        <p>Imagina que el sistema es como un <strong>archivador digital</strong> donde guardas información de todos tus clientes. En lugar de tener papeles, tienes registros digitales que puedes:</p>
+                        <ul>
+                            <li><strong>Buscar</strong> rápidamente por nombre, teléfono o correo</li>
+                            <li><strong>Agregar</strong> nuevos clientes fácilmente</li>
+                            <li><strong>Actualizar</strong> información cuando cambien sus datos</li>
+                            <li><strong>Archivar</strong> clientes que ya no están activos</li>
+                        </ul>
                     </div>
                 </div>
             </div>
-        </main>
+
+            <!-- Pestaña de Administrador -->
+            <div class="tab-pane fade admin-only" id="admin" role="tabpanel">
+                <div class="help-section">
+                    <h2>Funciones del Administrador</h2>
+                    <p>Como administrador, tienes acceso completo a todas las funcionalidades del sistema.</p>
+                    
+                    <div class="info-box">
+                        <h4><i class="fas fa-user-cog"></i> Acceso Completo</h4>
+                        <p>Los administradores pueden realizar cualquier acción en el sistema, incluyendo la gestión de otros usuarios, configuración del sistema y eliminación permanente de registros.</p>
+                    </div>
+                    
+                    <h3>Gestión Completa de Clientes</h3>
+                    <ol class="step-list">
+                        <li><strong>Ver todos los clientes:</strong> Accede a la pestaña "Buscar" para ver la lista completa de clientes activos.</li>
+                        <li><strong>Crear nuevo cliente:</strong> Haz clic en "Nuevo Cliente" para agregar un cliente al sistema.</li>
+                        <li><strong>Editar información:</strong> Selecciona un cliente y haz clic en "Editar" para modificar sus datos.</li>
+                        <li><strong>Gestionar eliminaciones:</strong> Puedes mover clientes a la papelera o eliminarlos permanentemente.</li>
+                    </ol>
+                    
+                    <h3>Gestión de la Papelera</h3>
+                    <p>Como administrador, tienes control total sobre la papelera del sistema:</p>
+                    
+                    <div class="feature-card">
+                        <h5><i class="fas fa-trash-restore"></i> Funciones de Papelera</h5>
+                        <ul>
+                            <li><strong>Restaurar clientes:</strong> Recupera clientes que han sido movidos a la papelera.</li>
+                            <li><strong>Eliminar permanentemente:</strong> Borra definitivamente clientes de la papelera.</li>
+                            <li><strong>Vaciar papelera:</strong> Elimina todos los clientes de la papelera de una vez.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Advertencia Importante</h4>
+                        <p>Las eliminaciones permanentes no se pueden deshacer. Asegúrate de verificar dos veces antes de eliminar registros permanentemente.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña de Vendedor -->
+            <div class="tab-pane fade seller-only" id="seller" role="tabpanel">
+                <div class="help-section">
+                    <h2>Funciones del Vendedor</h2>
+                    <p>Como vendedor, tienes acceso para gestionar la información de clientes en el sistema.</p>
+                    
+                    <div class="info-box">
+                        <h4><i class="fas fa-user-check"></i> Acceso Específico</h4>
+                        <p>Los vendedores pueden gestionar clientes pero con restricciones para proteger la integridad de los datos del sistema.</p>
+                    </div>
+                    
+                    <h3>Gestión Básica de Clientes</h3>
+                    <ol class="step-list">
+                        <li><strong>Ver clientes activos:</strong> Accede a la pestaña "Buscar" para ver todos los clientes del sistema.</li>
+                        <li><strong>Crear nuevo cliente:</strong> Usa el botón "Nuevo Cliente" para registrar clientes.</li>
+                        <li><strong>Editar información:</strong> Modifica datos de clientes existentes según sea necesario.</li>
+                        <li><strong>Buscar clientes:</strong> Utiliza la función de búsqueda en tiempo real.</li>
+                        <li><strong>Mover a papelera:</strong> Puedes eliminar clientes moviéndolos a la papelera.</li>
+                    </ol>
+                    
+                    <h3>Restricciones del Perfil Vendedor</h3>
+                    <p>Por seguridad del sistema, como vendedor no puedes:</p>
+                    
+                    <div class="feature-card">
+                        <h5><i class="fas fa-ban"></i> Acciones Restringidas</h5>
+                        <ul>
+                            <li>Acceder a configuraciones del sistema</li>
+                            <li>Gestionar otros usuarios o vendedores</li>
+                            <li>Eliminar registros permanentemente</li>
+                            <li>Vaciar la papelera del sistema</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña de Funcionalidades -->
+            <div class="tab-pane fade" id="features" role="tabpanel">
+                <div class="help-section">
+                    <h2>Funcionalidades Detalladas del Sistema</h2>
+                    
+                    <h3>Gestión de Clientes</h3>
+                    
+                    <div class="feature-card">
+                        <h5><i class="fas fa-search-plus"></i> Búsqueda Avanzada</h5>
+                        <p>Busca clientes por nombre, teléfono o correo electrónico.</p>
+                        <div class="simple-explanation">
+                            <h5><i class="fas fa-lightbulb"></i> ¿Cómo funciona?</h5>
+                            <p>Es como buscar un contacto en tu teléfono: escribes parte del nombre, número o correo y el sistema te muestra los resultados que coinciden. Solo necesitas escribir al menos 2 letras para que empiece a buscar.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h5><i class="fas fa-user-plus"></i> Crear Nuevo Cliente</h5>
+                        <p>Agrega nuevos clientes al sistema completando un formulario sencillo.</p>
+                        <div class="simple-explanation">
+                            <h5><i class="fas fa-lightbulb"></i> ¿Cómo funciona?</h5>
+                            <p>Es como llenar una ficha de cliente en papel, pero de forma digital. Solo necesitas completar los campos básicos como nombre, teléfono y correo. El sistema se encarga de guardar todo de forma segura.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h5><i class="fas fa-edit"></i> Editar Información</h5>
+                        <p>Modifica la información de clientes existentes cuando cambien sus datos.</p>
+                        <div class="simple-explanation">
+                            <h5><i class="fas fa-lightbulb"></i> ¿Cómo funciona?</h5>
+                            <p>Si un cliente cambia de teléfono o correo, puedes actualizar su información fácilmente. El sistema recuerda quién hizo cada cambio y cuándo, como un historial de modificaciones.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h5><i class="fas fa-trash-alt"></i> Sistema de Papelera</h5>
+                        <p>Los clientes eliminados se envían a la papelera antes de borrarse permanentemente.</p>
+                        <div class="simple-explanation">
+                            <h5><i class="fas fa-lightbulb"></i> ¿Cómo funciona?</h5>
+                            <p>Es como la papelera de reciclaje de tu computadora. Cuando eliminas un cliente, no se borra inmediatamente, sino que va a la papelera donde puedes recuperarlo si te equivocaste. Solo los administradores pueden vaciar la papelera definitivamente.</p>
+                        </div>
+                    </div>
+                    
+                    <h3>Estadísticas y Reportes</h3>
+                    <div class="feature-card">
+                        <h5><i class="fas fa-chart-bar"></i> Panel de Estadísticas</h5>
+                        <p>Visualiza métricas importantes del negocio en tiempo real.</p>
+                        <div class="simple-explanation">
+                            <h5><i class="fas fa-lightbulb"></i> ¿Cómo funciona?</h5>
+                            <p>El sistema te muestra números importantes como cuántos clientes tienes, cuántos se registraron hoy, etc. Es como un tablero de control que te da una vista rápida de cómo va el negocio.</p>
+                        </div>
+                    </div>
+                    
+                    <h3>Seguridad del Sistema</h3>
+                    <div class="feature-card">
+                        <h5><i class="fas fa-user-lock"></i> Control de Accesos</h5>
+                        <p>Diferentes niveles de permisos según el rol del usuario.</p>
+                        <div class="simple-explanation">
+                            <h5><i class="fas fa-lightbulb"></i> ¿Cómo funciona?</h5>
+                            <p>Es como tener llaves diferentes para diferentes puertas. Los vendedores tienen llaves para las funciones básicas, mientras que los administradores tienen llaves maestras para todo el sistema.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box admin-only">
+                        <h4><i class="fas fa-shield-alt"></i> Información Técnica para Administradores</h4>
+                        <p>El sistema utiliza una base de datos segura con tablas especializadas para clientes, usuarios y registro de actividades. Todas las eliminaciones se registran en la tabla <code>registro_eliminaciones</code> para mantener trazabilidad completa.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña de Solución de Problemas -->
+            <div class="tab-pane fade" id="troubleshooting" role="tabpanel">
+                <div class="help-section">
+                    <h2>Solución de Problemas y Preguntas Frecuentes</h2>
+                    
+                    <h3>Problemas Comunes de Acceso</h3>
+                    
+                    <div class="feature-card">
+                        <h5><i class="fas fa-sign-in-alt"></i> No puedo iniciar sesión</h5>
+                        <p>Si tienes problemas para acceder al sistema:</p>
+                        <ol class="step-list">
+                            <li>Verifica que tu teclado no esté en mayúsculas</li>
+                            <li>Asegúrate de estar usando las credenciales correctas</li>
+                            <li>Comprueba que tu usuario esté activo en el sistema</li>
+                            <li>Si persiste el problema, contacta al administrador</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Error al cargar una página</h5>
+                        <p>Si una página no carga correctamente:</p>
+                        <ol class="step-list">
+                            <li>Actualiza la página (F5)</li>
+                            <li>Limpia la caché de tu navegador</li>
+                            <li>Verifica tu conexión a internet</li>
+                            <li>Intenta acceder desde otro navegador</li>
+                        </ol>
+                    </div>
+                    
+                    <h3>Problemas con Datos de Clientes</h3>
+                    
+                    <div class="feature-card">
+                        <h5><i class="fas fa-user-times"></i> No puedo encontrar un cliente</h5>
+                        <p>Si un cliente no aparece en las búsquedas:</p>
+                        <ol class="step-list">
+                            <li>Verifica que estés buscando con el nombre correcto</li>
+                            <li>Intenta buscar por teléfono o correo electrónico</li>
+                            <li>Comprueba si el cliente fue movido a la papelera</li>
+                            <li>Verifica que tengas permisos para ver ese cliente</li>
+                        </ol>
+                    </div>
+                    
+                    <h3>Contacto de Soporte Técnico</h3>
+                    <p>Para problemas técnicos o preguntas sobre el sistema:</p>
+                    
+                    <div class="feature-card">
+                        <h5><i class="fas fa-headset"></i> Canales de Soporte</h5>
+                        <ul>
+                            <li><strong>Email:</strong> soporte@nacionaltapizados.com</li>
+                            <li><strong>Teléfono:</strong> +57 1 234 5678</li>
+                            <li><strong>Horario de atención:</strong> Lunes a Viernes 8:00am - 6:00pm</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Bootstrap JS -->
+    <!-- Contenido para PDF (oculto) -->
+    <div id="pdfContent" style="display: none;">
+        <div class="pdf-content">
+            <h1>Manual de Usuario - Sistema de Gestión de Clientes</h1>
+            <h2>Nacional Tapizados</h2>
+            <p><strong>Fecha de generación:</strong> <span id="pdfDate"></span></p>
+            <p><strong>Usuario:</strong> <span id="pdfUser"></span></p>
+            
+            <div id="pdfSections">
+                <!-- El contenido se generará dinámicamente según el rol -->
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Activar tooltips de Bootstrap
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
+        // Estado inicial - por defecto mostramos todo (rol admin)
+        let currentRole = 'admin';
+        
+        // Función para establecer el rol del usuario
+        function setUserRole(role) {
+            currentRole = role;
+            updateUIForRole();
+            
+            // Mostrar mensaje de confirmación
+            const roleName = role === 'admin' ? 'Administrador' : 'Vendedor';
+            alert(`Ahora estás viendo el sistema como: ${roleName}`);
+        }
+        
+        // Función para actualizar la interfaz según el rol
+        function updateUIForRole() {
+            const isAdmin = currentRole === 'admin';
+            const isSeller = currentRole === 'seller';
+            
+            // Actualizar badge de usuario
+            document.getElementById('currentUser').textContent = isAdmin ? 'Administrador' : 'Vendedor';
+            
+            // Mostrar/ocultar elementos según el rol
+            document.querySelectorAll('.admin-only').forEach(el => {
+                el.style.display = isAdmin ? 'block' : 'none';
+            });
+            
+            document.querySelectorAll('.seller-only').forEach(el => {
+                el.style.display = isSeller ? 'block' : 'none';
+            });
+            
+            // Si es vendedor, activar la pestaña de resumen por defecto
+            if (isSeller) {
+                document.getElementById('overview-tab').click();
+            }
+        }
+        
+        // Función para mostrar una pestaña específica
+        function showTab(tabId) {
+            document.getElementById(`${tabId}-tab`).click();
+        }
+        
+        // Función para generar el PDF
+        document.getElementById('exportPdf').addEventListener('click', function() {
+            generatePdf();
+        });
+        
+        function generatePdf() {
+            // Configurar fecha actual
+            const now = new Date();
+            document.getElementById('pdfDate').textContent = now.toLocaleDateString('es-ES');
+            document.getElementById('pdfUser').textContent = currentRole === 'admin' ? 'Administrador' : 'Vendedor';
+            
+            // Obtener el contenido según el rol
+            const pdfSections = document.getElementById('pdfSections');
+            pdfSections.innerHTML = '';
+            
+            // Agregar resumen (siempre visible)
+            const overviewContent = document.getElementById('overview').cloneNode(true);
+            cleanContentForPdf(overviewContent);
+            pdfSections.appendChild(overviewContent);
+            
+            // Agregar contenido específico del rol
+            if (currentRole === 'admin') {
+                const adminContent = document.getElementById('admin').cloneNode(true);
+                cleanContentForPdf(adminContent);
+                pdfSections.appendChild(adminContent);
+            } else {
+                const sellerContent = document.getElementById('seller').cloneNode(true);
+                cleanContentForPdf(sellerContent);
+                pdfSections.appendChild(sellerContent);
+            }
+            
+            // Agregar funcionalidades (siempre visible)
+            const featuresContent = document.getElementById('features').cloneNode(true);
+            cleanContentForPdf(featuresContent);
+            pdfSections.appendChild(featuresContent);
+            
+            // Agregar solución de problemas (siempre visible)
+            const troubleshootingContent = document.getElementById('troubleshooting').cloneNode(true);
+            cleanContentForPdf(troubleshootingContent);
+            pdfSections.appendChild(troubleshootingContent);
+            
+            // Configurar opciones del PDF
+            const options = {
+                margin: 10,
+                filename: `manual-usuario-${currentRole}-${now.toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            // Generar el PDF
+            html2pdf().set(options).from(document.getElementById('pdfContent')).save();
+        }
+        
+        // Función para limpiar el contenido para PDF
+        function cleanContentForPdf(element) {
+            // Remover elementos interactivos
+            element.querySelectorAll('button, .nav-tabs, .quick-access').forEach(el => {
+                el.remove();
+            });
+            
+            // Ajustar estilos para PDF
+            element.querySelectorAll('.help-section').forEach(el => {
+                el.style.marginBottom = '20px';
+                el.style.padding = '15px';
+                el.style.border = '1px solid #ddd';
+            });
+            
+            // Asegurar que el contenido sea visible
+            element.style.display = 'block';
+        }
+        
+        // Inicializar la interfaz
+        document.addEventListener('DOMContentLoaded', function() {
+            updateUIForRole();
+        });
     </script>
 </body>
 </html>
