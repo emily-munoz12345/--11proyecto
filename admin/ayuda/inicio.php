@@ -349,6 +349,9 @@
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver
                 </a>
+                <a href="../dashboard.php" class="btn btn-primary">
+                    <i class="fas fa-roll"></i>Ir a Clientes
+                </a>
             </div>
         </div>
 

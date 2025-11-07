@@ -318,7 +318,7 @@
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver
                 </a>
-                <a href="../vehiculos/index.php" class="btn btn-primary">
+                <a href="../formularios/vehiculos/index.php" class="btn btn-primary">
                     <i class="fas fa-car"></i>Ir a Vehículos
                 </a>
             </div>

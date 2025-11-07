@@ -377,7 +377,7 @@
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver
                 </a>
-                <a href="../servicios/index.php" class="btn btn-primary">
+                <a href="../formularios/servicios/index.php" class="btn btn-primary">
                     <i class="fas fa-concierge-bell"></i>Ir a Servicios
                 </a>
             </div>
@@ -407,8 +407,8 @@
                     <p>El módulo de Gestión de Servicios te permite administrar todos los servicios de tapicería automotriz ofrecidos por Nacional Tapizados. Desde aquí podrás crear, editar y organizar los diferentes servicios que se ofrecen a los clientes, incluyendo precios, tiempos de ejecución y descripciones detalladas.</p>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (304).png" alt="Vista general de gestión de servicios">
-                        <div class="image-caption">Figura 1: Vista general del módulo de Gestión de Servicios</div>
+                        <img src="../imagenes/ayuda/servicios/inicio.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p><strong>Características principales:</strong></p>
@@ -445,14 +445,14 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (304).png" alt="Estadísticas de servicios">
-                        <div class="image-caption">Figura 2: Panel de estadísticas de servicios</div>
+                        <img src="../imagenes/ayuda/servicios/estd.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p>Además, el sistema muestra una lista de todos los servicios disponibles con información clave como nombre, precio, tiempo de ejecución y descripción breve.</p>
                 </section>
 
-                <section id="tipos-servicios" class="help-section">
+                <!--<section id="tipos-servicios" class="help-section">
                     <h2><i class="fas fa-tags"></i>Tipos de Servicios</h2>
                     <p>En Nacional Tapizados ofrecemos una amplia gama de servicios especializados en tapicería automotriz:</p>
                     
@@ -484,11 +484,11 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (307).png" alt="Lista de servicios">
+                        <img src="../imagenes/ayuda/servicios/estd.png">
                         <div class="image-caption">Figura 3: Ejemplos de servicios disponibles</div>
                     </div>
                 </section>
-
+    -->
                 <section id="buscar-servicios" class="help-section">
                     <h2><i class="fas fa-search"></i>Buscar Servicios</h2>
                     <p>Para encontrar rápidamente un servicio específico, utiliza la función de búsqueda:</p>
@@ -529,8 +529,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (305).png" alt="Búsqueda de servicios">
-                        <div class="image-caption">Figura 4: Campo de búsqueda y opciones de servicios</div>
+                        <img src="../imagenes/ayuda/servicios/busqueda.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -844,8 +844,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (307).png" alt="Servicio movido a papelera">
-                        <div class="image-caption">Figura 5: Confirmación de servicio movido a papelera</div>
+                        <img src="../imagenes/ayuda/servicios/paper.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p><strong>Importante:</strong> Los servicios en la papelera pueden ser restaurados dentro de los 30 días. No se pueden eliminar servicios que estén siendo utilizados en cotizaciones o trabajos activos.</p>

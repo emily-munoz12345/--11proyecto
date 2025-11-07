@@ -321,7 +321,7 @@
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver
                 </a>
-                <a href="gestion_usuarios.php" class="btn btn-primary">
+                <a href="../formularios/usuarios/index.php" class="btn btn-primary">
                     <i class="fas fa-users-cog"></i>Ir a Usuarios
                 </a>
             </div>
@@ -349,8 +349,8 @@
                     <p>El módulo de Gestión de Usuarios permite administrar todos los usuarios del sistema de Nacional Tapizados. Desde aquí podrás agregar nuevos usuarios, gestionar roles, activar o desactivar cuentas y eliminar usuarios.</p>
 
                     <div class="image-container">
-                        <img src="Captura de pantalla (312).png" alt="Vista general de gestión de usuarios">
-                        <div class="image-caption">Figura 1: Vista general del módulo de Gestión de Usuarios</div>
+                        <img src="../imagenes/ayuda/usuarios/inicio.png">
+                        <div class="image-caption"></div>
                     </div>
 
                     <p><strong>IMPORTANTE:</strong> Este módulo está disponible exclusivamente para usuarios con rol de Administrador. Los usuarios con otros roles no tendrán acceso a esta sección.</p>
@@ -380,8 +380,8 @@
                     </div>
 
                     <div class="image-container">
-                        <img src="Captura de pantalla (313).png" alt="Opciones de administrador para usuarios">
-                        <div class="image-caption">Figura 2: Opciones disponibles para administradores en gestión de usuarios</div>
+                        <img src="../imagenes/ayuda/usuarios/accus.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -409,8 +409,8 @@
                     </div>
 
                     <div class="image-container">
-                        <img src="Captura de pantalla (318).png" alt="Estadísticas de usuarios">
-                        <div class="image-caption">Figura 3: Panel de estadísticas de usuarios</div>
+                        <img src="../imagenes/ayuda/usuarios/estd.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -443,8 +443,8 @@
                     </div>
 
                     <div class="image-container">
-                        <img src="Captura de pantalla (312).png" alt="Búsqueda de usuarios">
-                        <div class="image-caption">Figura 4: Campo de búsqueda y filtros de usuarios</div>
+                        <img src="../imagenes/ayuda/usuarios/busq.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -497,8 +497,8 @@
                     </div>
 
                     <div class="image-container">
-                        <img src="Captura de pantalla (320).png" alt="Formulario de nuevo usuario">
-                        <div class="image-caption">Figura 5: Formulario para agregar nuevo usuario</div>
+                        <img src="../imagenes/ayuda/usuarios/crear.png">
+                        <div class="image-caption"></div>
                     </div>
 
                     <p><strong>Nota importante:</strong> La contraseña se almacena en texto plano en el sistema. Se recomienda utilizar contraseñas seguras y cambiarlas periódicamente.</p>
@@ -533,8 +533,8 @@
                     </div>
 
                     <div class="image-container">
-                        <img src="Captura de pantalla (315).png" alt="Detalles del usuario">
-                        <div class="image-caption">Figura 6: Vista de detalles de un usuario</div>
+                        <img src="../imagenes/ayuda/usuarios/ver.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -567,8 +567,8 @@
                     </div>
 
                     <div class="image-container">
-                        <img src="Captura de pantalla (314).png" alt="Opciones de edición de usuario">
-                        <div class="image-caption">Figura 7: Opciones disponibles para editar un usuario</div>
+                        <img src="../imagenes/ayuda/usuarios/edit.png">
+                        <div class="image-caption"></div>
                     </div>
 
                     <p><strong>Nota:</strong> Puedes modificar todos los campos del usuario incluyendo su rol, que determinará los permisos que tendrá en el sistema.</p>
@@ -601,12 +601,12 @@
                             <p>El estado del usuario se actualizará inmediatamente en el sistema.</p>
                         </div>
                     </div>
-
+<!--
                     <div class="image-container">
-                        <img src="Captura de pantalla (319).png" alt="Confirmación de activar/desactivar usuario">
+                        <img src="../imagenes/ayuda/usuarios/config.png">
                         <div class="image-caption">Figura 8: Confirmación para cambiar estado de usuario</div>
                     </div>
-
+    -->
                     <p><strong>Importante:</strong> Los usuarios inactivos no pueden iniciar sesión en el sistema, aunque sus datos permanecen almacenados.</p>
                 </section>
 
@@ -639,8 +639,8 @@
                     </div>
 
                     <div class="image-container">
-                        <img src="Captura de pantalla (314).png" alt="Opción eliminar usuario">
-                        <div class="image-caption">Figura 9: Opción para eliminar usuario permanentemente</div>
+                        <img src="../imagenes/ayuda/usuarios/elim.png">
+                        <div class="image-caption"></div>
                     </div>
 
                     <div class="step-container" style="background-color: rgba(220, 53, 69, 0.2); border-left-color: var(--danger-color);">

@@ -377,7 +377,7 @@
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver
                 </a>
-                <a href="../materiales/index.php" class="btn btn-primary">
+                <a href="../formularios/materiales/index.php" class="btn btn-primary">
                     <i class="fas fa-roll"></i>Ir a Materiales
                 </a>
             </div>
@@ -407,8 +407,8 @@
                     <p>El módulo de Gestión de Materiales te permite administrar el inventario de todos los materiales de tapicería utilizados en Nacional Tapizados. Desde aquí podrás registrar nuevos materiales, controlar el stock disponible, gestionar precios y categorizar los diferentes tipos de materiales.</p>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (297).png" alt="Vista general de gestión de materiales">
-                        <div class="image-caption">Figura 1: Vista general del módulo de Gestión de Materiales</div>
+                        <img src="../imagenes/ayuda/materiales/inicio.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p><strong>Características principales:</strong></p>
@@ -445,14 +445,14 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (301).png" alt="Estadísticas de materiales">
-                        <div class="image-caption">Figura 2: Panel de estadísticas de materiales</div>
+                        <img src="../imagenes/ayuda/materiales/estd.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p>Además, el sistema muestra una lista de todos los materiales disponibles con información clave como nombre, categoría, precio y stock disponible.</p>
                 </section>
 
-                <section id="tipos-materiales" class="help-section">
+              <!--  <section id="tipos-materiales" class="help-section">
                     <h2><i class="fas fa-tags"></i>Tipos de Materiales</h2>
                     <p>En Nacional Tapizados manejamos diferentes tipos de materiales para tapicería automotriz:</p>
                     
@@ -524,7 +524,7 @@
                         <img src="Captura de pantalla (298).png" alt="Búsqueda de materiales">
                         <div class="image-caption">Figura 4: Campo de búsqueda y filtros de materiales</div>
                     </div>
-                </section>
+                </section> -->
 
                 <section id="nuevo-material" class="help-section">
                     <h2><i class="fas fa-plus-circle"></i>Crear Nuevo Material</h2>
@@ -573,8 +573,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (303).png" alt="Formulario de nuevo material">
-                        <div class="image-caption">Figura 5: Formulario para crear nuevo material</div>
+                        <img src="../imagenes/ayuda/materiales/crear.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -609,8 +609,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (299).png" alt="Detalles del material">
-                        <div class="image-caption">Figura 6: Vista de detalles de un material</div>
+                        <img src="../imagenes/ayuda/materiales/ver.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <div class="action-buttons">
@@ -660,8 +660,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (300).png" alt="Editar material">
-                        <div class="image-caption">Figura 7: Formulario de edición de material</div>
+                        <img src="../imagenes/ayuda/materiales/editar.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p><strong>Nota:</strong> Los cambios en el precio y stock afectarán automáticamente las cotizaciones y trabajos futuros que utilicen este material.</p>
@@ -836,8 +836,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (301).png" alt="Material movido a papelera">
-                        <div class="image-caption">Figura 8: Confirmación de material movido a papelera</div>
+                        <img src="../imagenes/ayuda/materiales/paper.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p><strong>Importante:</strong> Los materiales en la papelera pueden ser restaurados dentro de los 30 días. No se pueden eliminar materiales que estén siendo utilizados en trabajos activos.</p>

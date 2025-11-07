@@ -376,7 +376,7 @@
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver
                 </a>
-                <a href="../trabajos/index.php" class="btn btn-primary">
+                <a href="../formularios/trabajos/index.php" class="btn btn-primary">
                     <i class="fas fa-tools"></i>Ir a Trabajos
                 </a>
             </div>

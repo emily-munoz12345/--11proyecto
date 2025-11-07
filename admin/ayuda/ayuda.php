@@ -689,31 +689,36 @@
             <div class="navigation-buttons">
                 <a href="inicio.php" class="nav-btn">
                     <i class="fas fa-home"></i>
-                    <span>Inicio</span>
+                    <span>Ayuda de Inicio</span>
                 </a>
                 <a href="clientes.php" class="nav-btn">
                     <i class="fas fa-users"></i>
-                    <span>Gestión de Clientes</span>
+                    <span>Ayuda de Clientes</span>
                 </a>
                 <a href="servicios.php" class="nav-btn">
                     <i class="fas fa-tools"></i>
-                    <span>Servicios</span>
+                    <span>Ayuda de Servicios</span>
                 </a>
-                <a href="inventario.php" class="nav-btn">
+                <a href="vehiculos.php" class="nav-btn">
                     <i class="fas fa-boxes"></i>
-                    <span>Inventario</span>
-                </a>
-                <a href="reportes.php" class="nav-btn">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Reportes</span>
+                    <span>Ayuda de Vehiculos</span>
                 </a>
                 <a href="usuarios.php" class="nav-btn">
-                    <i class="fas fa-user-cog"></i>
-                    <span>Usuarios</span>
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Ayuda de Usuarios</span>
                 </a>
-                <a href="configuracion.php" class="nav-btn">
+                <a href="materiales.php" class="nav-btn">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Ayuda de Materiales</span>
+                </a>
+                <a href="trabajos.php" class="nav-btn">
                     <i class="fas fa-cog"></i>
-                    <span>Configuración</span>
+                    <span>Ayuda de Trabajos</span>
+                </a>
+                
+                <a href="cotizaciones.php" class="nav-btn">
+                    <i class="fas fa-cog"></i>
+                    <span>Ayuda de Cotizaciones</span>
                 </a>
             </div>
         </div>

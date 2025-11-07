@@ -375,8 +375,8 @@
                     <p>El módulo de Gestión de Cotizaciones te permite crear, administrar y dar seguimiento a todas las cotizaciones de servicios de tapicería automotriz. Desde aquí podrás generar propuestas detalladas para los clientes, incluyendo servicios, costos y cálculos automáticos.</p>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (269).png" alt="Vista general de gestión de cotizaciones">
-                        <div class="image-caption">Figura 1: Vista general del módulo de Gestión de Cotizaciones</div>
+                        <img src="../imagenes/ayuda/cotizaciones/inicio.PNG">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p>Las cotizaciones están integradas con los módulos de clientes y vehículos, permitiendo crear propuestas personalizadas para cada cliente y su vehículo específico.</p>
@@ -406,8 +406,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (272).png" alt="Estadísticas de cotizaciones">
-                        <div class="image-caption">Figura 2: Panel de estadísticas de cotizaciones</div>
+                        <img src="../imagenes/ayuda/cotizaciones/estadisticas.PNG">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -440,8 +440,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (269).png" alt="Búsqueda de cotizaciones">
-                        <div class="image-caption">Figura 3: Campo de búsqueda y filtros de cotizaciones</div>
+                        <img src="../imagenes/ayuda/cotizaciones/filtro.PNG">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -517,8 +517,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (275).png" alt="Formulario de nueva cotización">
-                        <div class="image-caption">Figura 4: Formulario para crear nueva cotización</div>
+                        <img src="../imagenes/ayuda/cotizaciones/crear.PNG">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -574,13 +574,13 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (276).png" alt="Detalles de cotización">
-                        <div class="image-caption">Figura 5: Vista de detalles de una cotización</div>
+                        <img src="../imagenes/ayuda/cotizaciones/det1.PNG">>
+                        <div class="image-caption"></div>
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (277).png" alt="Detalles completos de cotización">
-                        <div class="image-caption">Figura 6: Vista completa de detalles con cálculos</div>
+                        <img src="../imagenes/ayuda/cotizaciones/det2.PNG">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -619,8 +619,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (279).png" alt="Editar cotización">
-                        <div class="image-caption">Figura 7: Formulario de edición de cotización</div>
+                        <img src="../imagenes/ayuda/cotizaciones/editar.PNG">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -670,8 +670,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (278).png" alt="Vista PDF de cotización">
-                        <div class="image-caption">Figura 8: Vista previa del formato PDF profesional</div>
+                        <img src="../imagenes/ayuda/cotizaciones/pdf.PNG">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p><strong>Nota:</strong> Tanto el PDF como la versión imprimible mantienen el branding profesional de Nacional Tapizados y son ideales para enviar a clientes o archivar.</p>
@@ -762,13 +762,13 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (274).png" alt="Cotización movida a papelera">
-                        <div class="image-caption">Figura 9: Confirmación de cotización movida a papelera</div>
+                        <img src="../imagenes/ayuda/cotizaciones/paper.PNG">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (273).png" alt="Papelera vacía">
-                        <div class="image-caption">Figura 10: Papelera de cotizaciones vacía</div>
+                        <img src="../imagenes/ayuda/cotizaciones/paperv.PNG">
+                        <div class="image-caption">   </div>
                     </div>
                     
                     <p><strong>Importante:</strong> Las cotizaciones en la papelera pueden ser restauradas dentro de los 30 días. Después de este período, se eliminarán automáticamente del sistema.</p>
