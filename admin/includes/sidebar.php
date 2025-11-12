@@ -203,6 +203,22 @@ if (in_array('buzon', $userMenuItems)) {
                 </a>
             </li>
             <?php endif; ?>
+                        <!-- Buzón de Entrada -->
+            <?php if (in_array('buzon', $userMenuItems)): ?>
+            <li class="nav-item">
+                <a class="nav-link" href="/--11proyecto/admin/ayuda/ayuda.php">
+<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="16" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+</svg>
+                    <span>Buzón de Entrada</span>
+                    <?php if (($counts['buzon'] ?? 0) > 0): ?>
+                    <span class="badge-notification"><?= $counts['buzon'] ?></span>
+                    <?php endif; ?>
+                </a>
+            </li>
+            <?php endif; ?>
 
             <!-- Cerrar Sesión - Disponible para todos -->
             <li class="nav-item mt-auto">

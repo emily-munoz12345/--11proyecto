@@ -6,7 +6,6 @@
     <title>Sistema de Ayuda</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --primary-color: rgba(140, 74, 63, 0.9);
@@ -34,17 +33,81 @@
             color: var(--text-light);
             min-height: 100vh;
             line-height: 1.6;
+            display: flex;
+        }
+
+        /* Menú lateral */
+        .sidebar {
+            width: 280px;
+            background-color: var(--bg-transparent);
+            backdrop-filter: blur(12px);
+            padding: 2rem 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+
+        .sidebar-title {
+            color: var(--text-light);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1rem;
+            color: var(--text-light);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .sidebar-menu a:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .sidebar-menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .sidebar-menu i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
         }
 
         .main-container {
-            max-width: 1200px;
-            margin: 2rem auto;
+            flex: 1;
+            max-width: calc(100% - 280px);
+            margin: 2rem;
             padding: 2rem;
             background-color: var(--bg-transparent);
             backdrop-filter: blur(12px);
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             border: 1px solid var(--border-color);
+            overflow-y: auto;
         }
 
         .header-section {
@@ -360,10 +423,46 @@
             font-size: 0.9rem;
         }
 
+        /* Estilos para el contenido del PDF */
+        .pdf-content {
+            background: white;
+            color: #333;
+            padding: 2rem;
+            font-family: Arial, sans-serif;
+        }
+
+        .pdf-content h1, .pdf-content h2, .pdf-content h3 {
+            color: #8c4a3f;
+        }
+
+        .pdf-content .feature-card {
+            background: #f8f9fa;
+            border-left: 5px solid #8c4a3f;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 1rem;
+            }
+            
+            .main-container {
+                max-width: 100%;
+                margin: 1rem;
+            }
+        }
+
         @media (max-width: 768px) {
             .main-container {
                 padding: 1rem;
-                margin: 1rem;
+                margin: 0.5rem;
             }
 
             .header-section {
@@ -383,26 +482,31 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-
-        /* Estilos para el contenido del PDF */
-        .pdf-content {
-            background: white;
-            color: #333;
-            padding: 2rem;
-            font-family: Arial, sans-serif;
-        }
-
-        .pdf-content h1, .pdf-content h2, .pdf-content h3 {
-            color: #8c4a3f;
-        }
-
-        .pdf-content .feature-card {
-            background: #f8f9fa;
-            border-left: 5px solid #8c4a3f;
-        }
     </style>
 </head>
 <body>
+    <!-- Menú lateral -->
+    <div class="sidebar">
+        <h3 class="sidebar-title">Navegación</h3>
+        <ul class="sidebar-menu">
+            <li><a href="#" onclick="scrollToSection('introduccion')" class="active"><i class="fas fa-info-circle"></i> Introducción</a></li>
+            <li><a href="#" onclick="scrollToSection('roles')"><i class="fas fa-user-shield"></i> Roles y Permisos</a></li>
+            <li><a href="#" onclick="scrollToSection('modulos')"><i class="fas fa-cubes"></i> Módulos Principales</a></li>
+            <li><a href="#" onclick="scrollToSection('faq')"><i class="fas fa-question"></i> Preguntas Frecuentes</a></li>
+            <li><a href="#" onclick="scrollToSection('soporte')"><i class="fas fa-headset"></i> Soporte Técnico</a></li>
+            <li><hr style="border-color: var(--border-color); margin: 1rem 0;"></li>
+            <li><a href="inicio.php"><i class="fas fa-home"></i> Ayuda de Inicio</a></li>
+            <li><a href="clientes.php"><i class="fas fa-users"></i> Ayuda de Clientes</a></li>
+            <li><a href="servicios.php"><i class="fas fa-tools"></i> Ayuda de Servicios</a></li>
+            <li><a href="vehiculos.php"><i class="fas fa-boxes"></i> Ayuda de Vehículos</a></li>
+            <li><a href="usuarios.php"><i class="fas fa-chart-bar"></i> Ayuda de Usuarios</a></li>
+            <li><a href="materiales.php"><i class="fas fa-user-cog"></i> Ayuda de Materiales</a></li>
+            <li><a href="trabajos.php"><i class="fas fa-cog"></i> Ayuda de Trabajos</a></li>
+            <li><a href="cotizaciones.php"><i class="fas fa-cog"></i> Ayuda de Cotizaciones</a></li>
+        </ul>
+    </div>
+
+    <!-- Contenido principal -->
     <div class="main-container">
         <!-- Encabezado -->
         <div class="header-section">
@@ -682,59 +786,6 @@
                 </ul>
             </div>
         </div>
-
-        <!-- Sección de Navegación -->
-        <div class="navigation-section">
-            <h3 class="navigation-title">Acceso Rápido a Módulos</h3>
-            <div class="navigation-buttons">
-                <a href="inicio.php" class="nav-btn">
-                    <i class="fas fa-home"></i>
-                    <span>Ayuda de Inicio</span>
-                </a>
-                <a href="clientes.php" class="nav-btn">
-                    <i class="fas fa-users"></i>
-                    <span>Ayuda de Clientes</span>
-                </a>
-                <a href="servicios.php" class="nav-btn">
-                    <i class="fas fa-tools"></i>
-                    <span>Ayuda de Servicios</span>
-                </a>
-                <a href="vehiculos.php" class="nav-btn">
-                    <i class="fas fa-boxes"></i>
-                    <span>Ayuda de Vehiculos</span>
-                </a>
-                <a href="usuarios.php" class="nav-btn">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Ayuda de Usuarios</span>
-                </a>
-                <a href="materiales.php" class="nav-btn">
-                    <i class="fas fa-user-cog"></i>
-                    <span>Ayuda de Materiales</span>
-                </a>
-                <a href="trabajos.php" class="nav-btn">
-                    <i class="fas fa-cog"></i>
-                    <span>Ayuda de Trabajos</span>
-                </a>
-                
-                <a href="cotizaciones.php" class="nav-btn">
-                    <i class="fas fa-cog"></i>
-                    <span>Ayuda de Cotizaciones</span>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Contenido para PDF (oculto) -->
-    <div id="pdfContent" style="display: none;">
-        <div class="pdf-content">
-            <h1>Manual de Usuario - Sistema de Gestión</h1>
-            <h2>Nacional Tapizados</h2>
-            <p><strong>Fecha de generación:</strong> <span id="pdfDate"></span></p>
-            
-            <div id="pdfSections">
-                <!-- El contenido se generará dinámicamente -->
-            </div>
-        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -743,6 +794,18 @@
         function scrollToSection(sectionId) {
             document.getElementById(sectionId).scrollIntoView({ 
                 behavior: 'smooth' 
+            });
+            
+            // Actualizar el menú activo
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Encontrar el enlace correspondiente y marcarlo como activo
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                if (link.getAttribute('onclick') && link.getAttribute('onclick').includes(sectionId)) {
+                    link.classList.add('active');
+                }
             });
         }
 
@@ -768,65 +831,177 @@
             });
         });
 
-        // Función para generar el PDF
+        // Función para generar el PDF sin librerías externas
         document.getElementById('exportPdf').addEventListener('click', function() {
             generatePdf();
         });
 
         function generatePdf() {
-            // Configurar fecha actual
+            // Crear contenido HTML para el PDF
             const now = new Date();
-            document.getElementById('pdfDate').textContent = now.toLocaleDateString('es-ES');
+            const formattedDate = now.toLocaleDateString('es-ES');
             
-            // Obtener el contenido
-            const pdfSections = document.getElementById('pdfSections');
-            pdfSections.innerHTML = '';
+            let pdfContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Manual de Usuario - Nacional Tapizados</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            color: #333;
+                            line-height: 1.6;
+                            margin: 0;
+                            padding: 20px;
+                        }
+                        h1, h2, h3 {
+                            color: #8c4a3f;
+                        }
+                        h1 {
+                            border-bottom: 2px solid #8c4a3f;
+                            padding-bottom: 10px;
+                        }
+                        h2 {
+                            border-bottom: 1px solid #8c4a3f;
+                            padding-bottom: 5px;
+                            margin-top: 30px;
+                        }
+                        .section {
+                            margin-bottom: 30px;
+                        }
+                        .feature-card {
+                            background: #f8f9fa;
+                            border-left: 5px solid #8c4a3f;
+                            padding: 15px;
+                            margin: 15px 0;
+                            border-radius: 5px;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin: 15px 0;
+                        }
+                        th, td {
+                            border: 1px solid #ddd;
+                            padding: 8px;
+                            text-align: left;
+                        }
+                        th {
+                            background-color: #8c4a3f;
+                            color: white;
+                        }
+                        tr:nth-child(even) {
+                            background-color: #f2f2f2;
+                        }
+                        .info-box {
+                            background-color: #e7f3ff;
+                            border-left: 4px solid #0dcaf0;
+                            padding: 15px;
+                            margin: 15px 0;
+                        }
+                        .warning-box {
+                            background-color: #fff3cd;
+                            border-left: 4px solid #ffc107;
+                            padding: 15px;
+                            margin: 15px 0;
+                        }
+                        .faq-question {
+                            font-weight: bold;
+                            margin-top: 15px;
+                        }
+                        .faq-answer {
+                            margin-bottom: 15px;
+                        }
+                        .step-list {
+                            list-style-type: none;
+                            padding-left: 0;
+                            counter-reset: step;
+                        }
+                        .step-list li {
+                            margin-bottom: 10px;
+                            padding-left: 30px;
+                            position: relative;
+                        }
+                        .step-list li:before {
+                            content: counter(step);
+                            counter-increment: step;
+                            position: absolute;
+                            left: 0;
+                            top: 0;
+                            background-color: #8c4a3f;
+                            color: white;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 12px;
+                            font-weight: bold;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>Manual de Usuario - Sistema de Gestión</h1>
+                    <h2>Nacional Tapizados</h2>
+                    <p><strong>Fecha de generación:</strong> ${formattedDate}</p>
+            `;
             
             // Agregar todas las secciones al PDF
-            const sections = [
-                'introduccion', 'roles', 'modulos', 'faq', 'soporte'
-            ];
+            const sections = ['introduccion', 'roles', 'modulos', 'faq', 'soporte'];
             
             sections.forEach(sectionId => {
-                const section = document.getElementById(sectionId).cloneNode(true);
-                cleanContentForPdf(section);
-                pdfSections.appendChild(section);
+                const section = document.getElementById(sectionId);
+                const clonedSection = section.cloneNode(true);
+                
+                // Limpiar el contenido para PDF
+                clonedSection.querySelectorAll('button, .quick-access, .navigation-section, .sidebar').forEach(el => {
+                    el.remove();
+                });
+                
+                // Mostrar todas las respuestas FAQ en el PDF
+                clonedSection.querySelectorAll('.faq-answer').forEach(answer => {
+                    answer.style.display = 'block';
+                });
+                
+                // Convertir a HTML para el PDF
+                pdfContent += `
+                    <div class="section">
+                        ${clonedSection.innerHTML}
+                    </div>
+                `;
             });
             
-            // Configurar opciones del PDF
-            const options = {
-                margin: 10,
-                filename: `manual-usuario-nacional-tapizados-${now.toISOString().split('T')[0]}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
+            pdfContent += `
+                </body>
+                </html>
+            `;
             
-            // Generar el PDF
-            html2pdf().set(options).from(document.getElementById('pdfContent')).save();
-        }
-        
-        // Función para limpiar el contenido para PDF
-        function cleanContentForPdf(element) {
-            // Remover elementos interactivos
-            element.querySelectorAll('button, .quick-access, .navigation-section').forEach(el => {
-                el.remove();
-            });
+            // Crear un blob con el contenido HTML
+            const blob = new Blob([pdfContent], { type: 'text/html' });
             
-            // Ajustar estilos para PDF
-            element.querySelectorAll('.help-section').forEach(el => {
-                el.style.marginBottom = '20px';
-                el.style.padding = '15px';
-                el.style.border = '1px solid #ddd';
-            });
+            // Crear un enlace de descarga
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(blob);
+            downloadLink.download = `manual-usuario-nacional-tapizados-${now.toISOString().split('T')[0]}.html`;
             
-            // Mostrar todas las respuestas FAQ en el PDF
-            element.querySelectorAll('.faq-answer').forEach(answer => {
-                answer.style.display = 'block';
-            });
+            // Simular clic en el enlace para iniciar la descarga
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
             
-            // Asegurar que el contenido sea visible
-            element.style.display = 'block';
+            // También ofrecer la opción de imprimir
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(pdfContent);
+            printWindow.document.close();
+            
+            // Mostrar mensaje con opciones
+            setTimeout(() => {
+                if (confirm('El manual se ha generado correctamente. ¿Deseas imprimirlo ahora?')) {
+                    printWindow.print();
+                }
+            }, 500);
         }
     </script>
 </body>
