@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ayuda - Gestión de Clientes | Nacional Tapizados</title>
+    <title>Ayuda | Nacional Tapizados</title>
     <style>
         :root {
             --primary-color: rgba(140, 74, 63, 0.8);
@@ -313,10 +313,13 @@
 <body>
     <div class="main-container">
         <div class="header-section">
-            <h1 class="page-title"><i class="fas fa-question-circle"></i>Ayuda - Gestión de Clientes</h1>
+            <h1 class="page-title"><i class="fas fa-question-circle"></i>Ayuda - Sitio Web Nacional Tapizados</h1>
             <div>
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver
+                </a>
+                <a href="../index.html" class="btn btn-primary">
+                    <i class="fas fa-home"></i>Inicio
                 </a>
             </div>
         </div>
@@ -325,113 +328,111 @@
             <nav class="help-nav">
                 <ul>
                     <li><a href="#introduccion" class="active">Introducción</a></li>
-                    <li><a href="#vista-general">Vista General</a></li>
-                    <li><a href="#buscar-clientes">Buscar Clientes</a></li>
-                    <li><a href="#nuevo-cliente">Agregar Cliente</a></li>
-                    <li><a href="#ver-detalles">Ver Detalles</a></li>
-                    <li><a href="#editar-cliente">Editar Cliente</a></li>
-                    <li><a href="#papelera">Papelera</a></li>
+                    <li><a href="#navegacion">Navegación</a></li>
+                    <li><a href="#productos">Productos</a></li>
+                    <li><a href="#contacto">Contacto</a></li>
+                    <li><a href="#cuenta">Mi Cuenta</a></li>
+                    <li><a href="#pedidos">Pedidos</a></li>
+                    <li><a href="#pagos">Pagos</a></li>
                     <li><a href="#problemas-comunes">Problemas Comunes</a></li>
                 </ul>
             </nav>
 
             <div class="help-sections">
                 <section id="introduccion" class="help-section">
-                    <h2><i class="fas fa-info-circle"></i>Introducción a la Gestión de Clientes</h2>
-                    <p>El módulo de Gestión de Clientes te permite administrar toda la información relacionada con los clientes de Nacional Tapizados. Desde aquí podrás agregar nuevos clientes, buscar información existente, editar datos y gestionar registros eliminados.</p>
-                    
-                    <div class="image-container">
-                        <img src="../imagenes/ayuda/clientes/inicio.png">
-                        <div class="image-caption"></div>
-                    </div>
-                    
-                    <p>Este módulo está disponible para usuarios con permisos de administrador y vendedor, aunque algunas funciones pueden estar restringidas según el perfil de usuario.</p>
-                </section>
-
-                <section id="vista-general" class="help-section">
-                    <h2><i class="fas fa-chart-bar"></i>Vista General y Estadísticas</h2>
-                    <p>Al acceder al módulo de clientes, verás un resumen con las principales estadísticas:</p>
+                    <h2><i class="fas fa-info-circle"></i>Introducción al Sitio Web</h2>
+                    <p>Bienvenido al sitio web de Nacional Tapizados, tu destino para muebles de calidad y tapizados personalizados. Nuestra plataforma está diseñada para ofrecerte una experiencia de compra fácil y agradable.</p>
                     
                     <div class="feature-grid">
                         <div class="feature-card">
-                            <h4><i class="fas fa-users"></i>Total de Clientes</h4>
-                            <p>Muestra el número total de clientes registrados en el sistema.</p>
+                            <h4><i class="fas fa-shopping-cart"></i>Compras Fáciles</h4>
+                            <p>Navega por nuestro catálogo y realiza compras de forma segura.</p>
                         </div>
                         <div class="feature-card">
-                            <h4><i class="fas fa-calendar-plus"></i>Último Registro</h4>
-                            <p>Indica la fecha del último cliente agregado al sistema.</p>
+                            <h4><i class="fas fa-couch"></i>Productos de Calidad</h4>
+                            <p>Descubre nuestra amplia gama de muebles y servicios de tapizado.</p>
                         </div>
                         <div class="feature-card">
-                            <h4><i class="fas fa-calendar-day"></i>Registros Hoy</h4>
-                            <p>Muestra cuántos clientes se han registrado en el día actual.</p>
+                            <h4><i class="fas fa-truck"></i>Envío Rápido</h4>
+                            <p>Recibe tus productos en la comodidad de tu hogar.</p>
                         </div>
                         <div class="feature-card">
-                            <h4><i class="fas fa-trash"></i>En Papelera</h4>
-                            <p>Indica cuántos clientes han sido movidos a la papelera.</p>
+                            <h4><i class="fas fa-headset"></i>Soporte Personalizado</h4>
+                            <p>Nuestro equipo está listo para ayudarte en lo que necesites.</p>
                         </div>
                     </div>
                     
-                    <div class="image-container">
-                        <img src="../imagenes/ayuda/clientes/resumen.PNG">
-                        <div class="image-caption"></div>
-                    </div>
+                    <p>En esta guía encontrarás información detallada sobre cómo utilizar todas las funciones de nuestro sitio web.</p>
                 </section>
 
-                <section id="buscar-clientes" class="help-section">
-                    <h2><i class="fas fa-search"></i>Buscar Clientes</h2>
-                    <p>Para encontrar rápidamente un cliente específico, utiliza la función de búsqueda:</p>
+                <section id="navegacion" class="help-section">
+                    <h2><i class="fas fa-compass"></i>Navegación en el Sitio</h2>
+                    <p>Aprende a moverte eficientemente por nuestro sitio web:</p>
                     
                     <div class="step-container">
                         <div class="step-number">1</div>
                         <div class="step-content">
-                            <h3>Acceder a la búsqueda</h3>
-                            <p>Localiza el campo de búsqueda en la parte superior de la lista de clientes.</p>
+                            <h3>Menú Principal</h3>
+                            <p>Utiliza el menú superior para acceder a las principales secciones:</p>
+                            <ul>
+                                <li><strong>Inicio:</strong> Página principal con productos destacados.</li>
+                                <li><strong>Productos:</strong> Catálogo completo de muebles y servicios.</li>
+                                <li><strong>Servicios:</strong> Información sobre nuestros servicios de tapizado.</li>
+                                <li><strong>Contacto:</strong> Formas de comunicarte con nosotros.</li>
+                            </ul>
                         </div>
                     </div>
                     
                     <div class="step-container">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <h3>Ingresar criterios</h3>
-                            <p>Escribe el nombre, teléfono o correo del cliente que deseas encontrar.</p>
+                            <h3>Búsqueda</h3>
+                            <p>Utiliza la barra de búsqueda para encontrar productos específicos por nombre, categoría o características.</p>
                         </div>
                     </div>
                     
                     <div class="step-container">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h3>Filtrar resultados</h3>
-                            <p>Utiliza las pestañas "Recientes" y "Papelera" para filtrar los resultados de búsqueda.</p>
+                            <h3>Filtros</h3>
+                            <p>En la página de productos, utiliza los filtros para refinar tu búsqueda por categoría, precio, color, etc.</p>
                         </div>
                     </div>
                     
                     <div class="image-container">
-                        <img src="../imagenes/ayuda/clientes/busqueda.PNG">
-                        <div class="image-caption"></div>
+                        <img src="../imagenes/ayuda/publica/navegacion.png" alt="Navegación del sitio">
+                        <div class="image-caption">Ejemplo de navegación en el sitio web</div>
                     </div>
                 </section>
 
-                <section id="nuevo-cliente" class="help-section">
-                    <h2><i class="fas fa-user-plus"></i>Agregar Nuevo Cliente</h2>
-                    <p>Para registrar un nuevo cliente en el sistema, sigue estos pasos:</p>
+                <section id="productos" class="help-section">
+                    <h2><i class="fas fa-couch"></i>Productos y Catálogo</h2>
+                    <p>Descubre cómo explorar y seleccionar productos en nuestro catálogo:</p>
                     
                     <div class="step-container">
                         <div class="step-number">1</div>
                         <div class="step-content">
-                            <h3>Acceder al formulario</h3>
-                            <p>Haz clic en el botón "Nuevo Cliente" en la parte superior de la pantalla.</p>
+                            <h3>Explorar Categorías</h3>
+                            <p>Navega por nuestras categorías principales:</p>
+                            <ul>
+                                <li><strong>Sofás y Seccionales:</strong> Diversos estilos y tamaños.</li>
+                                <li><strong>Sillas y Butacas:</strong> Para interior y exterior.</li>
+                                <li><strong>Taburetes y Bancos:</strong> Complementos para tu hogar.</li>
+                                <li><strong>Tapizados Personalizados:</strong> Servicio a medida.</li>
+                            </ul>
                         </div>
                     </div>
                     
                     <div class="step-container">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <h3>Completar información</h3>
-                            <p>Llena todos los campos obligatorios marcados con asterisco (*):</p>
+                            <h3>Ver Detalles del Producto</h3>
+                            <p>Haz clic en cualquier producto para ver información detallada:</p>
                             <ul>
-                                <li><strong>Nombre Completo:</strong> Nombre y apellidos del cliente.</li>
-                                <li><strong>Correo Electrónico:</strong> Dirección de email válida.</li>
-                                <li><strong>Teléfono:</strong> Número de contacto del cliente.</li>
+                                <li><strong>Imágenes:</strong> Vista múltiple del producto.</li>
+                                <li><strong>Descripción:</strong> Características y materiales.</li>
+                                <li><strong>Dimensiones:</strong> Medidas exactas del producto.</li>
+                                <li><strong>Precio y Disponibilidad:</strong> Información de compra.</li>
                             </ul>
                         </div>
                     </div>
@@ -439,11 +440,159 @@
                     <div class="step-container">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h3>Información adicional</h3>
-                            <p>Completa los campos opcionales si es necesario:</p>
+                            <h3>Personalización</h3>
+                            <p>Para productos personalizables, selecciona:</p>
                             <ul>
-                                <li><strong>Dirección:</strong> Dirección física del cliente.</li>
-                                <li><strong>Notas Adicionales:</strong> Información relevante sobre el cliente.</li>
+                                <li><strong>Color:</strong> Diferentes opciones de tela.</li>
+                                <li><strong>Material:</strong> Variedad de materiales disponibles.</li>
+                                <li><strong>Medidas:</strong> Especificaciones personalizadas.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="image-container">
+                        <img src="../imagenes/ayuda/publica/productos.png" alt="Página de productos">
+                        <div class="image-caption">Vista de productos en el catálogo</div>
+                    </div>
+                </section>
+
+                <section id="contacto" class="help-section">
+                    <h2><i class="fas fa-envelope"></i>Contacto y Soporte</h2>
+                    <p>Múltiples formas de contactarnos para resolver tus dudas o solicitar información:</p>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4><i class="fas fa-map-marker-alt"></i>Visítanos</h4>
+                            <p>Ven a nuestro showroom para ver nuestros productos en persona.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-phone"></i>Llámanos</h4>
+                            <p>Habla directamente con nuestro equipo de atención al cliente.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-envelope"></i>Escríbenos</h4>
+                            <p>Envía tus consultas por correo electrónico.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-comments"></i>Chat en Vivo</h4>
+                            <p>Conversa en tiempo real con nuestros asesores.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Formulario de Contacto</h3>
+                            <p>Completa el formulario en línea con:</p>
+                            <ul>
+                                <li><strong>Nombre y Apellido:</strong> Información de contacto.</li>
+                                <li><strong>Correo Electrónico:</strong> Para responder tu consulta.</li>
+                                <li><strong>Teléfono:</strong> Número de contacto opcional.</li>
+                                <li><strong>Mensaje:</strong> Detalla tu consulta o solicitud.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Solicitud de Cotización</h3>
+                            <p>Para productos personalizados, utiliza el formulario específico que incluye:</p>
+                            <ul>
+                                <li><strong>Tipo de Producto:</strong> Sofá, silla, etc.</li>
+                                <li><strong>Medidas Específicas:</strong> Dimensiones requeridas.</li>
+                                <li><strong>Material Preferido:</strong> Tipo de tela o material.</li>
+                                <li><strong>Presupuesto Aproximado:</strong> Rango de inversión.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="image-container">
+                        <img src="../imagenes/ayuda/publica/contacto.png" alt="Formulario de contacto">
+                        <div class="image-caption">Formulario de contacto en línea</div>
+                    </div>
+                </section>
+
+                <section id="cuenta" class="help-section">
+                    <h2><i class="fas fa-user"></i>Mi Cuenta</h2>
+                    <p>Gestiona tu información personal y preferencias:</p>
+                    
+                    <div class="step-container">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Crear Cuenta</h3>
+                            <p>Regístrate para acceder a funciones exclusivas:</p>
+                            <ul>
+                                <li><strong>Nombre Completo:</strong> Tu nombre y apellidos.</li>
+                                <li><strong>Correo Electrónico:</strong> Será tu usuario.</li>
+                                <li><strong>Contraseña:</strong> Crea una contraseña segura.</li>
+                                <li><strong>Teléfono:</strong> Número de contacto.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Iniciar Sesión</h3>
+                            <p>Accede a tu cuenta con tu correo y contraseña.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Gestionar Perfil</h3>
+                            <p>Desde tu cuenta puedes:</p>
+                            <ul>
+                                <li><strong>Actualizar Información:</strong> Modificar datos personales.</li>
+                                <li><strong>Cambiar Contraseña:</strong> Actualizar credenciales de acceso.</li>
+                                <li><strong>Gestionar Direcciones:</strong> Agregar o editar direcciones de envío.</li>
+                                <li><strong>Preferencias:</strong> Configurar notificaciones y preferencias.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="image-container">
+                        <img src="../imagenes/ayuda/publica/cuenta.png" alt="Panel de usuario">
+                        <div class="image-caption">Panel de control de usuario</div>
+                    </div>
+                </section>
+
+                <section id="pedidos" class="help-section">
+                    <h2><i class="fas fa-shopping-bag"></i>Realizar Pedidos</h2>
+                    <p>Proceso completo para realizar tus compras en línea:</p>
+                    
+                    <div class="step-container">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Agregar al Carrito</h3>
+                            <p>Selecciona los productos que deseas comprar y agrégalos a tu carrito.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Revisar Carrito</h3>
+                            <p>Verifica los productos en tu carrito antes de proceder al pago:</p>
+                            <ul>
+                                <li><strong>Cantidad:</strong> Ajusta las cantidades si es necesario.</li>
+                                <li><strong>Precio:</strong> Revisa el costo total de tu pedido.</li>
+                                <li><strong>Opciones de Envío:</strong> Selecciona el método de entrega.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Proceso de Checkout</h3>
+                            <p>Completa la información necesaria para finalizar tu compra:</p>
+                            <ul>
+                                <li><strong>Información de Envío:</strong> Dirección de entrega.</li>
+                                <li><strong>Método de Pago:</strong> Selecciona forma de pago.</li>
+                                <li><strong>Revisión Final:</strong> Confirma los detalles del pedido.</li>
                             </ul>
                         </div>
                     </div>
@@ -451,165 +600,96 @@
                     <div class="step-container">
                         <div class="step-number">4</div>
                         <div class="step-content">
-                            <h3>Guardar cliente</h3>
-                            <p>Haz clic en "Guardar Cliente" para registrar la información en el sistema.</p>
+                            <h3>Confirmación</h3>
+                            <p>Recibirás una confirmación por correo electrónico con los detalles de tu pedido y número de seguimiento.</p>
                         </div>
                     </div>
                     
                     <div class="image-container">
-                        <img src="../imagenes/ayuda/clientes/crear.png">
-                        <div class="image-caption"></div>
+                        <img src="../imagenes/ayuda/publica/carrito.png" alt="Carrito de compras">
+                        <div class="image-caption">Carrito de compras y proceso de checkout</div>
                     </div>
                 </section>
 
-                <section id="ver-detalles" class="help-section">
-                    <h2><i class="fas fa-eye"></i>Ver Detalles del Cliente</h2>
-                    <p>Para ver la información completa de un cliente:</p>
+                <section id="pagos" class="help-section">
+                    <h2><i class="fas fa-credit-card"></i>Métodos de Pago</h2>
+                    <p>Opciones seguras para realizar tus pagos:</p>
                     
-                    <div class="step-container">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <h3>Seleccionar cliente</h3>
-                            <p>Haz clic en cualquier cliente de la lista para ver sus detalles.</p>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4><i class="fas fa-credit-card"></i>Tarjetas de Crédito</h4>
+                            <p>Aceptamos todas las tarjetas principales: Visa, MasterCard, American Express.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-university"></i>Transferencias Bancarias</h4>
+                            <p>Realiza transferencias desde tu banco directamente.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-mobile-alt"></i>Pagos Móviles</h4>
+                            <p>Utiliza aplicaciones de pago móvil compatibles.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-money-bill-wave"></i>Efectivo</h4>
+                            <p>Pago en efectivo al momento de la entrega (sujeto a condiciones).</p>
                         </div>
                     </div>
                     
-                    <div class="step-container">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h3>Revisar información</h3>
-                            <p>Se mostrará una tarjeta con todos los datos del cliente:</p>
-                            <ul>
-                                <li><strong>ID del Cliente:</strong> Identificador único en el sistema.</li>
-                                <li><strong>Información de contacto:</strong> Nombre, teléfono, correo y dirección.</li>
-                                <li><strong>Fecha de Registro:</strong> Cuándo fue agregado al sistema.</li>
-                                <li><strong>Notas:</strong> Información adicional sobre el cliente.</li>
-                                <li><strong>Estado:</strong> Si está activo o en papelera.</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="image-container">
-                        <img src="../imagenes/ayuda/clientes/detalles.PNG">
-                        <div class="image-caption"></div>
-                    </div>
-                </section>
-
-                <section id="editar-cliente" class="help-section">
-                    <h2><i class="fas fa-edit"></i>Editar Información del Cliente</h2>
-                    <p>Para modificar la información de un cliente existente:</p>
+                    <h3><i class="fas fa-shield-alt"></i>Seguridad en Pagos</h3>
+                    <p>Tu seguridad es nuestra prioridad:</p>
+                    <ul>
+                        <li><strong>Cifrado SSL:</strong> Todos los datos se transmiten de forma segura.</li>
+                        <li><strong>Protección de Datos:</strong> No almacenamos información sensible de pago.</li>
+                        <li><strong>Verificación:</strong> Procesos de autenticación para transacciones.</li>
+                    </ul>
                     
                     <div class="step-container">
-                        <div class="step-number">1</div>
                         <div class="step-content">
-                            <h3>Acceder a edición</h3>
-                            <p>Desde la vista de detalles del cliente, haz clic en "Editar".</p>
+                            <h3><i class="fas fa-lock"></i>Garantía de Seguridad</h3>
+                            <p>Todas las transacciones están protegidas con los más altos estándares de seguridad. Si experimentas algún problema con tu pago, contacta inmediatamente a nuestro equipo de soporte.</p>
                         </div>
                     </div>
-                    
-                    <div class="step-container">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h3>Modificar información</h3>
-                            <p>Actualiza los campos que necesites cambiar en el formulario de edición.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="step-container">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <h3>Guardar cambios</h3>
-                            <p>Haz clic en "Guardar Cambios" para actualizar la información del cliente.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="image-container">
-                        <img src="../imagenes/ayuda/clientes/editar.PNG">
-                        <div class="image-caption"></div>
-                    </div>
-                    
-                    <p><strong>Nota:</strong> Los campos marcados con asterisco (*) son obligatorios y deben completarse para guardar los cambios.</p>
-                </section>
-
-                <section id="papelera" class="help-section">
-                    <h2><i class="fas fa-trash"></i>Gestión de Papelera</h2>
-                    <p>La papelera almacena temporalmente los clientes eliminados antes de su eliminación permanente:</p>
-                    
-                    <div class="step-container">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <h3>Mover a papelera</h3>
-                            <p>Desde la vista de detalles del cliente, haz clic en "Eliminar" para moverlo a la papelera.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="step-container">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h3>Ver papelera</h3>
-                            <p>Haz clic en la pestaña "Papelera" para ver todos los clientes eliminados.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="step-container">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <h3>Restaurar o eliminar</h3>
-                            <p>Desde la papelera puedes restaurar clientes o eliminarlos permanentemente.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="image-container">
-                        <img src="../imagenes/ayuda/clientes/clmov_papelera.PNG">
-                        <div class="image-caption"></div>
-                    </div>
-                    
-                    <div class="image-container">
-                        <img src="../imagenes/ayuda/clientes/papelera_vacia.PNG">
-                        <div class="image-caption"></div>
-                    </div>
-                    
-                    <p><strong>Importante:</strong> Los clientes en la papelera pueden ser restaurados dentro de los 30 días. Después de este período, se eliminarán automáticamente del sistema.</p>
                 </section>
 
                 <section id="problemas-comunes" class="help-section">
                     <h2><i class="fas fa-tools"></i>Solución de Problemas Comunes</h2>
                     
-                    <h3><i class="fas fa-exclamation-triangle"></i>No puedo encontrar un cliente</h3>
+                    <h3><i class="fas fa-exclamation-triangle"></i>No puedo crear una cuenta</h3>
                     <ul>
-                        <li>Verifica que estés escribiendo correctamente el nombre en el buscador.</li>
-                        <li>Comprueba si el cliente ha sido movido a la papelera.</li>
-                        <li>Intenta buscar por partes del nombre o por número de teléfono.</li>
+                        <li>Verifica que tu correo electrónico no esté ya registrado.</li>
+                        <li>Asegúrate de que la contraseña cumpla con los requisitos mínimos.</li>
+                        <li>Comprueba que todos los campos obligatorios estén completos.</li>
                     </ul>
                     
-                    <h3><i class="fas fa-exclamation-triangle"></i>Error al guardar un cliente</h3>
+                    <h3><i class="fas fa-exclamation-triangle"></i>Problemas al iniciar sesión</h3>
                     <ul>
-                        <li>Asegúrate de que todos los campos obligatorios estén completos.</li>
-                        <li>Verifica que el formato del correo electrónico sea válido.</li>
-                        <li>Comprueba que el número de teléfono tenga el formato correcto.</li>
+                        <li>Verifica que estés usando el correo correcto.</li>
+                        <li>Confirma que tu contraseña sea la correcta (distingue mayúsculas y minúsculas).</li>
+                        <li>Utiliza la opción "¿Olvidaste tu contraseña?" si es necesario.</li>
                     </ul>
                     
-                    <h3><i class="fas fa-exclamation-triangle"></i>No tengo permisos para algunas acciones</h3>
+                    <h3><i class="fas fa-exclamation-triangle"></i>Error al realizar un pedido</h3>
                     <ul>
-                        <li>Algunas funciones pueden estar restringidas según tu perfil de usuario.</li>
-                        <li>Contacta al administrador del sistema si necesitas permisos adicionales.</li>
+                        <li>Verifica que todos los productos estén disponibles.</li>
+                        <li>Comprueba que la información de envío sea correcta.</li>
+                        <li>Asegúrate de que el método de pago seleccionado sea válido.</li>
                     </ul>
                     
-                    <h3><i class="fas fa-exclamation-triangle"></i>La página no carga correctamente</h3>
+                    <h3><i class="fas fa-exclamation-triangle"></i>No recibo el correo de confirmación</h3>
                     <ul>
-                        <li>Actualiza la página (F5).</li>
-                        <li>Limpia la caché de tu navegador.</li>
-                        <li>Verifica tu conexión a internet.</li>
+                        <li>Revisa tu carpeta de spam o correo no deseado.</li>
+                        <li>Verifica que hayas ingresado correctamente tu dirección de correo.</li>
+                        <li>Espera unos minutos, a veces hay demoras en el envío.</li>
                     </ul>
                     
                     <div class="step-container" style="background-color: rgba(25, 135, 84, 0.2); border-left-color: var(--success-color);">
                         <div class="step-content">
                             <h3><i class="fas fa-life-ring"></i>Contacto de Soporte</h3>
-                            <p>Si continúas experimentando problemas, contacta al equipo de soporte:</p>
+                            <p>Si continúas experimentando problemas, contacta a nuestro equipo de soporte:</p>
                             <ul>
                                 <li><strong>Email:</strong> soporte@nacionaltapizados.com</li>
                                 <li><strong>Teléfono:</strong> +57 123 456 7890</li>
                                 <li><strong>Horario de atención:</strong> Lunes a Viernes 8:00 AM - 6:00 PM</li>
+                                <li><strong>Chat en Vivo:</strong> Disponible en horario comercial</li>
                             </ul>
                         </div>
                     </div>

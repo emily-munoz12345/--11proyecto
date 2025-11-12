@@ -378,6 +378,8 @@ $roles = $conex->query("SELECT * FROM roles WHERE activo = 1 ORDER BY nombre_rol
             </div>
         </div>
     </div>
+<?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Usuarios');</script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>

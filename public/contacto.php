@@ -19,10 +19,10 @@ require_once __DIR__ . '/includes/navbar.php';
 
         <div class="row">
             <div class="col-lg-6 mb-5 mb-lg-0">
-                <h1 class="fw-bold mb-4">Contáctanos</h1>
+                <h1 class="fw-bold mb-4 text-primary">Contáctanos</h1>
                 <p class="lead mb-4">Estamos aquí para responder tus preguntas y brindarte el mejor servicio en tapicería automotriz.</p>
                 
-                <div class="card border-0 shadow-sm mb-4">
+                <div class="card border-0 shadow-sm mb-4 hover-card">
                     <div class="card-body">
                         <h3 class="h5 mb-3"><i class="fas fa-map-marker-alt text-primary me-2"></i> Visítanos</h3>
                         <address class="mb-0">
@@ -33,42 +33,42 @@ require_once __DIR__ . '/includes/navbar.php';
                     </div>
                 </div>
                 
-                <div class="card border-0 shadow-sm mb-4">
+                <div class="card border-0 shadow-sm mb-4 hover-card">
                     <div class="card-body">
                         <h3 class="h5 mb-3"><i class="fas fa-phone-alt text-primary me-2"></i> Llámanos</h3>
-                        <p class="mb-2"><strong>Ventas:</strong> <a href="tel:+525512345678">57 1234 5678</a></p>
-                        <p class="mb-0"><strong>Soporte:</strong> <a href="tel:+525598765432">57 9876 5432</a></p>
+                        <p class="mb-2"><strong>Ventas:</strong> <a href="tel:+525512345678" class="text-decoration-none">57 1234 5678</a></p>
+                        <p class="mb-0"><strong>Soporte:</strong> <a href="tel:+525598765432" class="text-decoration-none">57 9876 5432</a></p>
                     </div>
                 </div>
                 
-                <div class="card border-0 shadow-sm">
+                <div class="card border-0 shadow-sm hover-card">
                     <div class="card-body">
                         <h3 class="h5 mb-3"><i class="fas fa-envelope text-primary me-2"></i> Escríbenos</h3>
-                        <p class="mb-2"><strong>General:</strong> <a href="mailto:info@nacionaltapizados.com">olfonsojose@gmail.com</a></p>
+                        <p class="mb-2"><strong>General:</strong> <a href="mailto:info@nacionaltapizados.com" class="text-decoration-none">olfonsojose@gmail.com</a></p>
                     </div>
                 </div>
             </div>
             
             <div class="col-lg-6">
-                <div class="card border-0 shadow-sm">
+                <div class="card border-0 shadow-lg">
                     <div class="card-body p-4">
-                        <h2 class="h4 fw-bold mb-4">Formulario de Contacto</h2>
+                        <h2 class="h4 fw-bold mb-4 text-center text-primary">Formulario de Contacto</h2>
                         <form id="contactForm" action="procesar_contacto.php" method="POST">
                             <div class="mb-3">
-                                <label for="name" class="form-label">Nombre completo</label>
-                                <input type="text" class="form-control" id="name" name="nombre_completo" required>
+                                <label for="name" class="form-label fw-semibold">Nombre completo</label>
+                                <input type="text" class="form-control form-control-lg" id="name" name="nombre_completo" required placeholder="Ingresa tu nombre completo">
                             </div>
                             <div class="mb-3">
-                                <label for="email" class="form-label">Correo electrónico</label>
-                                <input type="email" class="form-control" id="email" name="correo_electronico" required>
+                                <label for="email" class="form-label fw-semibold">Correo electrónico</label>
+                                <input type="email" class="form-control form-control-lg" id="email" name="correo_electronico" required placeholder="tu@email.com">
                             </div>
                             <div class="mb-3">
-                                <label for="phone" class="form-label">Teléfono</label>
-                                <input type="tel" class="form-control" id="phone" name="telefono">
+                                <label for="phone" class="form-label fw-semibold">Teléfono</label>
+                                <input type="tel" class="form-control form-control-lg" id="phone" name="telefono" placeholder="+57 300 123 4567">
                             </div>
                             <div class="mb-3">
-                                <label for="subject" class="form-label">Asunto</label>
-                                <select class="form-select" id="subject" name="asunto" required>
+                                <label for="subject" class="form-label fw-semibold">Asunto</label>
+                                <select class="form-select form-select-lg" id="subject" name="asunto" required>
                                     <option value="" selected disabled>Selecciona una opción</option>
                                     <option value="cotizacion">Solicitud de cotización</option>
                                     <option value="consulta">Consulta general</option>
@@ -76,12 +76,12 @@ require_once __DIR__ . '/includes/navbar.php';
                                     <option value="otro">Otro</option>
                                 </select>
                             </div>
-                            <div class="mb-3">
-                                <label for="message" class="form-label">Mensaje</label>
-                                <textarea class="form-control" id="message" name="mensaje" rows="4" required></textarea>
+                            <div class="mb-4">
+                                <label for="message" class="form-label fw-semibold">Mensaje</label>
+                                <textarea class="form-control" id="message" name="mensaje" rows="4" required placeholder="Describe tu consulta o solicitud..."></textarea>
                             </div>
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
                                     <span id="btnText">Enviar mensaje</span>
                                     <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                                 </button>
@@ -92,7 +92,6 @@ require_once __DIR__ . '/includes/navbar.php';
             </div>
         </div>
         
-             
         <div class="row mt-5">
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
@@ -111,13 +110,13 @@ require_once __DIR__ . '/includes/navbar.php';
         </div>
         
         <div class="row mt-5">
-            <div class="col-md-6 mb-6 mb-md-0">
-                <div class="card border-0 shadow-sm h-100">
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100 hover-card">
                     <div class="card-body text-center p-4">
-                        <div class="icon-box bg-primary bg-opacity-10 text-primary mb-3">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary mb-3 mx-auto">
                             <i class="fas fa-clock fa-2x"></i>
                         </div>
-                        <h3 class="h5">Horario de atención</h3>
+                        <h3 class="h5 fw-bold">Horario de atención</h3>
                         <p class="mb-0">
                             <strong>Lunes a Viernes:</strong> 8:00am - 12:30am / 1:30pm - 6:00pm<br>
                             <strong>Sábados:</strong> 8:00am - 2:00pm<br>
@@ -126,13 +125,13 @@ require_once __DIR__ . '/includes/navbar.php';
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 mb-6 mb-md-0">
-                <div class="card border-0 shadow-sm h-100">
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm h-100 hover-card">
                     <div class="card-body text-center p-4">
-                        <div class="icon-box bg-primary bg-opacity-10 text-primary mb-3">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary mb-3 mx-auto">
                             <i class="fas fa-calendar-check fa-2x"></i>
                         </div>
-                        <h3 class="h5">Citas</h3>
+                        <h3 class="h5 fw-bold">Citas</h3>
                         <p class="mb-0">Para mejor servicio, recomendamos agendar cita previa. Puedes hacerlo por teléfono o mediante nuestro formulario de contacto.</p>
                     </div>
                 </div>
@@ -141,9 +140,55 @@ require_once __DIR__ . '/includes/navbar.php';
     </div>
 </main>
 
+<style>
+.hover-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    border-left-color: var(--bs-primary);
+}
+
+.icon-box {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.btn-lg {
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 600;
+}
+
+.card {
+    border-radius: 12px;
+}
+</style>
+
 <?php
 require_once __DIR__ . '/includes/footer.php';
-?>
+    include '../admin/includes/bot.php'; ?>
+    <script>
+ setHelpModule('Inicio');
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

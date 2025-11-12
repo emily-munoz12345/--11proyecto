@@ -318,9 +318,6 @@
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver
                 </a>
-                <a href="../formularios/vehiculos/index.php" class="btn btn-primary">
-                    <i class="fas fa-car"></i>Ir a Vehículos
-                </a>
             </div>
         </div>
 
@@ -344,8 +341,8 @@
                     <p>El módulo de Gestión de Vehículos te permite administrar toda la información relacionada con los vehículos de los clientes de Nacional Tapizados. Desde aquí podrás registrar nuevos vehículos, buscar información existente, editar datos y gestionar registros eliminados.</p>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (261).png" alt="Vista general de gestión de vehículos">
-                        <div class="image-caption">Figura 1: Vista general del módulo de Gestión de Vehículos</div>
+                        <img src="../imagenes/ayuda/vehiculos/vg.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p>Este módulo está integrado con el sistema de clientes, permitiendo asociar cada vehículo a su propietario correspondiente para un mejor control y seguimiento.</p>
@@ -375,8 +372,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (267).png" alt="Estadísticas de vehículos">
-                        <div class="image-caption">Figura 2: Panel de estadísticas de vehículos</div>
+                        <img src="../imagenes/ayuda/vehiculos/est.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -409,8 +406,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (261).png" alt="Búsqueda de vehículos">
-                        <div class="image-caption">Figura 3: Campo de búsqueda y filtros de vehículos</div>
+                        <img src="../imagenes/ayuda/vehiculos/busq.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -468,8 +465,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (263).png" alt="Formulario de nuevo vehículo">
-                        <div class="image-caption">Figura 4: Formulario para agregar nuevo vehículo</div>
+                        <img src="../imagenes/ayuda/vehiculos/crear.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -502,8 +499,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (264).png" alt="Detalles del vehículo">
-                        <div class="image-caption">Figura 5: Vista de detalles de un vehículo</div>
+                        <img src="../imagenes/ayuda/vehiculos/ver.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
@@ -536,8 +533,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (265).png" alt="Editar vehículo">
-                        <div class="image-caption">Figura 6: Formulario de edición de vehículo</div>
+                        <img src="../imagenes/ayuda/vehiculos/edit.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p><strong>Nota:</strong> Los campos marcados con asterisco (*) son obligatorios y deben completarse para guardar los cambios.</p>
@@ -572,8 +569,8 @@
                     </div>
                     
                     <div class="image-container">
-                        <img src="Captura de pantalla (268).png" alt="Vehículo en papelera">
-                        <div class="image-caption">Figura 7: Vehículo movido a la papelera</div>
+                        <img src="../imagenes/ayuda/vehiculos/paper.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <p><strong>Importante:</strong> Los vehículos en la papelera pueden ser restaurados dentro de los 30 días. Después de este período, se eliminarán automáticamente del sistema.</p>

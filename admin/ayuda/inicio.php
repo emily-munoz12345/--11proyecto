@@ -349,9 +349,6 @@
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver
                 </a>
-                <a href="../dashboard.php" class="btn btn-primary">
-                    <i class="fas fa-roll"></i>Ir a Clientes
-                </a>
             </div>
         </div>
 
@@ -379,7 +376,7 @@
                         <div class="image-caption"></div>
                     </div>
                     
-                    <p>El Dashboard se adapta automáticamente según tu rol de usuario, mostrando únicamente las opciones y estadísticas a las que tienes acceso.</p>
+                    <p>El Inicio se adapta automáticamente según tu rol de usuario, mostrando únicamente las opciones y estadísticas a las que tienes acceso.</p>
                 </section>
 
                 <section id="bienvenida" class="help-section">

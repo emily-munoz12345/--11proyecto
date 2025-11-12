@@ -963,6 +963,8 @@ if (isset($_GET['ajax'])) {
             </div>
         </div>
     </div>
+<?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Servicios');</script>
 
     <!-- Overlay para tarjetas flotantes -->
     <div class="overlay" id="overlay" onclick="hideOptionsCard()"></div>

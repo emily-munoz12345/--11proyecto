@@ -573,7 +573,8 @@ foreach ($userCards as $card) {
         </div>
     </div>
 
-    <?php require_once __DIR__ . '/includes/footer.php'; ?>
+    <?php include 'includes/bot.php'; ?>
+    <script>setHelpModule('Inicio');</script>
 
     <script>
         // Toggle sidebar

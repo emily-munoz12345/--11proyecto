@@ -979,7 +979,6 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
         </div>
     <?php endif; ?>
 </div>
-
     <!-- Tarjeta flotante para opciones -->
     <div class="overlay" id="overlay"></div>
     <div class="options-floating-card" id="optionsCard">
@@ -1001,9 +1000,14 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
             </a>
         </div>
     </div>
+<?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Clientes');</script>
+    
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
+        
         // Variables globales
         let currentClientId = null;
         let currentClientName = null;
@@ -1112,6 +1116,7 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
         document.querySelector('.search-container').addEventListener('submit', function(e) {
             e.preventDefault();
         });
+        
     </script>
 </body>
 </html>

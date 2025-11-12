@@ -687,6 +687,8 @@ $estadosCotizaciones = array_count_values(array_column($cotizaciones, 'estado_co
             </div>
         </div>
     </div>
+    <?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Cotizaciones');</script>
 
     <!-- Scripts -->
     <script>

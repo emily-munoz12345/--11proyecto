@@ -533,6 +533,8 @@ $ultimoRegistro = $totalClientes > 0 ? max(array_column($clientes, 'fecha_regist
         </div>
     </div>
 
+<?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Clientes');</script>
     <!-- Scripts -->
     <script>
         // Función para filtrar clientes

@@ -680,6 +680,8 @@ $trabajosEnProgreso = count(array_filter($trabajos, function($t) { return $t['es
         </div>
     </div>
 
+<?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Trabajos');</script>
     <!-- Scripts -->
     <script>
         // Función para filtrar trabajos

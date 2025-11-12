@@ -584,6 +584,8 @@ $serviciosPorCategoria = array_count_values(array_column($servicios, 'categoria_
         </div>
     </div>
 
+<?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Servicios');</script>
     <!-- Scripts -->
     <script>
         // Función para filtrar servicios

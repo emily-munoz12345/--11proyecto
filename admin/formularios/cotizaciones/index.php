@@ -962,6 +962,8 @@ if (isset($_GET['ajax'])) {
             </div>
         </div>
     </div>
+    <?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Cotizaciones');</script>
 
     <!-- Tarjeta flotante para opciones -->
     <div class="overlay" id="overlay" onclick="hideOptions()"></div>

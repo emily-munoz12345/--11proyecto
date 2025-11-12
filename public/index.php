@@ -247,7 +247,11 @@ $title = 'Nacional Tapizados - Expertos en Tapicería Automotriz';
 </section>
 
 <!-- Footer -->
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
+<?php require_once __DIR__ . '/includes/footer.php';
+    include '../admin/includes/bot.php'; ?>
+    <script>
+ setHelpModule('Inicio');
+</script>
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

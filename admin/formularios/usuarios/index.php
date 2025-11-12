@@ -979,6 +979,8 @@ $title = 'Gestión de Usuarios';
         </div>
     </div>
 
+<?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Usuarios');</script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Variables globales

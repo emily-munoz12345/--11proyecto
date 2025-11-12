@@ -938,7 +938,9 @@ if (isset($_GET['cargar_detalles']) && is_numeric($_GET['cargar_detalles'])) {
     <?php endif; ?>
 </div>
         </div>
-    </div>
+        </div>
+    <?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Materiales');</script>
 
     <!-- Tarjeta flotante para opciones -->
     <div class="overlay" id="overlay"></div>

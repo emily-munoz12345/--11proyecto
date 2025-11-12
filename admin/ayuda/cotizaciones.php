@@ -347,9 +347,6 @@
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver
                 </a>
-                <a href="../cotizaciones/index.php" class="btn btn-primary">
-                    <i class="fas fa-file-invoice"></i>Ir a Cotizaciones
-                </a>
             </div>
         </div>
 

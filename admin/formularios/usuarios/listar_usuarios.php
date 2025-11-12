@@ -611,6 +611,8 @@ $usuariosActivos = count(array_filter($usuarios, function($usuario) {
             </div>
         </div>
     </div>
+<?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Usuarios');</script>
 
     <!-- Scripts -->
     <script>

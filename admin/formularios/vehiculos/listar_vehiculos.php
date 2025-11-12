@@ -525,6 +525,8 @@ $ultimoRegistro = $totalVehiculos > 0 ? max(array_column($vehiculos, 'id_vehicul
             </div>
         </div>
     </div>
+<?php include '../../includes/bot.php'; ?>
+    <script>setHelpModule('Vehiculos');</script>
 
     <!-- Scripts -->
     <script>
