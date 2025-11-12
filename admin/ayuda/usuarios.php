@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ayuda - Gestión de Usuarios | Nacional Tapizados</title>
+    <title>Ayuda</title>
     <style>
         :root {
             --primary-color: rgba(140, 74, 63, 0.8);
@@ -316,7 +316,7 @@
 <body>
     <div class="main-container">
         <div class="header-section">
-            <h1 class="page-title"><i class="fas fa-question-circle"></i>Ayuda - Gestión de Usuarios</h1>
+            <h1 class="page-title"><i class="fas fa-question-circle"></i>Ayuda</h1>
             <div>
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver

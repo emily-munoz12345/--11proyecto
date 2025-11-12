@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ayuda | Nacional Tapizados</title>
+    <title>Ayuda</title>
     <style>
         :root {
             --primary-color: rgba(140, 74, 63, 0.8);
@@ -278,6 +278,32 @@
             color: var(--primary-color);
         }
 
+        /* Galería de imágenes */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .gallery-item {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
         /* Estilos responsivos */
         @media (max-width: 768px) {
             .main-container {
@@ -304,6 +330,10 @@
             .feature-grid {
                 grid-template-columns: 1fr;
             }
+
+            .image-gallery {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
         }
     </style>
     <!-- Font Awesome para iconos -->
@@ -313,13 +343,10 @@
 <body>
     <div class="main-container">
         <div class="header-section">
-            <h1 class="page-title"><i class="fas fa-question-circle"></i>Ayuda - Sitio Web Nacional Tapizados</h1>
+            <h1 class="page-title"><i class="fas fa-question-circle"></i>Ayuda </h1>
             <div>
                 <a href="javascript:history.back()" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i>Volver
-                </a>
-                <a href="../index.html" class="btn btn-primary">
-                    <i class="fas fa-home"></i>Inicio
                 </a>
             </div>
         </div>
@@ -329,11 +356,11 @@
                 <ul>
                     <li><a href="#introduccion" class="active">Introducción</a></li>
                     <li><a href="#navegacion">Navegación</a></li>
-                    <li><a href="#productos">Productos</a></li>
+                    <li><a href="#servicios">Servicios</a></li>
+                    <li><a href="#materiales">Materiales</a></li>
+                    <li><a href="#trabajos">Trabajos Realizados</a></li>
+                    <li><a href="#nosotros">Sobre Nosotros</a></li>
                     <li><a href="#contacto">Contacto</a></li>
-                    <li><a href="#cuenta">Mi Cuenta</a></li>
-                    <li><a href="#pedidos">Pedidos</a></li>
-                    <li><a href="#pagos">Pagos</a></li>
                     <li><a href="#problemas-comunes">Problemas Comunes</a></li>
                 </ul>
             </nav>
@@ -341,24 +368,29 @@
             <div class="help-sections">
                 <section id="introduccion" class="help-section">
                     <h2><i class="fas fa-info-circle"></i>Introducción al Sitio Web</h2>
-                    <p>Bienvenido al sitio web de Nacional Tapizados, tu destino para muebles de calidad y tapizados personalizados. Nuestra plataforma está diseñada para ofrecerte una experiencia de compra fácil y agradable.</p>
+                    <p>Bienvenido al sitio web de Nacional Tapizados, tu destino para tapicería automotriz de calidad y servicios personalizados. Nuestra plataforma está diseñada para ofrecerte información completa sobre nuestros servicios y facilitar el contacto con nosotros.</p>
+                    
+                    <div class="image-container">
+                        <img src="../imagenes/ayuda/public/inicio.png">
+                        <div class="image-caption"></div>
+                    </div>
                     
                     <div class="feature-grid">
                         <div class="feature-card">
-                            <h4><i class="fas fa-shopping-cart"></i>Compras Fáciles</h4>
-                            <p>Navega por nuestro catálogo y realiza compras de forma segura.</p>
+                            <h4><i class="fas fa-couch"></i>Servicios Especializados</h4>
+                            <p>Tapizado completo, reparaciones, limpieza y personalización de interiores automotrices.</p>
                         </div>
                         <div class="feature-card">
-                            <h4><i class="fas fa-couch"></i>Productos de Calidad</h4>
-                            <p>Descubre nuestra amplia gama de muebles y servicios de tapizado.</p>
+                            <h4><i class="fas fa-palette"></i>Materiales Premium</h4>
+                            <p>Descubre nuestra amplia gama de materiales de alta calidad para tu vehículo.</p>
                         </div>
                         <div class="feature-card">
-                            <h4><i class="fas fa-truck"></i>Envío Rápido</h4>
-                            <p>Recibe tus productos en la comodidad de tu hogar.</p>
+                            <h4><i class="fas fa-images"></i>Trabajos Realizados</h4>
+                            <p>Conoce ejemplos de nuestra calidad artesanal en diferentes tipos de vehículos.</p>
                         </div>
                         <div class="feature-card">
-                            <h4><i class="fas fa-headset"></i>Soporte Personalizado</h4>
-                            <p>Nuestro equipo está listo para ayudarte en lo que necesites.</p>
+                            <h4><i class="fas fa-headset"></i>Contacto Directo</h4>
+                            <p>Nuestro equipo está listo para atender tus consultas y cotizaciones.</p>
                         </div>
                     </div>
                     
@@ -375,50 +407,68 @@
                             <h3>Menú Principal</h3>
                             <p>Utiliza el menú superior para acceder a las principales secciones:</p>
                             <ul>
-                                <li><strong>Inicio:</strong> Página principal con productos destacados.</li>
-                                <li><strong>Productos:</strong> Catálogo completo de muebles y servicios.</li>
-                                <li><strong>Servicios:</strong> Información sobre nuestros servicios de tapizado.</li>
+                                <li><strong>Inicio:</strong> Página principal con información general y servicios destacados.</li>
+                                <li><strong>Servicios:</strong> Catálogo completo de nuestros servicios de tapicería.</li>
+                                <li><strong>Materiales:</strong> Información sobre los materiales premium que utilizamos.</li>
+                                <li><strong>Trabajos:</strong> Galería de trabajos realizados con ejemplos visuales.</li>
+                                <li><strong>Nosotros:</strong> Información sobre nuestra historia, equipo y valores.</li>
                                 <li><strong>Contacto:</strong> Formas de comunicarte con nosotros.</li>
                             </ul>
                         </div>
                     </div>
                     
+                    <div class="image-container">
+                        <img src="../imagenes/ayuda/public/menu.png">
+                        <div class="image-caption"></div>
+                    </div>
+                    
                     <div class="step-container">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <h3>Búsqueda</h3>
-                            <p>Utiliza la barra de búsqueda para encontrar productos específicos por nombre, categoría o características.</p>
+                            <h3>Navegación por Secciones</h3>
+                            <p>Cada sección tiene un diseño específico:</p>
+                            <ul>
+                                <li><strong>Tarjetas informativas:</strong> Haz clic en las tarjetas para obtener más detalles.</li>
+                                <li><strong>Filtros:</strong> En algunas páginas puedes filtrar contenido por categorías.</li>
+                                <li><strong>Botones de acción:</strong> Utiliza los botones para contactarnos o ver más información.</li>
+                            </ul>
                         </div>
                     </div>
                     
                     <div class="step-container">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h3>Filtros</h3>
-                            <p>En la página de productos, utiliza los filtros para refinar tu búsqueda por categoría, precio, color, etc.</p>
+                            <h3>Asistente de Ayuda</h3>
+                            <p>En la esquina inferior derecha encontrarás un botón de ayuda que te guiará en cada sección del sitio.</p>
                         </div>
                     </div>
                     
                     <div class="image-container">
-                        <img src="../imagenes/ayuda/publica/navegacion.png" alt="Navegación del sitio">
-                        <div class="image-caption">Ejemplo de navegación en el sitio web</div>
+                        <img src="../imagenes/ayuda/public/ayuda.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
-                <section id="productos" class="help-section">
-                    <h2><i class="fas fa-couch"></i>Productos y Catálogo</h2>
-                    <p>Descubre cómo explorar y seleccionar productos en nuestro catálogo:</p>
+                <section id="servicios" class="help-section">
+                    <h2><i class="fas fa-concierge-bell"></i>Servicios</h2>
+                    <p>En la sección de Servicios encontrarás información detallada sobre todos los trabajos que realizamos:</p>
+                    
+                    <div class="image-container">
+                    <img src="../imagenes/ayuda/public/serv.png">
+                        <div class="image-caption"></div>
+                    </div>
                     
                     <div class="step-container">
                         <div class="step-number">1</div>
                         <div class="step-content">
-                            <h3>Explorar Categorías</h3>
-                            <p>Navega por nuestras categorías principales:</p>
+                            <h3>Filtrar Servicios</h3>
+                            <p>Utiliza los botones de filtro para ver servicios específicos:</p>
                             <ul>
-                                <li><strong>Sofás y Seccionales:</strong> Diversos estilos y tamaños.</li>
-                                <li><strong>Sillas y Butacas:</strong> Para interior y exterior.</li>
-                                <li><strong>Taburetes y Bancos:</strong> Complementos para tu hogar.</li>
-                                <li><strong>Tapizados Personalizados:</strong> Servicio a medida.</li>
+                                <li><strong>Todos:</strong> Muestra todos los servicios disponibles.</li>
+                                <li><strong>Tapizado Completo:</strong> Renovación total de interiores.</li>
+                                <li><strong>Reparaciones:</strong> Soluciones para daños y desgastes.</li>
+                                <li><strong>Limpieza:</strong> Tratamientos profesionales de limpieza.</li>
+                                <li><strong>Personalización:</strong> Diseños exclusivos para tu vehículo.</li>
                             </ul>
                         </div>
                     </div>
@@ -426,13 +476,71 @@
                     <div class="step-container">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <h3>Ver Detalles del Producto</h3>
-                            <p>Haz clic en cualquier producto para ver información detallada:</p>
+                            <h3>Información de Servicios</h3>
+                            <p>Cada servicio incluye:</p>
                             <ul>
-                                <li><strong>Imágenes:</strong> Vista múltiple del producto.</li>
-                                <li><strong>Descripción:</strong> Características y materiales.</li>
-                                <li><strong>Dimensiones:</strong> Medidas exactas del producto.</li>
-                                <li><strong>Precio y Disponibilidad:</strong> Información de compra.</li>
+                                <li><strong>Descripción detallada:</strong> Explicación del servicio.</li>
+                                <li><strong>Lista de beneficios:</strong> Ventajas y características.</li>
+                                <li><strong>Tiempo estimado:</strong> Duración del trabajo.</li>
+                                <li><strong>Precio referencial:</strong> Costo aproximado del servicio.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="step-container">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Proceso de Trabajo</h3>
+                            <p>En la parte inferior de la página encontrarás nuestro proceso de trabajo:</p>
+                            <ul>
+                                <li><strong>Evaluación:</strong> Diagnóstico del vehículo.</li>
+                                <li><strong>Cotización:</strong> Presupuesto transparente.</li>
+                                <li><strong>Aprobación:</strong> Selección de materiales.</li>
+                                <li><strong>Ejecución:</strong> Trabajo artesanal.</li>
+                                <li><strong>Entrega:</strong> Con garantía documentada.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="image-container">
+                        <img src="../imagenes/ayuda/public/procs.png">
+                        <div class="image-caption"></div>
+                    </div>
+                </section>
+
+                <section id="materiales" class="help-section">
+                    <h2><i class="fas fa-palette"></i>Materiales</h2>
+                    <p>En esta sección conocerás los materiales premium que utilizamos en nuestros trabajos:</p>
+                    
+                    <div class="image-container">
+                        <img src="../imagenes/ayuda/public/mat.png">
+                        <div class="image-caption"></div>
+                    </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Tipos de Materiales</h3>
+                            <p>Explora los diferentes materiales disponibles:</p>
+                            <ul>
+                                <li><strong>Cuero Natural Premium:</strong> La opción más exclusiva con máxima durabilidad.</li>
+                                <li><strong>Alcántara Deportiva:</strong> Material técnico antideslizante y resistente.</li>
+                                <li><strong>Vinilcuero Premium:</strong> Opción económica sin sacrificar calidad.</li>
+                                <li><strong>Tela Técnica:</strong> Materiales modernos con tratamientos especiales.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Información de Materiales</h3>
+                            <p>Cada material incluye:</p>
+                            <ul>
+                                <li><strong>Ventajas:</strong> Beneficios específicos del material.</li>
+                                <li><strong>Vida útil:</strong> Duración estimada.</li>
+                                <li><strong>Recomendaciones:</strong> Para qué tipo de vehículos es ideal.</li>
                             </ul>
                         </div>
                     </div>
@@ -440,42 +548,160 @@
                     <div class="step-container">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h3>Personalización</h3>
-                            <p>Para productos personalizables, selecciona:</p>
+                            <h3>Cuidados Específicos</h3>
+                            <p>Haz clic en "Ver cuidados" para cada material y obtén información detallada sobre:</p>
                             <ul>
-                                <li><strong>Color:</strong> Diferentes opciones de tela.</li>
-                                <li><strong>Material:</strong> Variedad de materiales disponibles.</li>
-                                <li><strong>Medidas:</strong> Especificaciones personalizadas.</li>
+                                <li><strong>Limpieza:</strong> Frecuencia y métodos recomendados.</li>
+                                <li><strong>Mantenimiento:</strong> Cuidados específicos para cada material.</li>
+                                <li><strong>Protección:</strong> Cómo preservar la calidad del material.</li>
+                                <li><strong>Productos:</strong> Recomendaciones de productos de limpieza.</li>
+                                <li><strong>Advertencias:</strong> Qué evitar para no dañar el material.</li>
                             </ul>
                         </div>
                     </div>
                     
                     <div class="image-container">
-                        <img src="../imagenes/ayuda/publica/productos.png" alt="Página de productos">
-                        <div class="image-caption">Vista de productos en el catálogo</div>
+                        <img src="../imagenes/ayuda/public/formc.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
+                <section id="trabajos" class="help-section">
+                    <h2><i class="fas fa-images"></i>Trabajos Realizados</h2>
+                    <p>En esta sección podrás ver ejemplos de nuestro trabajo en diferentes vehículos:</p>
+                    
+                    <div class="image-container">
+                        <img src="../imagenes/ayuda/public/trab.png">
+                        <div class="image-caption"></div>
+                    </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Filtrar Trabajos</h3>
+                            <p>Utiliza los botones de filtro para ver trabajos específicos:</p>
+                            <ul>
+                                <li><strong>Todos:</strong> Muestra todos los trabajos realizados.</li>
+                                <li><strong>Tapizado Completo:</strong> Renovaciones totales de interiores.</li>
+                                <li><strong>Reparaciones:</strong> Trabajos de restauración y reparación.</li>
+                                <li><strong>Personalización:</strong> Diseños exclusivos y personalizados.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="image-gallery">
+                        <div class="gallery-item">
+                            <img src="../imagenes/ayuda/public/fil.png">
+                        <div class="image-caption"></div>
+                        </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Información de Trabajos</h3>
+                            <p>Cada trabajo incluye:</p>
+                            <ul>
+                                <li><strong>Imágenes:</strong> Fotografías del antes y después.</li>
+                                <li><strong>Descripción:</strong> Detalles del trabajo realizado.</li>
+                                <li><strong>Vehículo:</strong> Marca y modelo del automóvil.</li>
+                                <li><strong>Materiales utilizados:</strong> Especificaciones de los materiales.</li>
+                                <li><strong>Tiempo de trabajo:</strong> Duración del proyecto.</li>
+                                <li><strong>Garantía:</strong> Tiempo de garantía ofrecido.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="nosotros" class="help-section">
+                    <h2><i class="fas fa-users"></i>Sobre Nosotros</h2>
+                    <p>Conoce más sobre Nacional Tapizados, nuestra historia y valores:</p>
+                    
+                    <div class="image-container">
+                                        <div class="image-gallery">
+                        <div class="gallery-item">
+                            <img src="../imagenes/ayuda/public/nos.png">
+                        <div class="image-caption"></div>
+                        </div></div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Nuestra Historia</h3>
+                            <p>Descubre nuestra trayectoria desde 1995:</p>
+                            <ul>
+                                <li><strong>1995:</strong> Fundación como taller familiar.</li>
+                                <li><strong>2002:</strong> Primera expansión de instalaciones.</li>
+                                <li><strong>2010:</strong> Certificación de calidad e importación directa de materiales.</li>
+                                <li><strong>2020:</strong> Modernización con tecnología de punta.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="image-container">
+                    </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Nuestro Equipo</h3>
+                            <p>Conoce a los profesionales detrás de nuestro trabajo:</p>
+                            <ul>
+                                <li><strong>Juan Pérez:</strong> Fundador y maestro tapicero con 40+ años de experiencia.</li>
+                                <li><strong>María Gómez:</strong> Diseñadora y especialista en materiales.</li>
+                                <li><strong>Carlos Rojas:</strong> Jefe de taller supervisando cada proyecto.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="step-container">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Nuestros Valores</h3>
+                            <p>Los principios que guían nuestro trabajo:</p>
+                            <ul>
+                                <li><strong>Calidad:</strong> Atención al detalle en cada pieza.</li>
+                                <li><strong>Honestidad:</strong> Transparencia en cada proceso.</li>
+                                <li><strong>Excelencia:</strong> Búsqueda constante de la perfección.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="step-container">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>Nuestras Instalaciones</h3>
+                            <p>Contamos con un espacio de 800m² diseñado específicamente para tapicería automotriz, con áreas especializadas para cada etapa del proceso.</p>
+                        </div>
+                    </div>
+                    
+                </section>
+
                 <section id="contacto" class="help-section">
-                    <h2><i class="fas fa-envelope"></i>Contacto y Soporte</h2>
+                    <h2><i class="fas fa-envelope"></i>Contacto</h2>
                     <p>Múltiples formas de contactarnos para resolver tus dudas o solicitar información:</p>
+                    
+                    <div class="image-container">
+                        <img src="../imagenes/ayuda/public/formg.png">
+                        <div class="image-caption">/div>
+                    </div>
                     
                     <div class="feature-grid">
                         <div class="feature-card">
                             <h4><i class="fas fa-map-marker-alt"></i>Visítanos</h4>
-                            <p>Ven a nuestro showroom para ver nuestros productos en persona.</p>
+                            <p>Cr 13 # 4.43, Ciudad, Estado 12345, Colombia</p>
                         </div>
                         <div class="feature-card">
                             <h4><i class="fas fa-phone"></i>Llámanos</h4>
-                            <p>Habla directamente con nuestro equipo de atención al cliente.</p>
+                            <p>Ventas: 57 1234 5678<br>Soporte: 57 9876 5432</p>
                         </div>
                         <div class="feature-card">
                             <h4><i class="fas fa-envelope"></i>Escríbenos</h4>
-                            <p>Envía tus consultas por correo electrónico.</p>
+                            <p>olfonsojose@gmail.com</p>
                         </div>
                         <div class="feature-card">
-                            <h4><i class="fas fa-comments"></i>Chat en Vivo</h4>
-                            <p>Conversa en tiempo real con nuestros asesores.</p>
+                            <h4><i class="fas fa-clock"></i>Horario</h4>
+                            <p>Lunes a Viernes: 8:00am - 6:00pm<br>Sábados: 8:00am - 2:00pm</p>
                         </div>
                     </div>
                     
@@ -488,98 +714,26 @@
                                 <li><strong>Nombre y Apellido:</strong> Información de contacto.</li>
                                 <li><strong>Correo Electrónico:</strong> Para responder tu consulta.</li>
                                 <li><strong>Teléfono:</strong> Número de contacto opcional.</li>
+                                <li><strong>Asunto:</strong> Selecciona el motivo de tu consulta.</li>
                                 <li><strong>Mensaje:</strong> Detalla tu consulta o solicitud.</li>
                             </ul>
                         </div>
                     </div>
                     
-                    <div class="step-container">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h3>Solicitud de Cotización</h3>
-                            <p>Para productos personalizados, utiliza el formulario específico que incluye:</p>
-                            <ul>
-                                <li><strong>Tipo de Producto:</strong> Sofá, silla, etc.</li>
-                                <li><strong>Medidas Específicas:</strong> Dimensiones requeridas.</li>
-                                <li><strong>Material Preferido:</strong> Tipo de tela o material.</li>
-                                <li><strong>Presupuesto Aproximado:</strong> Rango de inversión.</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
                     <div class="image-container">
-                        <img src="../imagenes/ayuda/publica/contacto.png" alt="Formulario de contacto">
-                        <div class="image-caption">Formulario de contacto en línea</div>
-                    </div>
-                </section>
-
-                <section id="cuenta" class="help-section">
-                    <h2><i class="fas fa-user"></i>Mi Cuenta</h2>
-                    <p>Gestiona tu información personal y preferencias:</p>
-                    
-                    <div class="step-container">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <h3>Crear Cuenta</h3>
-                            <p>Regístrate para acceder a funciones exclusivas:</p>
-                            <ul>
-                                <li><strong>Nombre Completo:</strong> Tu nombre y apellidos.</li>
-                                <li><strong>Correo Electrónico:</strong> Será tu usuario.</li>
-                                <li><strong>Contraseña:</strong> Crea una contraseña segura.</li>
-                                <li><strong>Teléfono:</strong> Número de contacto.</li>
-                            </ul>
-                        </div>
+                        <img src="../imagenes/ayuda/public/formc.png">
+                        <div class="image-caption"></div>
                     </div>
                     
                     <div class="step-container">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <h3>Iniciar Sesión</h3>
-                            <p>Accede a tu cuenta con tu correo y contraseña.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="step-container">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <h3>Gestionar Perfil</h3>
-                            <p>Desde tu cuenta puedes:</p>
+                            <h3>Confirmación de Envío</h3>
+                            <p>Después de enviar el formulario:</p>
                             <ul>
-                                <li><strong>Actualizar Información:</strong> Modificar datos personales.</li>
-                                <li><strong>Cambiar Contraseña:</strong> Actualizar credenciales de acceso.</li>
-                                <li><strong>Gestionar Direcciones:</strong> Agregar o editar direcciones de envío.</li>
-                                <li><strong>Preferencias:</strong> Configurar notificaciones y preferencias.</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="image-container">
-                        <img src="../imagenes/ayuda/publica/cuenta.png" alt="Panel de usuario">
-                        <div class="image-caption">Panel de control de usuario</div>
-                    </div>
-                </section>
-
-                <section id="pedidos" class="help-section">
-                    <h2><i class="fas fa-shopping-bag"></i>Realizar Pedidos</h2>
-                    <p>Proceso completo para realizar tus compras en línea:</p>
-                    
-                    <div class="step-container">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <h3>Agregar al Carrito</h3>
-                            <p>Selecciona los productos que deseas comprar y agrégalos a tu carrito.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="step-container">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h3>Revisar Carrito</h3>
-                            <p>Verifica los productos en tu carrito antes de proceder al pago:</p>
-                            <ul>
-                                <li><strong>Cantidad:</strong> Ajusta las cantidades si es necesario.</li>
-                                <li><strong>Precio:</strong> Revisa el costo total de tu pedido.</li>
-                                <li><strong>Opciones de Envío:</strong> Selecciona el método de entrega.</li>
+                                <li>Verás un mensaje de confirmación en la parte superior de la página.</li>
+                                <li>Si hay errores, recibirás indicaciones para corregirlos.</li>
+                                <li>Nos pondremos en contacto contigo en un plazo máximo de 24 horas.</li>
                             </ul>
                         </div>
                     </div>
@@ -587,98 +741,51 @@
                     <div class="step-container">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h3>Proceso de Checkout</h3>
-                            <p>Completa la información necesaria para finalizar tu compra:</p>
-                            <ul>
-                                <li><strong>Información de Envío:</strong> Dirección de entrega.</li>
-                                <li><strong>Método de Pago:</strong> Selecciona forma de pago.</li>
-                                <li><strong>Revisión Final:</strong> Confirma los detalles del pedido.</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="step-container">
-                        <div class="step-number">4</div>
-                        <div class="step-content">
-                            <h3>Confirmación</h3>
-                            <p>Recibirás una confirmación por correo electrónico con los detalles de tu pedido y número de seguimiento.</p>
+                            <h3>Ubicación</h3>
+                            <p>En la parte inferior de la página de contacto encontrarás un mapa con nuestra ubicación exacta.</p>
                         </div>
                     </div>
                     
                     <div class="image-container">
-                        <img src="../imagenes/ayuda/publica/carrito.png" alt="Carrito de compras">
-                        <div class="image-caption">Carrito de compras y proceso de checkout</div>
-                    </div>
-                </section>
-
-                <section id="pagos" class="help-section">
-                    <h2><i class="fas fa-credit-card"></i>Métodos de Pago</h2>
-                    <p>Opciones seguras para realizar tus pagos:</p>
-                    
-                    <div class="feature-grid">
-                        <div class="feature-card">
-                            <h4><i class="fas fa-credit-card"></i>Tarjetas de Crédito</h4>
-                            <p>Aceptamos todas las tarjetas principales: Visa, MasterCard, American Express.</p>
-                        </div>
-                        <div class="feature-card">
-                            <h4><i class="fas fa-university"></i>Transferencias Bancarias</h4>
-                            <p>Realiza transferencias desde tu banco directamente.</p>
-                        </div>
-                        <div class="feature-card">
-                            <h4><i class="fas fa-mobile-alt"></i>Pagos Móviles</h4>
-                            <p>Utiliza aplicaciones de pago móvil compatibles.</p>
-                        </div>
-                        <div class="feature-card">
-                            <h4><i class="fas fa-money-bill-wave"></i>Efectivo</h4>
-                            <p>Pago en efectivo al momento de la entrega (sujeto a condiciones).</p>
-                        </div>
-                    </div>
-                    
-                    <h3><i class="fas fa-shield-alt"></i>Seguridad en Pagos</h3>
-                    <p>Tu seguridad es nuestra prioridad:</p>
-                    <ul>
-                        <li><strong>Cifrado SSL:</strong> Todos los datos se transmiten de forma segura.</li>
-                        <li><strong>Protección de Datos:</strong> No almacenamos información sensible de pago.</li>
-                        <li><strong>Verificación:</strong> Procesos de autenticación para transacciones.</li>
-                    </ul>
-                    
-                    <div class="step-container">
-                        <div class="step-content">
-                            <h3><i class="fas fa-lock"></i>Garantía de Seguridad</h3>
-                            <p>Todas las transacciones están protegidas con los más altos estándares de seguridad. Si experimentas algún problema con tu pago, contacta inmediatamente a nuestro equipo de soporte.</p>
-                        </div>
+                        <img src="../imagenes/ayuda/public/map.png">
+                        <div class="image-caption"></div>
                     </div>
                 </section>
 
                 <section id="problemas-comunes" class="help-section">
                     <h2><i class="fas fa-tools"></i>Solución de Problemas Comunes</h2>
                     
-                    <h3><i class="fas fa-exclamation-triangle"></i>No puedo crear una cuenta</h3>
+                    <h3><i class="fas fa-exclamation-triangle"></i>No puedo ver las imágenes correctamente</h3>
                     <ul>
-                        <li>Verifica que tu correo electrónico no esté ya registrado.</li>
-                        <li>Asegúrate de que la contraseña cumpla con los requisitos mínimos.</li>
-                        <li>Comprueba que todos los campos obligatorios estén completos.</li>
+                        <li>Verifica tu conexión a internet.</li>
+                        <li>Actualiza la página (F5 o Ctrl+R).</li>
+                        <li>Prueba con un navegador diferente.</li>
                     </ul>
                     
-                    <h3><i class="fas fa-exclamation-triangle"></i>Problemas al iniciar sesión</h3>
+                    <h3><i class="fas fa-exclamation-triangle"></i>El formulario de contacto no se envía</h3>
                     <ul>
-                        <li>Verifica que estés usando el correo correcto.</li>
-                        <li>Confirma que tu contraseña sea la correcta (distingue mayúsculas y minúsculas).</li>
-                        <li>Utiliza la opción "¿Olvidaste tu contraseña?" si es necesario.</li>
+                        <li>Verifica que todos los campos obligatorios estén completos.</li>
+                        <li>Asegúrate de que el correo electrónico tenga un formato válido.</li>
+                        <li>Comprueba que no haya errores marcados en rojo en los campos.</li>
                     </ul>
                     
-                    <h3><i class="fas fa-exclamation-triangle"></i>Error al realizar un pedido</h3>
+                    <div class="image-container">
+                        <img src="../imagenes/ayuda/public/errr.png">
+                        <div class="image-caption">Ejemplo de error en formulario con campos obligatorios</div>
+                    </div>
+                    
+                    <h3><i class="fas fa-exclamation-triangle"></i>No encuentro la información que busco</h3>
                     <ul>
-                        <li>Verifica que todos los productos estén disponibles.</li>
-                        <li>Comprueba que la información de envío sea correcta.</li>
-                        <li>Asegúrate de que el método de pago seleccionado sea válido.</li>
+                        <li>Utiliza el menú de navegación superior para acceder a las diferentes secciones.</li>
+                        <li>Revisa la sección de "Servicios" para información detallada sobre nuestros trabajos.</li>
+                        <li>Si no encuentras lo que buscas, contáctanos directamente.</li>
                     </ul>
                     
-                    <h3><i class="fas fa-exclamation-triangle"></i>No recibo el correo de confirmación</h3>
+                    <h3><i class="fas fa-exclamation-triangle"></i>Problemas con la visualización en móvil</h3>
                     <ul>
-                        <li>Revisa tu carpeta de spam o correo no deseado.</li>
-                        <li>Verifica que hayas ingresado correctamente tu dirección de correo.</li>
-                        <li>Espera unos minutos, a veces hay demoras en el envío.</li>
+                        <li>Asegúrate de estar usando la versión más reciente de tu navegador.</li>
+                        <li>Intenta rotar la pantalla de tu dispositivo para ver si mejora la visualización.</li>
+                        <li>Si el problema persiste, contáctanos para reportarlo.</li>
                     </ul>
                     
                     <div class="step-container" style="background-color: rgba(25, 135, 84, 0.2); border-left-color: var(--success-color);">
@@ -686,10 +793,10 @@
                             <h3><i class="fas fa-life-ring"></i>Contacto de Soporte</h3>
                             <p>Si continúas experimentando problemas, contacta a nuestro equipo de soporte:</p>
                             <ul>
-                                <li><strong>Email:</strong> soporte@nacionaltapizados.com</li>
-                                <li><strong>Teléfono:</strong> +57 123 456 7890</li>
+                                <li><strong>Email:</strong> olfonsojose@gmail.com</li>
+                                <li><strong>Teléfono:</strong> +57 1234 5678</li>
                                 <li><strong>Horario de atención:</strong> Lunes a Viernes 8:00 AM - 6:00 PM</li>
-                                <li><strong>Chat en Vivo:</strong> Disponible en horario comercial</li>
+                                <li><strong>Ubicación:</strong> Cr 13 # 4.43, Ciudad, Estado 12345, Colombia</li>
                             </ul>
                         </div>
                     </div>
