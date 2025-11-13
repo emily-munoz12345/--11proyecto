@@ -307,7 +307,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <!-- Enlace de debug (solo mostrar en localhost) -->
                         <?php if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'localhost') !== false): ?>
                         <div class="text-center mt-3">
-                            <a href="debug_login.php" class="text-muted small">Debug del Sistema</a>
                         </div>
                         <?php endif; ?>
                     </div>
